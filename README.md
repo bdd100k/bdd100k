@@ -2,9 +2,7 @@
 
 ![teaser](doc/teaser.jpg)
 
-
-We construct BDD100K, the largest open driving video dataset with 100K videos and 10 tasks to evaluate the exciting progress of image recognition algorithms on autonomous driving. Each video has 40 seconds and a high resolution. The dataset represents more than 1000 hours of driving experience with more than 100 million frames. The videos comes with GPU/IMU data for trajectory information. The dataset possesses geographic, environmental, and weather diversity, which is useful for training models that are less likely to be surprised by new conditions. The dynamic outdoor scenes and complicated ego-vehicle motion make the perception tasks even more challenging. The tasks on this dataset include image tagging, lane detection, drivable area segmentation, road object detection, semantic segmentation, instance segmentation, multi-object detection tracking, multi-object segmentation tracking, domain adaptation,  and imitation learning. This repo is the supporting code for [BDD100K data](https://arxiv.org/abs/1805.04687) and [Scalabel](https://www.scalabel.ai/). The data downloading is available at [BDD100K data website](https://bdd-data.berkeley.edu/). To cite the dataset in your paper,
-
+We construct BDD100K, the largest open driving video dataset with 100K videos and 10 tasks to evaluate the exciting progress of image recognition algorithms on autonomous driving. Each video has 40 seconds and a high resolution. The dataset represents more than 1000 hours of driving experience with more than 100 million frames. The videos comes with GPU/IMU data for trajectory information. The dataset possesses geographic, environmental, and weather diversity, which is useful for training models that are less likely to be surprised by new conditions. The dynamic outdoor scenes and complicated ego-vehicle motion make the perception tasks even more challenging. The tasks on this dataset include image tagging, lane detection, drivable area segmentation, road object detection, semantic segmentation, instance segmentation, multi-object detection tracking, multi-object segmentation tracking, domain adaptation, and imitation learning. This repo is the supporting code for [BDD100K data](https://arxiv.org/abs/1805.04687) and [Scalabel](https://www.scalabel.ai/). The data downloading is available at [BDD100K data website](https://bdd-data.berkeley.edu/). To cite the dataset in your paper,
 
 ```
 @InProceedings{bdd100k,
@@ -15,7 +13,6 @@ We construct BDD100K, the largest open driving video dataset with 100K videos an
     year = {2020}
 }
 ```
-
 
 ## Dependency
 
@@ -64,7 +61,6 @@ python3 -m bdd100k.show_gps_trajectory \
 To create a Google Map API key, please follow the instruction [here](https://developers.google.com/maps/documentation/embed/get-api-key). The generated maps will look like
 
 ![gps_trajectory](doc/trajectory_gmap.jpg)
-
 
 ### Semantic Segmentation
 
