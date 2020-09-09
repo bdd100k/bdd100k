@@ -1,6 +1,10 @@
+black
+gmplot
 matplotlib
+motmetrics
+mypy
 numpy
 pillow
-gmplot
-motmetrics
+pydocstyle
+pylint
 tqdm
