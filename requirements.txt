@@ -6,6 +6,7 @@ mypy
 numpy
 pillow
 pycocotools
-pydocstyle
 pylint
 tqdm
+isort
+flake8

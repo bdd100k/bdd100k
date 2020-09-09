@@ -3,10 +3,9 @@
 import argparse
 import json
 import os
-from typing import Dict, Any
+from typing import Any, Dict
 
 from tqdm import tqdm
-
 
 DictObject = Dict[str, Any]  # type: ignore[misc]
 

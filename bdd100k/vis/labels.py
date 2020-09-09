@@ -1,6 +1,5 @@
 # type: ignore
 # pylint: skip-file
-# noqa
 
 
 import argparse

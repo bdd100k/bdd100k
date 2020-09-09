@@ -1,7 +1,7 @@
 """Convert coco to bdd100k format."""
 import argparse
 import json
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 from pycocotools.coco import COCO
 
