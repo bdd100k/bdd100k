@@ -1,11 +1,13 @@
 black
+flake8
+flake8-docstrings
 gmplot
+isort
 matplotlib
 motmetrics
 mypy
 numpy
 pillow
 pycocotools
-pydocstyle
 pylint
 tqdm

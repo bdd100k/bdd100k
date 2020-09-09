@@ -1,7 +1,7 @@
 """Converting label to the detection evaluation format."""
 import argparse
 import json
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
 __author__ = "Fisher Yu"
 __copyright__ = "Copyright (c) 2018, Fisher Yu"
