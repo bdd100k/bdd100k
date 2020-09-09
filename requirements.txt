@@ -5,6 +5,7 @@ motmetrics
 mypy
 numpy
 pillow
+pycocotools
 pydocstyle
 pylint
 tqdm
