@@ -3,10 +3,11 @@ flake8
 flake8-docstrings
 gmplot
 isort
+joblib
 matplotlib
 motmetrics
 mypy
-numpy
+numpy>=1.19
 pillow
 pycocotools
 pylint
