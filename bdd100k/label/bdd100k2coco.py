@@ -1,4 +1,4 @@
-"""Convert BDD100K to COCO format. """
+"""Convert BDD100K to COCO format."""
 
 import argparse
 import json
