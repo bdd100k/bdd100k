@@ -6,7 +6,7 @@ A Diverse Driving Dataset for Heterogeneous Multitask Learning
 [**Paper**](https://arxiv.org/abs/1805.04687) |
 [**Documentation**](https://www.bdd100k.com/doc)
 
-![teaser](doc/teaser.gif)
+![teaser](doc/images/teaser.gif)
 
 We construct BDD100K, the largest open driving video dataset with 100K videos
 and 10 tasks to evaluate the exciting progress of image recognition algorithms
