@@ -12,3 +12,5 @@ pillow
 pycocotools
 pylint
 tqdm
+sphinx
+sphinx-rtd-theme
