@@ -4,7 +4,8 @@ A Diverse Driving Dataset for Heterogeneous Multitask Learning
 
 [**Homepage**](https://www.bdd100k.com/) |
 [**Paper**](https://arxiv.org/abs/1805.04687) |
-[**Documentation**](https://doc.bdd100k.com)
+[**Doc**](https://doc.bdd100k.com) |
+[**Questions**](https://groups.google.com/d/forum/bdd100k-discuss)
 
 ![teaser](doc/images/teaser.gif)
 

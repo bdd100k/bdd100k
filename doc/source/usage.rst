@@ -19,8 +19,7 @@ the original videos are in ``bdd100k/videos`` and labels in ``bdd100k/labels``.
 ``bdd100k/images`` contains the frame at 10th second in the corresponding video.
 
 
-``bdd100k/labels`` contains two json files based on :ref:`our label
-format <Label Format>`_ for training and validation sets.
+``bdd100k/labels`` contains two json files based on :ref:`Scalabel Format` for training and validation sets.
 |vis_labels|_ provides examples to parse and
 visualize the labels.
 
