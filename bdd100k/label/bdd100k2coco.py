@@ -16,13 +16,13 @@ def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="BDD100K to COCO format")
     parser.add_argument(
         "-i",
-        "--in_path",
+        "--in-path",
         default="/input/path/",
         help="path to detection JSON file or tracking base folder",
     )
     parser.add_argument(
         "-o",
-        "--out_path",
+        "--out-path",
         default="/output/path",
         help="path to save coco formatted label file",
     )
