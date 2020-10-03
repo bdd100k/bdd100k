@@ -1,4 +1,21 @@
-"""Convert BDD100K to COCO format."""
+"""Convert BDD100K to COCO format.
+
+The annotation files in BDD100K format has additional annotaitons
+('other person', 'other vehicle' and 'trail') besides the considered
+categories ('car', 'pedestrian', 'truck', etc.) to indicate the uncertain
+regions. Given the different handlings of the these additional classes, we
+provide three options to process the labels when converting them into COCO
+format.
+
+1. Ignore the labels. This is the default setting and is often used for
+evaluation. CocoAPIs have native support for ignored annotations.
+https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocotools/cocoeval.py#L370
+2. Remove the annotations from the label file. By adding the
+flag `--remove-ignore`, the script will remove all the ignored annotations.
+3. Use `ignore` as a separate class and the user can decide how to utilize
+the annotations in `ignored` class. To achieve this, add the flag
+`--ignore-as-class`.
+"""
 
 import argparse
 import json
@@ -18,25 +35,39 @@ def parse_arguments() -> argparse.Namespace:
         "-i",
         "--in-path",
         default="/input/path/",
-        help="path to detection JSON file or tracking base folder",
+        help="Path to detection JSON file or tracking base folder.",
     )
     parser.add_argument(
         "-o",
         "--out-path",
         default="/output/path",
-        help="path to save coco formatted label file",
+        help="Path to save coco formatted label file.",
     )
     parser.add_argument(
         "-m",
         "--mode",
         default="det",
         choices=["det", "track"],
-        help="conversion mode: detection or tracking",
+        help="conversion mode: detection or tracking.",
+    )
+    parser.add_argument(
+        "-ri",
+        "--remove-ignore",
+        action="store_true",
+        help="Remove the ignored annotations from the label file.",
+    )
+    parser.add_argument(
+        "-ic",
+        "--ignore-as-class",
+        action="store_true",
+        help="Put the ignored annotations to the `ignored` category.",
     )
     return parser.parse_args()
 
 
-def bdd100k2coco_det(labels: List[DictObject]) -> DictObject:
+def bdd100k2coco_det(
+    args: argparse.Namespace, labels: List[DictObject]
+) -> DictObject:
     """Converting BDD100K Detection Set to COCO format."""
     naming_replacement_dict = {
         "person": "pedestrian",
@@ -56,8 +87,20 @@ def bdd100k2coco_det(labels: List[DictObject]) -> DictObject:
         {"supercategory": "none", "id": 8, "name": "bicycle"},
         {"supercategory": "none", "id": 9, "name": "traffic light"},
         {"supercategory": "none", "id": 10, "name": "traffic sign"},
-        {"supercategory": "none", "id": 11, "name": "ignored"},
     ]
+
+    if args.ignore_as_class:
+        coco["categories"].append(
+            {"supercategory": "none", "id": 11, "name": "ignored"}
+        )
+
+    # Mapping the ignored classes to standard classes.
+    ignore_map = {
+        "other person": "pedestrian",
+        "other vehicle": "car",
+        "trailer": "truck",
+    }
+
     attr_id_dict: DictObject = {
         frame["name"]: frame["id"] for frame in coco["categories"]
     }
@@ -99,12 +142,23 @@ def bdd100k2coco_det(labels: List[DictObject]) -> DictObject:
                     ]
                 category_ignored = label["category"] not in attr_id_dict
 
-                annotation["category_id"] = (
-                    attr_id_dict["ignored"]
-                    if category_ignored
-                    else attr_id_dict[label["category"]]
-                )
-                annotation["ignore"] = int(category_ignored)
+                if args.remove_ignore and category_ignored:
+                    continue
+
+                # Merging the ignored examples to car but
+                # the annotation is ignored for training and evaluation.
+                if category_ignored:
+                    if args.ignore_as_class:
+                        cls_id = attr_id_dict["ignored"]
+                    else:
+                        cls_id = attr_id_dict[ignore_map[label["category"]]]
+                else:
+                    cls_id = attr_id_dict[label["category"]]
+                annotation["category_id"] = cls_id
+                if args.ignore_as_class:
+                    annotation["ignore"] = 0
+                else:
+                    annotation["ignore"] = int(category_ignored)
                 annotation["id"] = label["id"]
                 annotation["segmentation"] = [[x1, y1, x1, y2, x2, y2, x2, y1]]
                 coco["annotations"].append(annotation)
@@ -117,8 +171,11 @@ def bdd100k2coco_det(labels: List[DictObject]) -> DictObject:
     return coco
 
 
-def bdd100k2coco_track(labels: List[DictObject]) -> DictObject:
+def bdd100k2coco_track(
+    args: argparse.Namespace, labels: List[DictObject]
+) -> DictObject:
     """Converting BDD100K Tracking Set to COCO format."""
+    # pylint: disable=R1702
     coco = defaultdict(list)
     coco["categories"] = [
         {"supercategory": "none", "id": 1, "name": "pedestrian"},
@@ -129,8 +186,20 @@ def bdd100k2coco_track(labels: List[DictObject]) -> DictObject:
         {"supercategory": "none", "id": 6, "name": "train"},
         {"supercategory": "none", "id": 7, "name": "motorcycle"},
         {"supercategory": "none", "id": 8, "name": "bicycle"},
-        {"supercategory": "none", "id": 9, "name": "ignored"},
     ]
+
+    if args.ignore_as_class:
+        coco["categories"].append(
+            {"supercategory": "none", "id": 9, "name": "ignored"}
+        )
+
+    # Mapping the ignored classes to standard classes.
+    ignore_map = {
+        "other person": "pedestrian",
+        "other vehicle": "car",
+        "trailer": "truck",
+    }
+
     attr_id_dict = {i["name"]: i["id"] for i in coco["categories"]}
 
     video_id, image_id, ann_id, global_instance_id = 0, 0, 0, 0
@@ -160,8 +229,15 @@ def bdd100k2coco_track(labels: List[DictObject]) -> DictObject:
             for lbl in image_anns["labels"]:
                 category_ignored = False
                 if lbl["category"] not in attr_id_dict.keys():
-                    lbl["category"] = "ignored"
-                    category_ignored = True
+                    if args.ignore_as_class:
+                        lbl["category"] = "ignored"
+                        category_ignored = False
+                    else:
+                        lbl["category"] = ignore_map[lbl["category"]]
+                        category_ignored = True
+                        if args.remove_ignore:
+                            # remove the ignored annotations
+                            continue
 
                 bdd100k_id = lbl["id"]
                 if bdd100k_id in instance_id_maps.keys():
@@ -220,9 +296,9 @@ def main() -> None:
     out_fn = os.path.join(args.out_path)
 
     if args.mode == "det":
-        coco = bdd100k2coco_det(labels)
+        coco = bdd100k2coco_det(args, labels)
     elif args.mode == "track":
-        coco = bdd100k2coco_track(labels)
+        coco = bdd100k2coco_track(args, labels)
 
     print("Saving...")
     with open(out_fn, "w") as f:

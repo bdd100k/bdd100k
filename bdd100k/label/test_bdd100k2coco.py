@@ -1,9 +1,9 @@
 """Test cases for bdd100k2coco.py."""
-import os
 import json
+import os
 import unittest
 
-from .bdd100k2coco import bdd100k2coco_det
+from .bdd100k2coco import bdd100k2coco_det, parse_arguments
 
 
 class TestBDD100K2COCO(unittest.TestCase):
@@ -15,18 +15,19 @@ class TestBDD100K2COCO(unittest.TestCase):
     ) as _file:
         val_bdd = json.load(_file)
 
-    val_coco = bdd100k2coco_det(val_bdd)
+    args = parse_arguments()
+    val_coco = bdd100k2coco_det(args, val_bdd)
 
-    def test_type(self):
+    def test_type(self) -> None:
         """Check coco format type."""
         self.assertTrue(isinstance(self.val_coco, dict))
         self.assertEqual(len(self.val_coco), 4)
 
-    def test_num_images(self):
+    def test_num_images(self) -> None:
         """Check the number of images is unchanged."""
         self.assertEqual(len(self.val_bdd), len(self.val_coco["images"]))
 
-    def test_num_anns(self):
+    def test_num_anns(self) -> None:
         """Check the number of annotations is unchanged."""
         len_bdd = sum([len(item["labels"]) for item in self.val_bdd])
         len_coco = len(self.val_coco["annotations"])
