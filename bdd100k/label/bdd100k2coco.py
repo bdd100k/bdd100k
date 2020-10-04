@@ -3,7 +3,7 @@
 The annotation files in BDD100K format has additional annotaitons
 ('other person', 'other vehicle' and 'trail') besides the considered
 categories ('car', 'pedestrian', 'truck', etc.) to indicate the uncertain
-regions. Given the different handlings of the these additional classes, we
+regions. Given the different handlings of these additional classes, we
 provide three options to process the labels when converting them into COCO
 format.
 
