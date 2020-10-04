@@ -3,7 +3,7 @@ import json
 import os
 import unittest
 
-from .bdd100k2coco import bdd100k2coco_det, parse_arguments
+from .bdd100k2coco import bdd100k2coco_det
 
 
 class TestBDD100K2COCO(unittest.TestCase):
@@ -15,8 +15,7 @@ class TestBDD100K2COCO(unittest.TestCase):
     ) as _file:
         val_bdd = json.load(_file)
 
-    args = parse_arguments()
-    val_coco = bdd100k2coco_det(args, val_bdd)
+    val_coco = bdd100k2coco_det(val_bdd)
 
     def test_type(self) -> None:
         """Check coco format type."""
