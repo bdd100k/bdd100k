@@ -4,7 +4,8 @@ A Diverse Driving Dataset for Heterogeneous Multitask Learning
 
 [**Homepage**](https://www.bdd100k.com/) |
 [**Paper**](https://arxiv.org/abs/1805.04687) |
-[**Documentation**](https://www.bdd100k.com/doc)
+[**Doc**](https://doc.bdd100k.com) |
+[**Questions**](https://groups.google.com/d/forum/bdd100k-discuss)
 
 ![teaser](doc/images/teaser.gif)
 
@@ -25,7 +26,8 @@ data](https://arxiv.org/abs/1805.04687). To cite the dataset in your paper,
 
 ```
 @InProceedings{bdd100k,
-    author = {Yu, Fisher and Chen, Haofeng and Wang, Xin and Xian, Wenqi and Chen, Yingying and Liu, Fangchen and Madhavan, Vashisht and Darrell, Trevor},
+    author = {Yu, Fisher and Chen, Haofeng and Wang, Xin and Xian, Wenqi and Chen,
+              Yingying and Liu, Fangchen and Madhavan, Vashisht and Darrell, Trevor},
     title = {BDD100K: A Diverse Driving Dataset for Heterogeneous Multitask Learning},
     booktitle = {The IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
     month = {June},
