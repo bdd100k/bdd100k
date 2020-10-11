@@ -1,6 +1,8 @@
-# BDD100K
+<p align="center"><img width=300 src="https://bdd100k.com/images/bdd100k-logo.svg" /></p>
 
-A Diverse Driving Dataset for Heterogeneous Multitask Learning
+---
+
+BDD100K is a diverse driving dataset for heterogeneous multitask learning.
 
 [**Homepage**](https://www.bdd100k.com/) |
 [**Paper**](https://arxiv.org/abs/1805.04687) |
