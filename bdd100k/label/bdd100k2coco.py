@@ -195,7 +195,6 @@ def bdd100k2coco_track(
     remove_ignore: bool = False,
 ) -> DictObject:
     """Converting BDD100K Tracking Set to COCO format."""
-    # pylint: disable=R1702
     coco, ignore_map, attr_id_dict = init(
         mode="track", ignore_as_class=ignore_as_class
     )
@@ -233,9 +232,9 @@ def bdd100k2coco_track(
                     else:
                         lbl["category"] = ignore_map[lbl["category"]]
                         category_ignored = True
-                        if remove_ignore:
-                            # remove the ignored annotations
-                            continue
+                    if category_ignored and remove_ignore:
+                        # remove the ignored annotations
+                        continue
 
                 bdd100k_id = lbl["id"]
                 if bdd100k_id in instance_id_maps.keys():
