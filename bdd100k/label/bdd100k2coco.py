@@ -82,8 +82,16 @@ def init(
     ]
     if mode == "det":
         coco["categories"] += [
-            {"supercategory": "traffic light", "id": 9, "name": "traffic light"},
-            {"supercategory": "traffic sign", "id": 10, "name": "traffic sign"},
+            {
+                "supercategory": "traffic light",
+                "id": 9,
+                "name": "traffic light",
+            },
+            {
+                "supercategory": "traffic sign",
+                "id": 10,
+                "name": "traffic sign",
+            },
         ]
 
     if ignore_as_class:
@@ -178,9 +186,12 @@ def bdd100k2coco_det(
                 else:
                     annotation["ignore"] = int(category_ignored)
                 # COCOAPIs only ignores the crowd region.
-                annotation['iscrowd'] = annotation['iscrowd'] or int(category_ignored)
-                # COCO annotation ID starts from 1 instead of 0 as used in the BDD100K format.
-                annotation["id"] = label["id"]+1
+                annotation["iscrowd"] = annotation["iscrowd"] or int(
+                    category_ignored
+                )
+                # COCO annotation ID starts from 1 instead of 0 as used
+                # in the BDD100K format.
+                annotation["id"] = label["id"] + 1
                 annotation["segmentation"] = [[x1, y1, x1, y2, x2, y2, x2, y1]]
                 coco["annotations"].append(annotation)
         else:
@@ -203,7 +214,8 @@ def bdd100k2coco_track(
         mode="track", ignore_as_class=ignore_as_class
     )
 
-    # COCO annotation ID starts from 1 instead of 0 as used in the BDD100K format.
+    # COCO annotation ID starts from 1 instead of 0 as used
+    # in the BDD100K format.
     video_id, image_id, ann_id, global_instance_id = 1, 1, 1, 1
     no_ann = 0
 
@@ -263,7 +275,8 @@ def bdd100k2coco_track(
                     truncated=lbl["attributes"]["Truncated"],
                     bbox=[x1, y1, x2 - x1, y2 - y1],
                     area=area,
-                    iscrowd=int(lbl["attributes"]["Crowd"]) or int(category_ignored),
+                    iscrowd=int(lbl["attributes"]["Crowd"])
+                    or int(category_ignored),
                     ignore=int(category_ignored),
                     segmentation=[[x1, y1, x1, y2, x2, y2, x2, y1]],
                 )
