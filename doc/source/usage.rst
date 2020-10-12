@@ -75,7 +75,7 @@ To create a Google Map API key, please follow the instruction
 `here <https://developers.google.com/maps/documentation/embed/get-api-key>`_. The
 generated maps will look like
 
-.. figure:: ../media/doc/trajectory_gmap.jpg
+.. figure:: ../media/images/trajectory_gmap.jpg
    :alt: Trajectory on Google Map
 
 Semantic Segmentation
