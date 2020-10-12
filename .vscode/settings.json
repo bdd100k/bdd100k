@@ -32,6 +32,6 @@
   },
   "files.watcherExclude": {
     "node_modules": true
-},
-"restructuredtext.confPath": "${workspaceFolder}/doc/source"
+  },
+  "restructuredtext.confPath": "${workspaceFolder}/doc/source"
 }

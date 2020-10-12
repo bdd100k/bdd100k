@@ -150,7 +150,9 @@ def cat_pc(
         k: np.zeros((len(boxes), len(thresholds)))
         for k, boxes in image_gts.items()
     }
-    predictions = sorted(predictions, key=lambda x: x["score"], reverse=True)
+    predictions = sorted(
+        predictions, key=lambda x: float(x["score"]), reverse=True
+    )
 
     # go down dets and mark TPs and FPs
     nd = len(predictions)
@@ -241,8 +243,8 @@ def evaluate_det_tracking(
     gt_path: str, result_path: str, cats: List[str]
 ) -> None:
     """Evaluate tracking."""
-    gt = sorted(json.load(open(gt_path)), key=lambda l1: l1["name"])
-    pred = sorted(json.load(open(result_path)), key=lambda l2: l2["name"])
+    gt = sorted(json.load(open(gt_path)), key=lambda l1: str(l1["name"]))
+    pred = sorted(json.load(open(result_path)), key=lambda l2: str(l2["name"]))
     assert len(gt) == len(pred)
 
     acc_dict: DictAny = {}
