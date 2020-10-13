@@ -26,4 +26,14 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires=">=3.7",
+    install_requires=[
+        "gmplot",
+        "joblib",
+        "matplotlib",
+        "motmetrics",
+        "numpy>=1.19",
+        "pillow",
+        "pycocotools",
+        "tqdm",
+    ],
 )
