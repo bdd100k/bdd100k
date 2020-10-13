@@ -6,11 +6,10 @@ import time
 from multiprocessing import Pool
 from typing import Any, Dict, List, Tuple, Union
 
-import numpy as np
-import pandas as pd
-
 import mmcv
 import motmetrics as mm
+import numpy as np
+import pandas as pd
 
 DictAny = Dict[str, Any]  # type: ignore[misc]
 
