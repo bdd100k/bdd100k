@@ -6,7 +6,6 @@ categories ('car', 'pedestrian', 'truck', etc.) to indicate the uncertain
 regions. Given the different handlings of these additional classes, we
 provide three options to process the labels when converting them into COCO
 format.
-
 1. Ignore the labels. This is the default setting and is often used for
 evaluation. CocoAPIs have native support for ignored annotations.
 https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocotools/cocoeval.py#L370
@@ -71,19 +70,27 @@ def init(
     """Initialze the annotation dictionary."""
     coco: DictObject = defaultdict(list)
     coco["categories"] = [
-        {"supercategory": "none", "id": 1, "name": "pedestrian"},
-        {"supercategory": "none", "id": 2, "name": "rider"},
-        {"supercategory": "none", "id": 3, "name": "car"},
-        {"supercategory": "none", "id": 4, "name": "truck"},
-        {"supercategory": "none", "id": 5, "name": "bus"},
-        {"supercategory": "none", "id": 6, "name": "train"},
-        {"supercategory": "none", "id": 7, "name": "motorcycle"},
-        {"supercategory": "none", "id": 8, "name": "bicycle"},
+        {"supercategory": "human", "id": 1, "name": "pedestrian"},
+        {"supercategory": "human", "id": 2, "name": "rider"},
+        {"supercategory": "vehicle", "id": 3, "name": "car"},
+        {"supercategory": "vehicle", "id": 4, "name": "truck"},
+        {"supercategory": "vehicle", "id": 5, "name": "bus"},
+        {"supercategory": "vehicle", "id": 6, "name": "train"},
+        {"supercategory": "bike", "id": 7, "name": "motorcycle"},
+        {"supercategory": "bike", "id": 8, "name": "bicycle"},
     ]
     if mode == "det":
         coco["categories"] += [
-            {"supercategory": "none", "id": 9, "name": "traffic light"},
-            {"supercategory": "none", "id": 10, "name": "traffic sign"},
+            {
+                "supercategory": "traffic light",
+                "id": 9,
+                "name": "traffic light",
+            },
+            {
+                "supercategory": "traffic sign",
+                "id": 10,
+                "name": "traffic sign",
+            },
         ]
 
     if ignore_as_class:
@@ -124,6 +131,7 @@ def bdd100k2coco_det(
         mode="det", ignore_as_class=ignore_as_class
     )
     counter = 0
+    label_counter = 0
     for frame in tqdm(labels):
         counter += 1
         image: DictObject = dict()
@@ -138,6 +146,7 @@ def bdd100k2coco_det(
                 # skip for drivable area and lane marking
                 if "box2d" not in label:
                     continue
+                label_counter += 1
                 annotation: DictObject = dict()
                 annotation["iscrowd"] = (
                     int(label["attributes"]["crowd"])
@@ -177,7 +186,15 @@ def bdd100k2coco_det(
                     annotation["ignore"] = 0
                 else:
                     annotation["ignore"] = int(category_ignored)
-                annotation["id"] = label["id"]
+                # COCOAPIs only ignores the crowd region.
+                annotation["iscrowd"] = annotation["iscrowd"] or int(
+                    category_ignored
+                )
+
+                annotation["id"] = label_counter
+                # save the original bdd100k_id for backup.
+                # The BDD100K ID might be string in the future.
+                annotation["bdd100k_id"] = label["id"]
                 annotation["segmentation"] = [[x1, y1, x1, y2, x2, y2, x2, y1]]
                 coco["annotations"].append(annotation)
         else:
@@ -199,7 +216,7 @@ def bdd100k2coco_track(
         mode="track", ignore_as_class=ignore_as_class
     )
 
-    video_id, image_id, ann_id, global_instance_id = 0, 0, 0, 0
+    video_id, image_id, ann_id, global_instance_id = 1, 1, 1, 1
     no_ann = 0
 
     for video_anns in tqdm(labels):
@@ -208,17 +225,17 @@ def bdd100k2coco_track(
         # videos
         video = dict(id=video_id, name=video_anns[0]["video_name"])
         coco["videos"].append(video)
+        video_name = video_anns[0]["video_name"]
 
         # images
         for image_anns in video_anns:
-            video_name = "-".join(image_anns["name"].split("-")[:-1])
             image = dict(
                 file_name=os.path.join(video_name, image_anns["name"]),
                 height=720,
                 width=1280,
                 id=image_id,
                 video_id=video_id,
-                index=image_anns["index"],
+                frame_id=image_anns["index"],
             )
             coco["images"].append(image)
 
@@ -254,11 +271,13 @@ def bdd100k2coco_track(
                     image_id=image_id,
                     category_id=attr_id_dict[lbl["category"]],
                     instance_id=instance_id,
-                    is_occluded=lbl["attributes"]["Occluded"],
-                    is_truncated=lbl["attributes"]["Truncated"],
+                    bdd100k_id=bdd100k_id,
+                    occluded=lbl["attributes"]["Occluded"],
+                    truncated=lbl["attributes"]["Truncated"],
                     bbox=[x1, y1, x2 - x1, y2 - y1],
                     area=area,
-                    iscrowd=int(lbl["attributes"]["Crowd"]),
+                    iscrowd=int(lbl["attributes"]["Crowd"])
+                    or int(category_ignored),
                     ignore=int(category_ignored),
                     segmentation=[[x1, y1, x1, y2, x2, y2, x2, y1]],
                 )
@@ -278,7 +297,12 @@ def main() -> None:
     """Main function."""
     args = parse_arguments()
 
-    print("Loading...")
+    print(
+        "Mode: {}\nremove-ignore: {}\nignore-as-class: {}".format(
+            args.mode, args.remove_ignore, args.ignore_as_class
+        )
+    )
+    print("Loading annotations...")
     if os.path.isdir(args.in_path):
         # labels are provided in multiple json files in a folder
         labels = []
@@ -289,7 +313,7 @@ def main() -> None:
         with open(args.in_path) as f:
             labels = json.load(f)
 
-    print("Converting...")
+    print("Converting annotations...")
     out_fn = os.path.join(args.out_path)
 
     if args.mode == "det":
@@ -301,9 +325,10 @@ def main() -> None:
             labels, args.ignore_as_class, args.remove_ignore
         )
 
-    print("Saving...")
+    print("Saving converted annotations to disk...")
     with open(out_fn, "w") as f:
         json.dump(coco, f)
+    print("Finished!")
 
 
 if __name__ == "__main__":
