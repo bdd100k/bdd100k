@@ -15,33 +15,38 @@ from tqdm import tqdm
 
 from ..common.logger import logger
 from ..common.typing import DictAny
-from .mot import eval_mot
+from .mot import evaluate_mot
 
 
 def parse_args() -> argparse.Namespace:
     """Use argparse to get command line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--task", "-t", choices=["seg", "det", "drivable", "mot"]
+        "--task",
+        "-t",
+        choices=["seg", "det", "drivable", "mot"],
+        required=True,
     )
-    parser.add_argument("--gt", "-g", help="path to ground truth")
     parser.add_argument(
-        "--result", "-r", help="path to results to be evaluated"
+        "--gt", "-g", required=True, help="path to ground truth"
     )
     parser.add_argument(
-        "--iou-thr",
+        "--result", "-r", required=True, help="path to results to be evaluated"
+    )
+    parser.add_argument(
+        "--mot-iou-thr",
         type=float,
         default=0.5,
         help="iou threshold for mot evaluation",
     )
     parser.add_argument(
-        "--ignore-iof-thr",
+        "--mot-ignore-iof-thr",
         type=float,
         default=0.5,
         help="ignore iof threshold for mot evaluation",
     )
     parser.add_argument(
-        "--nproc",
+        "--mot-nproc",
         type=int,
         default=4,
         help="number of processes for mot evaluation",
@@ -377,12 +382,12 @@ def run() -> None:
     elif args.task == "det":
         evaluate_detection(args.gt, args.result)
     elif args.task == "mot":
-        eval_mot(
+        evaluate_mot(
             gts=read(args.gt),
             results=read(args.result),
-            iou_thr=args.iou_thr,
-            ignore_iof_thr=args.ignore_iof_thr,
-            nproc=args.nproc,
+            iou_thr=args.mot_iou_thr,
+            ignore_iof_thr=args.mot_ignore_iof_thr,
+            nproc=args.mot_nproc,
         )
 
 

@@ -128,8 +128,10 @@ def aggregate_accs(
     accs: List[List[str]] = [[] for c in CLASSES]
     for video_ind, _accs in enumerate(accumulators):
         for cls_ind, acc in enumerate(_accs):
-            # pylint: disable=protected-access
-            if len(acc._events["Type"]) == 0:
+            if (
+                len(acc._events["Type"])  # pylint: disable=protected-access
+                == 0
+            ):
                 continue
             name = f"{CLASSES[cls_ind]}_{video_ind}"
             names[cls_ind].append(name)
@@ -149,7 +151,7 @@ def aggregate_accs(
     return names, accs, items
 
 
-def eval_single_class(
+def evaluate_single_class(
     names: List[str], accs: List[mm.MOTAccumulator]
 ) -> List[Union[float, int]]:
     """Evaluate results for one class."""
@@ -226,7 +228,7 @@ def render_results(
     return outputs
 
 
-def eval_mot(
+def evaluate_mot(
     gts: List[List[DictAny]],
     results: List[List[DictAny]],
     iou_thr: float = 0.5,
@@ -253,7 +255,7 @@ def eval_mot(
     names, accs, items = aggregate_accs(accs)
 
     logger.info("evaluating...")
-    summaries = pool.starmap(eval_single_class, zip(names, accs))
+    summaries = pool.starmap(evaluate_single_class, zip(names, accs))
     pool.close()
 
     logger.info("rendering...")
