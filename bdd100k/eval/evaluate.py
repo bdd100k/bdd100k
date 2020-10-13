@@ -5,14 +5,15 @@ import json
 import os
 import os.path as osp
 from collections import defaultdict
-from typing import Any, Dict, List, Tuple
+from typing import List, Tuple
 
 import motmetrics as mm
 import numpy as np
 from PIL import Image
 from tqdm import tqdm
 
-DictAny = Dict[str, Any]  # type: ignore[misc]
+from ..common.logger import logger
+from ..common.typing import DictAny
 
 
 def parse_args() -> argparse.Namespace:
@@ -75,8 +76,8 @@ def evaluate_segmentation(
                 len(result_gt_keys), len(gt_dict)
             )
         )
-    print("Found", len(result_dict), "results")
-    print("Evaluating", len(gt_dict), "results")
+    logger.info("Found %d results", len(result_dict))
+    logger.info("Evaluating %d results", len(gt_dict))
     hist = np.zeros((num_classes, num_classes))
     i = 0
     gt_id_set = set()
@@ -89,13 +90,13 @@ def evaluate_segmentation(
         hist += fast_hist(gt.flatten(), prediction.flatten(), num_classes)
         i += 1
         if i % 100 == 0:
-            print("Finished", i, per_class_iu(hist) * 100)
+            logger.info("Finished %d %f", i, per_class_iu(hist) * 100)
     gt_id_set.remove([255])
-    print("GT id set", gt_id_set)
+    logger.info("GT id set [%s]", ",".join(str(s) for s in gt_id_set))
     ious = per_class_iu(hist) * 100
     miou = np.mean(ious[list(gt_id_set)])
 
-    print(
+    logger.info(
         "{:.2f}".format(miou),
         ", ".join(["{:.2f}".format(n) for n in list(ious)]),
     )
@@ -233,7 +234,7 @@ def evaluate_detection(gt_path: str, result_path: str) -> None:
     m_ap = np.mean(aps)
     mean, breakdown = m_ap, aps.flatten().tolist()
 
-    print(
+    logger.info(
         "{:.2f}".format(mean),
         ", ".join(["{:.2f}".format(n) for n in breakdown]),
     )
@@ -249,7 +250,7 @@ def evaluate_det_tracking(
 
     acc_dict: DictAny = {}
 
-    print("Collecting IoU...")
+    logger.info("Collecting IoU...")
     for i in tqdm(range(len(gt))):
         im_gt = gt[i]
         im_pred = pred[i]
@@ -316,7 +317,7 @@ def evaluate_det_tracking(
 
     # create summary
 
-    print("Generating matchings and summary...")
+    logger.info("Generating matchings and summary...")
 
     mh = mm.metrics.create()
 

@@ -20,11 +20,12 @@ import argparse
 import json
 import os
 from collections import defaultdict
-from typing import Any, Dict, List, Tuple
+from typing import Dict, List, Tuple
 
 from tqdm import tqdm
 
-DictObject = Dict[str, Any]  # type: ignore[misc]
+from ..common.logger import logger
+from ..common.typing import DictAny
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -66,9 +67,9 @@ def parse_arguments() -> argparse.Namespace:
 
 def init(
     mode: str = "det", ignore_as_class: bool = False
-) -> Tuple[DictObject, Dict[str, str], DictObject]:
+) -> Tuple[DictAny, Dict[str, str], DictAny]:
     """Initialze the annotation dictionary."""
-    coco: DictObject = defaultdict(list)
+    coco: DictAny = defaultdict(list)
     coco["categories"] = [
         {"supercategory": "human", "id": 1, "name": "pedestrian"},
         {"supercategory": "human", "id": 2, "name": "rider"},
@@ -109,17 +110,17 @@ def init(
         "trailer": "truck",
     }
 
-    attr_id_dict: DictObject = {
+    attr_id_dict: DictAny = {
         frame["name"]: frame["id"] for frame in coco["categories"]
     }
     return coco, ignore_map, attr_id_dict
 
 
 def bdd100k2coco_det(
-    labels: List[DictObject],
+    labels: List[DictAny],
     ignore_as_class: bool = False,
     remove_ignore: bool = False,
-) -> DictObject:
+) -> DictAny:
     """Converting BDD100K Detection Set to COCO format."""
     naming_replacement_dict = {
         "person": "pedestrian",
@@ -134,7 +135,7 @@ def bdd100k2coco_det(
     label_counter = 0
     for frame in tqdm(labels):
         counter += 1
-        image: DictObject = dict()
+        image: DictAny = dict()
         image["file_name"] = frame["name"]
         image["height"] = 720
         image["width"] = 1280
@@ -147,7 +148,7 @@ def bdd100k2coco_det(
                 if "box2d" not in label:
                     continue
                 label_counter += 1
-                annotation: DictObject = dict()
+                annotation: DictAny = dict()
                 annotation["iscrowd"] = (
                     int(label["attributes"]["crowd"])
                     if "crowd" in label["attributes"]
@@ -207,10 +208,10 @@ def bdd100k2coco_det(
 
 
 def bdd100k2coco_track(
-    labels: List[DictObject],
+    labels: List[DictAny],
     ignore_as_class: bool = False,
     remove_ignore: bool = False,
-) -> DictObject:
+) -> DictAny:
     """Converting BDD100K Tracking Set to COCO format."""
     coco, ignore_map, attr_id_dict = init(
         mode="track", ignore_as_class=ignore_as_class
@@ -220,7 +221,7 @@ def bdd100k2coco_track(
     no_ann = 0
 
     for video_anns in tqdm(labels):
-        instance_id_maps: DictObject = dict()
+        instance_id_maps: DictAny = dict()
 
         # videos
         video = dict(id=video_id, name=video_anns[0]["video_name"])
@@ -240,20 +241,20 @@ def bdd100k2coco_track(
             coco["images"].append(image)
 
             # annotations
-            for lbl in image_anns["labels"]:
+            for label in image_anns["labels"]:
                 category_ignored = False
-                if lbl["category"] not in attr_id_dict.keys():
+                if label["category"] not in attr_id_dict.keys():
                     if ignore_as_class:
-                        lbl["category"] = "ignored"
+                        label["category"] = "ignored"
                         category_ignored = False
                     else:
-                        lbl["category"] = ignore_map[lbl["category"]]
+                        label["category"] = ignore_map[label["category"]]
                         category_ignored = True
                     if category_ignored and remove_ignore:
                         # remove the ignored annotations
                         continue
 
-                bdd100k_id = lbl["id"]
+                bdd100k_id = label["id"]
                 if bdd100k_id in instance_id_maps.keys():
                     instance_id = instance_id_maps[bdd100k_id]
                 else:
@@ -261,22 +262,22 @@ def bdd100k2coco_track(
                     global_instance_id += 1
                     instance_id_maps[bdd100k_id] = instance_id
 
-                x1 = lbl["box2d"]["x1"]
-                x2 = lbl["box2d"]["x2"]
-                y1 = lbl["box2d"]["y1"]
-                y2 = lbl["box2d"]["y2"]
+                x1 = label["box2d"]["x1"]
+                x2 = label["box2d"]["x2"]
+                y1 = label["box2d"]["y1"]
+                y2 = label["box2d"]["y2"]
                 area = float((x2 - x1) * (y2 - y1))
                 ann = dict(
                     id=ann_id,
                     image_id=image_id,
-                    category_id=attr_id_dict[lbl["category"]],
+                    category_id=attr_id_dict[label["category"]],
                     instance_id=instance_id,
                     bdd100k_id=bdd100k_id,
-                    occluded=lbl["attributes"]["Occluded"],
-                    truncated=lbl["attributes"]["Truncated"],
+                    occluded=label["attributes"]["Occluded"],
+                    truncated=label["attributes"]["Truncated"],
                     bbox=[x1, y1, x2 - x1, y2 - y1],
                     area=area,
-                    iscrowd=int(lbl["attributes"]["Crowd"])
+                    iscrowd=int(label["attributes"]["Crowd"])
                     or int(category_ignored),
                     ignore=int(category_ignored),
                     segmentation=[[x1, y1, x1, y2, x2, y2, x2, y1]],
@@ -297,12 +298,13 @@ def main() -> None:
     """Main function."""
     args = parse_arguments()
 
-    print(
-        "Mode: {}\nremove-ignore: {}\nignore-as-class: {}".format(
-            args.mode, args.remove_ignore, args.ignore_as_class
-        )
+    logger.info(
+        "Mode: %s\nremove-ignore: %s\nignore-as-class: %s",
+        args.mode,
+        args.remove_ignore,
+        args.ignore_as_class,
     )
-    print("Loading annotations...")
+    logger.info("Loading annotations...")
     if os.path.isdir(args.in_path):
         # labels are provided in multiple json files in a folder
         labels = []
@@ -313,7 +315,7 @@ def main() -> None:
         with open(args.in_path) as f:
             labels = json.load(f)
 
-    print("Converting annotations...")
+    logger.info("Converting annotations...")
     out_fn = os.path.join(args.out_path)
 
     if args.mode == "det":
@@ -325,10 +327,10 @@ def main() -> None:
             labels, args.ignore_as_class, args.remove_ignore
         )
 
-    print("Saving converted annotations to disk...")
+    logger.info("Saving converted annotations to disk...")
     with open(out_fn, "w") as f:
         json.dump(coco, f)
-    print("Finished!")
+    logger.info("Finished!")
 
 
 if __name__ == "__main__":
