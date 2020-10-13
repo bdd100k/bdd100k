@@ -160,8 +160,8 @@ def aggregate_accs(
     accs: List[List[str]] = [[] for c in CLASSES]
     for video_ind, _accs in enumerate(accumulators):
         for cls_ind, acc in enumerate(_accs):
-            if len(acc._events["Type"]) == 0:
-                continue
+            # if len(acc._events["Type"]) == 0:
+            #     continue
             name = f"{CLASSES[cls_ind]}_{video_ind}"
             names[cls_ind].append(name)
             accs[cls_ind].append(acc)
