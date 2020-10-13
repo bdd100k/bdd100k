@@ -216,6 +216,7 @@ def bdd100k2coco_track(
     video_id, image_id, ann_id, global_instance_id = 1, 1, 1, 1
     no_ann = 0
 
+    # pylint: disable=R1702
     for video_anns in tqdm(labels):
         instance_id_maps: DictObject = dict()
 
