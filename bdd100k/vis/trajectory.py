@@ -14,10 +14,10 @@ import json
 import os
 from glob import glob
 
+import gmplot
 import numpy as np
 
 from ..common.logger import logger
-import gmplot
 
 
 def visualize_file(in_file: str, out_file: str, apikey: str) -> None:
