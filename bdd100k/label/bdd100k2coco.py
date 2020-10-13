@@ -1,4 +1,5 @@
 """Convert BDD100K to COCO format.
+
 The annotation files in BDD100K format has additional annotaitons
 ('other person', 'other vehicle' and 'trail') besides the considered
 categories ('car', 'pedestrian', 'truck', etc.) to indicate the uncertain
