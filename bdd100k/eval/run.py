@@ -1,6 +1,7 @@
 """Evaluation helper functoins."""
 
 import argparse
+import glob
 import json
 import os
 import os.path as osp
@@ -14,20 +15,41 @@ from tqdm import tqdm
 
 from ..common.logger import logger
 from ..common.typing import DictAny
+from .mot import evaluate_mot
 
 
 def parse_args() -> argparse.Namespace:
     """Use argparse to get command line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--task", "-t", choices=["seg", "det", "drivable", "mot"]
+        "--task",
+        "-t",
+        choices=["seg", "det", "drivable", "mot"],
+        required=True,
     )
-    parser.add_argument("--gt", "-g", help="path to ground truth")
     parser.add_argument(
-        "--result", "-r", help="path to results to be evaluated"
+        "--gt", "-g", required=True, help="path to ground truth"
     )
     parser.add_argument(
-        "--categories", "-c", nargs="+", help="categories to keep"
+        "--result", "-r", required=True, help="path to results to be evaluated"
+    )
+    parser.add_argument(
+        "--mot-iou-thr",
+        type=float,
+        default=0.5,
+        help="iou threshold for mot evaluation",
+    )
+    parser.add_argument(
+        "--mot-ignore-iof-thr",
+        type=float,
+        default=0.5,
+        help="ignore iof threshold for mot evaluation",
+    )
+    parser.add_argument(
+        "--mot-nproc",
+        type=int,
+        default=4,
+        help="number of processes for mot evaluation",
     )
     args = parser.parse_args()
 
@@ -336,7 +358,20 @@ def evaluate_det_tracking(
     print(strsummary)
 
 
-def main() -> None:
+def read(inputs: str) -> List[List[DictAny]]:
+    """Read annotations from file/files."""
+    if osp.isdir(inputs):
+        files = glob.glob(osp.join(inputs, "*.json"))
+        outputs = [json.load(open(file)) for file in files]
+    elif osp.isfile(inputs) and inputs.endswith("json"):
+        outputs = json.load(open(inputs))
+    else:
+        raise TypeError("Inputs must be a folder or a JSON file.")
+    outputs = sorted(outputs, key=lambda x: str(x[0]["video_name"]))
+    return outputs
+
+
+def run() -> None:
     """Main."""
     args = parse_args()
 
@@ -347,8 +382,14 @@ def main() -> None:
     elif args.task == "det":
         evaluate_detection(args.gt, args.result)
     elif args.task == "mot":
-        evaluate_det_tracking(args.gt, args.result, args.categories)
+        evaluate_mot(
+            gts=read(args.gt),
+            results=read(args.result),
+            iou_thr=args.mot_iou_thr,
+            ignore_iof_thr=args.mot_ignore_iof_thr,
+            nproc=args.mot_nproc,
+        )
 
 
 if __name__ == "__main__":
-    main()
+    run()
