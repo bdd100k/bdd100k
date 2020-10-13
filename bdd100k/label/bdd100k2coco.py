@@ -271,6 +271,7 @@ def bdd100k2coco_track(
                     image_id=image_id,
                     category_id=attr_id_dict[lbl["category"]],
                     instance_id=instance_id,
+                    bdd100k_id=bdd100k_id,
                     occluded=lbl["attributes"]["Occluded"],
                     truncated=lbl["attributes"]["Truncated"],
                     bbox=[x1, y1, x2 - x1, y2 - y1],
