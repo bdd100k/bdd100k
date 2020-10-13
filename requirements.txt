@@ -9,6 +9,7 @@ motmetrics
 mmcv
 mypy
 numpy>=1.19
+pandas
 pillow
 pycocotools
 pylint
