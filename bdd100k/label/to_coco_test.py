@@ -3,7 +3,7 @@ import json
 import os
 import unittest
 
-from .bdd100k2coco import bdd100k2coco_det
+from .to_coco import bdd100k2coco_det
 
 
 class TestBDD100K2COCO(unittest.TestCase):

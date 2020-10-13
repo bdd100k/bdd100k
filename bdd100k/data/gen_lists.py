@@ -4,6 +4,8 @@ import os
 import sys
 from os import path as osp
 
+from ..common.logger import logger
+
 
 def gen_list(
     data_root: str,
@@ -24,11 +26,11 @@ def gen_list(
             if n[-len(suffix) :] == suffix
         ]
     )
-    print("Found", len(images), "items in", data_dir, phase)
+    logger.info("Found %d items in %s %s", len(images), data_dir, phase)
     out_path = osp.join(list_dir, "{}_{}.txt".format(phase, list_type))
     if not osp.exists(list_dir):
         os.makedirs(list_dir)
-    print("Writing", out_path)
+    logger.info("Writing %s", out_path)
     with open(out_path, "w") as fp:
         fp.write("\n".join(images))
 

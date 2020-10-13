@@ -17,6 +17,8 @@ from glob import glob
 import gmplot
 import numpy as np
 
+from ..common.logger import logger
+
 
 def visualize_file(in_file: str, out_file: str, apikey: str) -> None:
     """Visualize one GPS file.
@@ -37,10 +39,10 @@ def visualize_file(in_file: str, out_file: str, apikey: str) -> None:
     longitude_list = []
 
     if "gps" not in info:
-        print("Field 'gps' not found.")
+        logger.info("Field 'gps' not found.")
         return
     if len(info["gps"]) < 1:
-        print("Empty trajectory data.")
+        logger.info("Empty trajectory data.")
         return
 
     for location in info["gps"]:
