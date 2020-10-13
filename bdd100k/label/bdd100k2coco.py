@@ -297,7 +297,12 @@ def main() -> None:
     """Main function."""
     args = parse_arguments()
 
-    print("Loading...")
+    print(
+        "Mode: {}\nremove-ignore: {}\nignore-as-class: {}".format(
+            args.mode, args.remove_ignore, args.ignore_as_class
+        )
+    )
+    print("Loading annotations...")
     if os.path.isdir(args.in_path):
         # labels are provided in multiple json files in a folder
         labels = []
@@ -308,7 +313,7 @@ def main() -> None:
         with open(args.in_path) as f:
             labels = json.load(f)
 
-    print("Converting...")
+    print("Converting annotations...")
     out_fn = os.path.join(args.out_path)
 
     if args.mode == "det":
@@ -320,9 +325,10 @@ def main() -> None:
             labels, args.ignore_as_class, args.remove_ignore
         )
 
-    print("Saving...")
+    print("Saving converted annotations to disk...")
     with open(out_fn, "w") as f:
         json.dump(coco, f)
+    print("Finished!")
 
 
 if __name__ == "__main__":
