@@ -35,17 +35,19 @@ We use the following 3 metrics to evaluate the performance of segmetation tracki
 Submission format
 ^^^^^^^^^^^^^^^^^
 
-The entire result struct array is stored as a single JSON file (save via gason in Matlab or json.dump in Python).
+The entire result struct array is stored as a single JSON file (save via gason in Matlab or json.dump in Python), which consists a list of frame objects with the fields below.
 ::
 
-    [  
-        {  
-            "image_id": int,
-            "instance_id": int,
-            "category_id": int,
-            "segmentation": polygon or RLE,
-        }
-    ]
+    - name: string
+    - video_name: string
+    - index: int (frame index in this video)
+    - labels []:
+        - id: int32
+        - category: string
+        - poly2d []:
+                - vertices: [][]float (list of 2-tuples [x, y])
+                - types: string (each character corresponds to the type of the vertex with the same index in vertices. ‘L’ for vertex and ‘C’ for control point of a bezier curve.
+                - closed: boolean (closed for polygon and otherwise for path)
 
-Note that, the "instance_id" of the same object through an video should be the same. Moreover, it should be unique inside an video, but not need to be unique between objects belonging to different videos.
+Note that, the "id" of the same object through an video should be the same.
 Candidates for `category` are `['person', 'rider', 'car', 'bus', 'truck', 'bike', 'motor', 'train']`.
