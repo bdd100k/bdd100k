@@ -14,10 +14,10 @@ import json
 import os
 from glob import glob
 
-import gmplot
 import numpy as np
 
 from ..common.logger import logger
+import gmplot
 
 
 def visualize_file(in_file: str, out_file: str, apikey: str) -> None:
@@ -56,20 +56,17 @@ def visualize_file(in_file: str, out_file: str, apikey: str) -> None:
     mean_longitude = longitude_array.mean()
 
     gmap3 = gmplot.GoogleMapPlotter(
-        mean_latitude, mean_longitude, 18, apikey=apikey
-    )
+        mean_latitude, mean_longitude, 18, apikey=apikey)
 
     # scatter method of map object
     # scatter points on the google map
     gmap3.scatter(
-        latitude_array, longitude_array, "# FF0000", size=1, marker=False
-    )
+        latitude_array, longitude_array, "# FF0000", size=1, marker=False)
 
     # Plot method Draw a line in
     # between given coordinates
     gmap3.plot(
-        latitude_array, longitude_array, "cornflowerblue", edge_width=2.5
-    )
+        latitude_array, longitude_array, "cornflowerblue", edge_width=2.5)
 
     gmap3.draw(out_file)
 

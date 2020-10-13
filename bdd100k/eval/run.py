@@ -7,7 +7,6 @@ import os.path as osp
 from collections import defaultdict
 from typing import List, Tuple
 
-import motmetrics as mm
 import numpy as np
 from PIL import Image
 from tqdm import tqdm
@@ -20,28 +19,24 @@ def parse_args() -> argparse.Namespace:
     """Use argparse to get command line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--task", "-t", choices=["seg", "det", "drivable", "mot"]
-    )
+        "--task", "-t", choices=["seg", "det", "drivable", "mot"])
     parser.add_argument("--gt", "-g", help="path to ground truth")
     parser.add_argument(
-        "--result", "-r", help="path to results to be evaluated"
-    )
+        "--result", "-r", help="path to results to be evaluated")
     parser.add_argument(
-        "--categories", "-c", nargs="+", help="categories to keep"
-    )
+        "--categories", "-c", nargs="+", help="categories to keep")
     args = parser.parse_args()
 
     return args
 
 
-def fast_hist(
-    groundtruth: np.ndarray, prediction: np.ndarray, size: int
-) -> np.ndarray:
+def fast_hist(groundtruth: np.ndarray, prediction: np.ndarray,
+              size: int) -> np.ndarray:
     """Compute the histogram."""
     k = (groundtruth >= 0) & (groundtruth < size)
     return np.bincount(
-        size * groundtruth[k].astype(int) + prediction[k], minlength=size ** 2
-    ).reshape(size, size)
+        size * groundtruth[k].astype(int) + prediction[k],
+        minlength=size**2).reshape(size, size)
 
 
 def per_class_iu(hist: np.ndarray) -> np.ndarray:
@@ -56,26 +51,23 @@ def find_all_png(folder: str) -> List[str]:
     paths = []
     for root, _, files in os.walk(folder, topdown=True):
         paths.extend(
-            [osp.join(root, f) for f in files if osp.splitext(f)[1] == ".png"]
-        )
+            [osp.join(root, f) for f in files if osp.splitext(f)[1] == ".png"])
     return paths
 
 
-def evaluate_segmentation(
-    gt_dir: str, result_dir: str, num_classes: int, key_length: int
-) -> None:
+def evaluate_segmentation(gt_dir: str, result_dir: str, num_classes: int,
+                          key_length: int) -> None:
     """Evaluate segmentation IoU from input folders."""
     gt_dict = {osp.split(p)[1][:key_length]: p for p in find_all_png(gt_dir)}
     result_dict = {
-        osp.split(p)[1][:key_length]: p for p in find_all_png(result_dir)
+        osp.split(p)[1][:key_length]: p
+        for p in find_all_png(result_dir)
     }
     result_gt_keys = set(gt_dict.keys()) & set(result_dict.keys())
     if len(result_gt_keys) != len(gt_dict):
         raise ValueError(
             "Result folder only has {} of {} ground truth files.".format(
-                len(result_gt_keys), len(gt_dict)
-            )
-        )
+                len(result_gt_keys), len(gt_dict)))
     logger.info("Found %d results", len(result_dict))
     logger.info("Evaluating %d results", len(gt_dict))
     hist = np.zeros((num_classes, num_classes))
@@ -136,9 +128,9 @@ def group_by_key(detections: List[DictAny], key: str) -> DictAny:
 
 
 def cat_pc(
-    groundtruth: List[DictAny],
-    predictions: List[DictAny],
-    thresholds: List[float],
+        groundtruth: List[DictAny],
+        predictions: List[DictAny],
+        thresholds: List[float],
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Refers to https://github.com/rbgirshick/py-faster-rcnn."""
     num_gts = len(groundtruth)
@@ -152,8 +144,7 @@ def cat_pc(
         for k, boxes in image_gts.items()
     }
     predictions = sorted(
-        predictions, key=lambda x: float(x["score"]), reverse=True
-    )
+        predictions, key=lambda x: float(x["score"]), reverse=True)
 
     # go down dets and mark TPs and FPs
     nd = len(predictions)
@@ -182,12 +173,9 @@ def cat_pc(
             inters = iw * ih
 
             # union
-            uni = (
-                (box[2] - box[0] + 1.0) * (box[3] - box[1] + 1.0)
-                + (gt_boxes[:, 2] - gt_boxes[:, 0] + 1.0)
-                * (gt_boxes[:, 3] - gt_boxes[:, 1] + 1.0)
-                - inters
-            )
+            uni = ((box[2] - box[0] + 1.0) * (box[3] - box[1] + 1.0) +
+                   (gt_boxes[:, 2] - gt_boxes[:, 0] + 1.0) *
+                   (gt_boxes[:, 3] - gt_boxes[:, 1] + 1.0) - inters)
 
             overlaps = inters / uni
             ovmax = np.max(overlaps)
@@ -240,9 +228,8 @@ def evaluate_detection(gt_path: str, result_path: str) -> None:
     )
 
 
-def evaluate_det_tracking(
-    gt_path: str, result_path: str, cats: List[str]
-) -> None:
+def evaluate_det_tracking(gt_path: str, result_path: str,
+                          cats: List[str]) -> None:
     """Evaluate tracking."""
     gt = sorted(json.load(open(gt_path)), key=lambda l1: str(l1["name"]))
     pred = sorted(json.load(open(result_path)), key=lambda l2: str(l2["name"]))
@@ -289,29 +276,22 @@ def evaluate_det_tracking(
             pred_ids = np.linspace(1, num_preds, num_preds)
 
             # calculate distances between gt and pred
-            gt_boxes = [
-                [
-                    label["box2d"]["x1"],
-                    label["box2d"]["y1"],
-                    label["box2d"]["x2"] - label["box2d"]["x1"],
-                    label["box2d"]["y2"] - label["box2d"]["y1"],
-                ]
-                for label in cat_gt[cat]
-            ]
+            gt_boxes = [[
+                label["box2d"]["x1"],
+                label["box2d"]["y1"],
+                label["box2d"]["x2"] - label["box2d"]["x1"],
+                label["box2d"]["y2"] - label["box2d"]["y1"],
+            ] for label in cat_gt[cat]]
 
-            pred_boxes = [
-                [
-                    label["box2d"]["x1"],
-                    label["box2d"]["y1"],
-                    label["box2d"]["x2"] - label["box2d"]["x1"],
-                    label["box2d"]["y2"] - label["box2d"]["y1"],
-                ]
-                for label in cat_pred[cat]
-            ]
+            pred_boxes = [[
+                label["box2d"]["x1"],
+                label["box2d"]["y1"],
+                label["box2d"]["x2"] - label["box2d"]["x1"],
+                label["box2d"]["y2"] - label["box2d"]["y1"],
+            ] for label in cat_pred[cat]]
 
             distances = mm.distances.iou_matrix(
-                gt_boxes, pred_boxes, max_iou=0.5
-            )
+                gt_boxes, pred_boxes, max_iou=0.5)
 
             acc_dict[cat].update(gt_ids, pred_ids, distances)
 
