@@ -1,3 +1,4 @@
+"""BDD100K tracking evaluation with CLEAR MOT metrics."""
 import argparse
 import glob
 import os.path as osp
@@ -61,6 +62,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def parse_objects(objects: List[DictAny]) -> List[np.ndarray]:
+    """Parse objects under Scalable formats."""
     bboxes, labels, ids, ignore_bboxes = [], [], [], []
     for obj in objects:
         bbox = [
@@ -97,6 +99,7 @@ def acc_single_video(gts: List[DictAny],
                      results: List[DictAny],
                      iou_thr: float = 0.5,
                      ignore_iof_thr: float = 0.5) -> List[mm.MOTAccumulator]:
+    """Accumulate results for one video."""
     num_classes = len(CLASSES)
     assert len(gts) == len(results)
     gts = sorted(gts, key=lambda x: int(x['index']))
@@ -141,6 +144,7 @@ def acc_single_video(gts: List[DictAny],
 def aggregate_accs(
         accumulators: List[List[mm.MOTAccumulator]]
 ) -> Tuple[List[List[str]], List[List[mm.MOTAccumulator]], List[str]]:
+    """Aggregate the results of the entire dataset."""
     # accs for each class
     items = CLASSES.copy()
     names: List[List[str]] = [[] for c in CLASSES]
@@ -169,6 +173,7 @@ def aggregate_accs(
 
 def eval_single_class(names: List[str], accs: List[mm.MOTAccumulator]
                       ) -> List[Union[float, int]]:
+    """Evaluate results for one class."""
     mh = mm.metrics.create()
     summary = mh.compute_many(
         accs, names=names, metrics=METRIC_MAPS.keys(), generate_overall=True)
@@ -189,6 +194,7 @@ def eval_single_class(names: List[str], accs: List[mm.MOTAccumulator]
 
 def render_results(summaries: List[List[Union[float, int]]], items: List[str],
                    metrics: List[str]) -> DictAny:
+    """Render the evaluation results."""
     eval_results = pd.DataFrame(columns=metrics)
     # category, super-category and overall results
     for i, item in enumerate(items):
@@ -238,6 +244,7 @@ def eval_mot(gts: List[List[DictAny]],
              iou_thr: float = 0.5,
              ignore_iof_thr: float = 0.5,
              nproc: int = 4) -> DictAny:
+    """Evaluate CLEAR MOT metrics for BDD100K."""
     print('BDD100K tracking evaluation with CLEAR MOT metrics.')
     t = time.time()
     assert len(gts) == len(results)
@@ -262,6 +269,7 @@ def eval_mot(gts: List[List[DictAny]],
 
 
 def read(inputs: str) -> List[List[DictAny]]:
+    """Read annotations from file/files."""
     if osp.isdir(inputs):
         files = glob.glob(osp.join(inputs, '*.json'))
         outputs = [mmcv.load(file) for file in files]
@@ -274,6 +282,7 @@ def read(inputs: str) -> List[List[DictAny]]:
 
 
 def main() -> None:
+    """Main."""
     args = parse_args()
     eval_mot(
         gts=read(args.gt),
