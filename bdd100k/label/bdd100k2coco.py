@@ -217,7 +217,6 @@ def bdd100k2coco_track(
     video_id, image_id, ann_id, global_instance_id = 1, 1, 1, 1
     no_ann = 0
 
-    # pylint: disable=R1702
     for video_anns in tqdm(labels):
         instance_id_maps: DictObject = dict()
 
@@ -248,9 +247,9 @@ def bdd100k2coco_track(
                     else:
                         lbl["category"] = ignore_map[lbl["category"]]
                         category_ignored = True
-                        if remove_ignore:
-                            # remove the ignored annotations
-                            continue
+                    if category_ignored and remove_ignore:
+                        # remove the ignored annotations
+                        continue
 
                 bdd100k_id = lbl["id"]
                 if bdd100k_id in instance_id_maps.keys():
