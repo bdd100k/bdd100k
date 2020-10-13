@@ -3,14 +3,15 @@ import glob
 import os.path as osp
 import time
 from multiprocessing import Pool
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
 
 import mmcv
 import motmetrics as mm
-from typing import Any, Dict, List, Tuple, Union
-from evaluate import DictAny
+
+DictAny = Dict[str, Any]  # type: ignore[misc]
 
 METRIC_MAPS = {
     'idf1': 'IDF1',
