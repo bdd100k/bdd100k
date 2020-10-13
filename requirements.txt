@@ -12,6 +12,7 @@ pandas
 pillow
 pycocotools
 pylint
-tqdm
+pytest
 sphinx
 sphinx-rtd-theme
+tqdm

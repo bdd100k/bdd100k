@@ -8,10 +8,8 @@ import os.path as osp
 from collections import defaultdict
 from typing import List, Tuple
 
-import motmetrics as mm
 import numpy as np
 from PIL import Image
-from tqdm import tqdm
 
 from ..common.logger import logger
 from ..common.typing import DictAny
@@ -260,102 +258,6 @@ def evaluate_detection(gt_path: str, result_path: str) -> None:
         "{:.2f}".format(mean),
         ", ".join(["{:.2f}".format(n) for n in breakdown]),
     )
-
-
-def evaluate_det_tracking(
-    gt_path: str, result_path: str, cats: List[str]
-) -> None:
-    """Evaluate tracking."""
-    gt = sorted(json.load(open(gt_path)), key=lambda l1: str(l1["name"]))
-    pred = sorted(json.load(open(result_path)), key=lambda l2: str(l2["name"]))
-    assert len(gt) == len(pred)
-
-    acc_dict: DictAny = {}
-
-    logger.info("Collecting IoU...")
-    for i in tqdm(range(len(gt))):
-        im_gt = gt[i]
-        im_pred = pred[i]
-
-        # image info
-        video_name = im_gt["videoName"]
-        index = im_gt["index"]
-
-        # group by category; skip if no gt labels
-        if im_gt["labels"] is None:
-            continue
-
-        cat_gt = group_by_key(im_gt["labels"], "category")
-        cat_pred = group_by_key(im_pred["labels"], "category")
-        cat_list = cat_pred.keys()
-
-        for cat in cat_list:
-
-            if cat not in cat_gt.keys():
-                continue
-
-            if len(cats) > 0:
-                if cat not in cats:
-                    continue
-
-            # initialize accumulator for each category if needed
-            if cat not in acc_dict.keys():
-                acc_dict[cat] = mm.MOTAccumulator(auto_id=True)
-
-            # get IDs
-            gt_ids = [
-                "{}-{}-{}".format(video_name, index, label["id"])
-                for label in cat_gt[cat]
-            ]
-            num_preds = len(cat_pred[cat])
-            pred_ids = np.linspace(1, num_preds, num_preds)
-
-            # calculate distances between gt and pred
-            gt_boxes = [
-                [
-                    label["box2d"]["x1"],
-                    label["box2d"]["y1"],
-                    label["box2d"]["x2"] - label["box2d"]["x1"],
-                    label["box2d"]["y2"] - label["box2d"]["y1"],
-                ]
-                for label in cat_gt[cat]
-            ]
-
-            pred_boxes = [
-                [
-                    label["box2d"]["x1"],
-                    label["box2d"]["y1"],
-                    label["box2d"]["x2"] - label["box2d"]["x1"],
-                    label["box2d"]["y2"] - label["box2d"]["y1"],
-                ]
-                for label in cat_pred[cat]
-            ]
-
-            distances = mm.distances.iou_matrix(
-                gt_boxes, pred_boxes, max_iou=0.5
-            )
-
-            acc_dict[cat].update(gt_ids, pred_ids, distances)
-
-    # create summary
-
-    logger.info("Generating matchings and summary...")
-
-    mh = mm.metrics.create()
-
-    summary = mh.compute_many(
-        [i[1] for i in acc_dict.items()],
-        metrics=mm.metrics.motchallenge_metrics,
-        names=[i[0] for i in acc_dict.items()],
-    )
-
-    strsummary = mm.io.render_summary(
-        summary,
-        formatters=mh.formatters,
-        namemap=mm.io.motchallenge_metric_names,
-    )
-
-    print(strsummary)
 
 
 def read(inputs: str) -> List[List[DictAny]]:
