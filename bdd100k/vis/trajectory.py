@@ -14,9 +14,8 @@ import json
 import os
 from glob import glob
 
-import numpy as np
-
 import gmplot
+import numpy as np
 
 
 def visualize_file(in_file: str, out_file: str, apikey: str) -> None:
