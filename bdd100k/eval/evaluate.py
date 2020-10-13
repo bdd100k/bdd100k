@@ -7,11 +7,10 @@ import os.path as osp
 from collections import defaultdict
 from typing import Any, Dict, List, Tuple
 
+import motmetrics as mm
 import numpy as np
 from PIL import Image
 from tqdm import tqdm
-
-import motmetrics as mm
 
 DictAny = Dict[str, Any]  # type: ignore[misc]
 
