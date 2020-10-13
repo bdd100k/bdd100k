@@ -1,17 +1,14 @@
 """BDD100K tracking evaluation with CLEAR MOT metrics."""
-import argparse
-import glob
-import os.path as osp
 import time
 from multiprocessing import Pool
-from typing import Any, Dict, List, Tuple, Union
+from typing import List, Tuple, Union
 
-import mmcv
 import motmetrics as mm
 import numpy as np
 import pandas as pd
 
-DictAny = Dict[str, Any]  # type: ignore[misc]
+from ..common.logger import logger
+from ..common.typing import DictAny
 
 METRIC_MAPS = {
     "idf1": "IDF1",
@@ -33,35 +30,6 @@ SUPER_CLASSES = {
 }
 CLASSES = [c for cs in SUPER_CLASSES.values() for c in cs]
 IGNORE_CLASSES = ["trailer", "other person", "other vehicle"]
-
-
-def parse_args() -> argparse.Namespace:
-    """Use argparse to get command line arguments."""
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--gt", "-g", help="path to ground truth")
-    parser.add_argument(
-        "--result", "-r", help="path to results to be evaluated"
-    )
-    parser.add_argument(
-        "--iou-thr",
-        type=float,
-        default=0.5,
-        help="iou threshold for mot evaluation",
-    )
-    parser.add_argument(
-        "--ignore-iof-thr",
-        type=float,
-        default=0.5,
-        help="ignore iof threshold for mot evaluation",
-    )
-    parser.add_argument(
-        "--nproc",
-        type=int,
-        default=4,
-        help="number of processes for mot evaluation",
-    )
-    args = parser.parse_args()
-    return args
 
 
 def parse_objects(objects: List[DictAny]) -> List[np.ndarray]:
@@ -242,8 +210,8 @@ def render_results(
     strsummary.insert(1, split_line)
     strsummary.insert(2 + len(CLASSES), split_line)
     strsummary.insert(3 + len(CLASSES) + len(SUPER_CLASSES), split_line)
-    strsummary = "".join([f"{s}\n" for s in strsummary])
-    print(strsummary)
+    strsummary = "\n".join([f"{s}\n" for s in strsummary])
+    logger.info(strsummary)
 
     outputs: DictAny = dict()
     for i, item in enumerate(items[len(CLASSES) :], len(CLASSES)):
@@ -265,12 +233,12 @@ def eval_mot(
     nproc: int = 4,
 ) -> DictAny:
     """Evaluate CLEAR MOT metrics for BDD100K."""
-    print("BDD100K tracking evaluation with CLEAR MOT metrics.")
+    logger.info("BDD100K tracking evaluation with CLEAR MOT metrics.")
     t = time.time()
     assert len(gts) == len(results)
     metrics = list(METRIC_MAPS.keys())
 
-    print("accumulating...")
+    logger.info("accumulating...")
     pool = Pool(nproc)
     accs = pool.starmap(
         acc_single_video,
@@ -283,40 +251,12 @@ def eval_mot(
     )
     names, accs, items = aggregate_accs(accs)
 
-    print("evaluating...")
+    logger.info("evaluating...")
     summaries = pool.starmap(eval_single_class, zip(names, accs))
     pool.close()
 
-    print("rendering...")
+    logger.info("rendering...")
     eval_results = render_results(summaries, items, metrics)
-    print(f"evaluation finishes with {(time.time() - t):.2f} s.")
+    t = time.time() - t
+    logger.info("evaluation finishes with %.1f s.", t)
     return eval_results
-
-
-def read(inputs: str) -> List[List[DictAny]]:
-    """Read annotations from file/files."""
-    if osp.isdir(inputs):
-        files = glob.glob(osp.join(inputs, "*.json"))
-        outputs = [mmcv.load(file) for file in files]
-    elif osp.isfile(inputs) and inputs.endswith("json"):
-        outputs = mmcv.load(inputs)
-    else:
-        raise TypeError("Inputs must be a folder or a JSON file.")
-    outputs = sorted(outputs, key=lambda x: str(x[0]["video_name"]))
-    return outputs
-
-
-def main() -> None:
-    """Main."""
-    args = parse_args()
-    eval_mot(
-        gts=read(args.gt),
-        results=read(args.result),
-        iou_thr=args.iou_thr,
-        ignore_iof_thr=args.ignore_iof_thr,
-        nproc=args.nproc,
-    )
-
-
-if __name__ == "__main__":
-    main()
