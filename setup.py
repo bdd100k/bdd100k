@@ -32,6 +32,7 @@ setuptools.setup(
         "matplotlib",
         "motmetrics",
         "numpy>=1.19",
+        "pandas",
         "pillow",
         "pycocotools",
         "tqdm",
