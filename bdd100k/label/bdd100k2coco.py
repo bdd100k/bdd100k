@@ -131,6 +131,7 @@ def bdd100k2coco_det(
         mode="det", ignore_as_class=ignore_as_class
     )
     counter = 0
+    label_counter = 0
     for frame in tqdm(labels):
         counter += 1
         image: DictObject = dict()
@@ -145,6 +146,7 @@ def bdd100k2coco_det(
                 # skip for drivable area and lane marking
                 if "box2d" not in label:
                     continue
+                label_counter += 1
                 annotation: DictObject = dict()
                 annotation["iscrowd"] = (
                     int(label["attributes"]["crowd"])
@@ -188,9 +190,11 @@ def bdd100k2coco_det(
                 annotation["iscrowd"] = annotation["iscrowd"] or int(
                     category_ignored
                 )
-                # COCO annotation ID starts from 1 instead of 0 as used
-                # in the BDD100K format.
-                annotation["id"] = label["id"] + 1
+
+                annotation["id"] = label_counter
+                # save the original bdd100k_id for backup.
+                # The BDD100K ID might be string in the future.
+                annotation["bdd100k_id"] = label["id"]
                 annotation["segmentation"] = [[x1, y1, x1, y2, x2, y2, x2, y1]]
                 coco["annotations"].append(annotation)
         else:
@@ -212,8 +216,6 @@ def bdd100k2coco_track(
         mode="track", ignore_as_class=ignore_as_class
     )
 
-    # COCO annotation ID starts from 1 instead of 0 as used
-    # in the BDD100K format.
     video_id, image_id, ann_id, global_instance_id = 1, 1, 1, 1
     no_ann = 0
 
