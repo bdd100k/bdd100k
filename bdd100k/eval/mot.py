@@ -68,10 +68,10 @@ def intersection_over_area(preds: np.ndarray, gts: np.ndarray) -> np.ndarray:
 
 
 def acc_single_video(
-    gts: List[DictAny],
-    results: List[DictAny],
-    iou_thr: float = 0.5,
-    ignore_iof_thr: float = 0.5,
+        gts: List[DictAny],
+        results: List[DictAny],
+        iou_thr: float = 0.5,
+        ignore_iof_thr: float = 0.5,
 ) -> List[mm.MOTAccumulator]:
     """Accumulate results for one video."""
     num_classes = len(CLASSES)
@@ -96,8 +96,7 @@ def acc_single_video(
                 distances = np.full((gt_bboxes_c.shape[0], 0), np.nan)
             else:
                 distances = mm.distances.iou_matrix(
-                    gt_bboxes_c, pred_bboxes_c, max_iou=1 - iou_thr
-                )
+                    gt_bboxes_c, pred_bboxes_c, max_iou=1 - iou_thr)
             if gt_ignores.shape[0] > 0:
                 # 1. assign gt and preds
                 fps = np.ones(pred_bboxes_c.shape[0]).astype(np.bool)
@@ -119,7 +118,7 @@ def acc_single_video(
 
 
 def aggregate_accs(
-    accumulators: List[List[mm.MOTAccumulator]],
+        accumulators: List[List[mm.MOTAccumulator]],
 ) -> Tuple[List[List[str]], List[List[mm.MOTAccumulator]], List[str]]:
     """Aggregate the results of the entire dataset."""
     # accs for each class
@@ -143,20 +142,18 @@ def aggregate_accs(
 
     # overall
     items.append("OVERALL")
-    names.append([n for name in names[: len(CLASSES)] for n in name])
-    accs.append([a for acc in accs[: len(CLASSES)] for a in acc])
+    names.append([n for name in names[:len(CLASSES)] for n in name])
+    accs.append([a for acc in accs[:len(CLASSES)] for a in acc])
 
     return names, accs, items
 
 
-def eval_single_class(
-    names: List[str], accs: List[mm.MOTAccumulator]
-) -> List[Union[float, int]]:
+def eval_single_class(names: List[str], accs: List[mm.MOTAccumulator]
+                      ) -> List[Union[float, int]]:
     """Evaluate results for one class."""
     mh = mm.metrics.create()
     summary = mh.compute_many(
-        accs, names=names, metrics=METRIC_MAPS.keys(), generate_overall=True
-    )
+        accs, names=names, metrics=METRIC_MAPS.keys(), generate_overall=True)
     results = [v["OVERALL"] for k, v in summary.to_dict().items()]
     motp_ind = list(METRIC_MAPS).index("motp")
     if np.isnan(results[motp_ind]):
@@ -167,17 +164,16 @@ def eval_single_class(
             generate_overall=True,
         )
         sum_motp = (summary["motp"] * num_dets["num_detections"]).sum()
-        motp = mm.math_util.quiet_divide(
-            sum_motp, num_dets["num_detections"]["OVERALL"]
-        )
+        motp = mm.math_util.quiet_divide(sum_motp,
+                                         num_dets["num_detections"]["OVERALL"])
         results[motp_ind] = float(1 - motp)
     return results
 
 
 def render_results(
-    summaries: List[List[Union[float, int]]],
-    items: List[str],
-    metrics: List[str],
+        summaries: List[List[Union[float, int]]],
+        items: List[str],
+        metrics: List[str],
 ) -> DictAny:
     """Render the evaluation results."""
     eval_results = pd.DataFrame(columns=metrics)
@@ -188,7 +184,7 @@ def render_results(
     # average results
     avg_results: List[Union[int, float]] = []
     for i, m in enumerate(metrics):
-        v = np.array([s[i] for s in summaries[: len(CLASSES)]])
+        v = np.array([s[i] for s in summaries[:len(CLASSES)]])
         v = np.nan_to_num(v, nan=0)
         if dtypes[m] == int:
             avg_results.append(int(v.sum()))
@@ -210,11 +206,12 @@ def render_results(
     strsummary.insert(1, split_line)
     strsummary.insert(2 + len(CLASSES), split_line)
     strsummary.insert(3 + len(CLASSES) + len(SUPER_CLASSES), split_line)
-    strsummary = "\n".join([f"{s}\n" for s in strsummary])
+    strsummary = "".join([f"{s}\n" for s in strsummary])
+    strsummary = "\n" + strsummary
     logger.info(strsummary)
 
     outputs: DictAny = dict()
-    for i, item in enumerate(items[len(CLASSES) :], len(CLASSES)):
+    for i, item in enumerate(items[len(CLASSES):], len(CLASSES)):
         outputs[item] = dict()
         for j, metric in enumerate(METRIC_MAPS.values()):
             outputs[item][metric] = summaries[i][j]
@@ -226,11 +223,11 @@ def render_results(
 
 
 def eval_mot(
-    gts: List[List[DictAny]],
-    results: List[List[DictAny]],
-    iou_thr: float = 0.5,
-    ignore_iof_thr: float = 0.5,
-    nproc: int = 4,
+        gts: List[List[DictAny]],
+        results: List[List[DictAny]],
+        iou_thr: float = 0.5,
+        ignore_iof_thr: float = 0.5,
+        nproc: int = 4,
 ) -> DictAny:
     """Evaluate CLEAR MOT metrics for BDD100K."""
     logger.info("BDD100K tracking evaluation with CLEAR MOT metrics.")
