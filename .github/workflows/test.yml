@@ -33,3 +33,5 @@ jobs:
           python3 -m mypy --strict bdd100k
           python3 -m black --check bdd100k
           python3 -m isort -c bdd100k/**/*.py
+      - name: test
+        run: python3 -m pytest bdd100k
