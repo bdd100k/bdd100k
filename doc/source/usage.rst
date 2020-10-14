@@ -20,7 +20,7 @@ the original videos are in ``bdd100k/videos`` and labels in ``bdd100k/labels``.
 
 
 ``bdd100k/labels`` contains json files based on `Scalabel Format
-<https://www.scalabel.ai/doc/format.html>`_ for training and validation sets. |vis_labels|_ provides examples to parse and
+<https://doc.scalabel.ai/format.html>`_ for training and validation sets. |vis_labels|_ provides examples to parse and
 visualize the labels.
 
 .. |vis_labels| replace:: ``bdd100k.vis.labels``

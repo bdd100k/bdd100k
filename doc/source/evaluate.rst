@@ -14,7 +14,7 @@ Submission format
 ^^^^^^^^^^^^^^^^^^^^^^
 
 To evaluate your algorithms on BDD100K multiple object tracking benchmark,
-please first format your results in `Scalabel Format <www.scalabel.ai/doc/format.html>`_ 
+please first format your results in `Scalabel Format <https://doc.scalabel.ai/format.html>`_ 
 with two save/submit options:
 
 - A zip file or a folder that contains JSON files of each video.
