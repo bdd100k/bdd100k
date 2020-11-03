@@ -1,10 +1,10 @@
-import os
-import sys
-import numpy as np
-import json
-import time
+"""Evaluation code for BDD100K detection."""
 import datetime
-from typing import Optional, Dict, Any
+import json
+import os
+from typing import Any, Dict, Optional
+
+import numpy as np
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 
@@ -61,16 +61,22 @@ def evaluate(
         ann_coco = convert_fn(ann_bdd100k)
         coco_gt = COCOV2(None, ann_coco)
 
-    # Load results
-    coco_dt = coco_gt.loadRes(pred_file)
+    # Load results and convert the predictions
+    pred_res = convert_preds(pred_file)
+    coco_dt = coco_gt.loadRes(pred_res)
 
-    stats_all = -np.ones((80, 12))
-    catIds = coco_dt.getCatIds()
-    T = 10
-    R = 101
-    K = 80
-    A = 4
-    M = 3
+    cat_ids = coco_dt.getCatIds()
+    n_tit = 12  # number of evaluation titles
+    n_cls = (
+        8 if mode == "track" else 10
+    )  # 10 classes for BDD100K detection. 8 for classes tracking
+    n_thr = 10  # [.5:.05:.95] T=10 IoU thresholds for evaluation
+    n_rec = 101  # [0:.01:1] R=101 recall thresholds for evaluation
+    n_area = 4  # A=4 object area ranges for evaluation
+    n_mdet = 3  # [1 10 100] M=3 thresholds on max detections per image
+
+    stats_all = -np.ones((n_cls, n_tit))
+
     eval_param = {
         "params": {
             "imgIds": [],
@@ -94,37 +100,38 @@ def evaluate(
         "date": datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")[
             :-3
         ],
-        "counts": [T, R, K, A, M],
-        "precision": -np.ones((T, R, K, A, M), order="F"),
-        "recall": -np.ones((T, K, A, M), order="F"),
+        "counts": [n_thr, n_rec, n_cls, n_area, n_mdet],
+        "precision": -np.ones(
+            (n_thr, n_rec, n_cls, n_area, n_mdet), order="F"
+        ),
+        "recall": -np.ones((n_thr, n_cls, n_area, n_mdet), order="F"),
     }
-    imgIds = sorted(coco_gt.getImgIds())
-    catIds = catIds
-    annType = "bbox"
-    for i, catId in enumerate(catIds):
-        print("evaluate category: %s" % (coco_gt.loadCats(catId)[0]["name"]))
+    img_ids = sorted(coco_gt.getImgIds())
+    ann_type = "bbox"
+    for i, cat_id in enumerate(cat_ids):
+        print("evaluate category: %s" % (coco_gt.loadCats(cat_id)[0]["name"]))
         coco_eval = COCOeval(coco_gt, coco_dt)
-        params = coco_eval.params
-        coco_eval.params.imgIds = imgIds
-        coco_eval.params.catIds = coco_dt.getCatIds(catIds=catId)
-        coco_eval.params.useSegm = annType == "segm"
+        coco_eval.params.imgIds = img_ids
+        coco_eval.params.catIds = coco_dt.getCatIds(catIds=cat_id)
+        coco_eval.params.useSegm = ann_type == "segm"
         coco_eval.evaluate()
         coco_eval.accumulate()
         coco_eval.summarize()
         stats_all[i, :] = coco_eval.stats
         eval_param["precision"][:, :, i, :, :] = coco_eval.eval[
             "precision"
-        ].reshape((T, R, A, M))
+        ].reshape((n_thr, n_rec, n_area, n_mdet))
         eval_param["recall"][:, i, :, :] = coco_eval.eval["recall"].reshape(
-            (T, A, M)
+            (n_thr, n_area, n_mdet)
         )
 
-    stats = np.zeros((12, 1))
+    # Print evaluation results
+    stats = np.zeros((n_tit, 1))
     print("overall performance")
     coco_eval.eval = eval_param
     coco_eval.summarize()
 
-    for i in range(12):
+    for i in range(n_tit):
         column = stats_all[:, i]
         if len(column > -1) == 0:
             stats[i] = -1
@@ -148,7 +155,7 @@ def evaluate(
     scores = []
 
     for title, stat in zip(score_titles, stats):
-        scores.append("%s: %0.3f" % (title, stat))
+        scores.append("{}: {:3f}".format(title, stat))
 
     output_filename = os.path.join(out_dir, "scores.txt")
     with open(output_filename, "wb") as fp:
@@ -161,6 +168,51 @@ def evaluate(
         json.dump(eval_param, fp)
 
 
-def covert_preds():
+def convert_preds(res_file: str, max_det: int = 100):
     """Convert the prediction into the coco eval format."""
-    pass
+    with open(res_file, "rb") as fp:
+        res = json.load(fp)
+
+    # get the list of image_ids in res.
+    image_ids = set()
+    for item in res:
+        if item["image_id"] not in image_ids:
+            image_ids.add(item["image_id"])
+    image_ids = sorted(list(image_ids))
+
+    # sort res by 'image_id'.
+    res = sorted(res, key=lambda k: k["image_id"])
+
+    # get the start and end index in res for each image.
+    image_id = image_ids[0]
+    idx = 0
+    start_end = {}
+    for i, res_i in enumerate(res):
+        if i == len(res) - 1:
+            start_end[image_id] = (idx, i + 1)
+        if res_i["image_id"] != image_id:
+            start_end[image_id] = (idx, i)
+            idx = i
+            image_id = res_i["image_id"]
+
+    # cut number of detections to max_det for each image.
+    res_max_det = []
+    more_than_max_det = 0
+    for image_id in image_ids:
+        r_img = res[start_end[image_id][0] : start_end[image_id][1]]
+        if len(r_img) > max_det:
+            more_than_max_det += 1
+            r_img = sorted(r_img, key=lambda k: k["score"], reverse=True)[
+                :max_det
+            ]
+        res_max_det.extend(r_img)
+
+    if more_than_max_det > 0:
+        print(
+            "Some images have more than {0} detections. Results were cut to {0}"
+            " detections per images on {1} images.".format(
+                max_det, more_than_max_det
+            )
+        )
+
+    return res_max_det
