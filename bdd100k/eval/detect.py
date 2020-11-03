@@ -34,7 +34,7 @@ class COCOV2(COCO):
             self.createIndex()
 
 
-def evaluate(
+def evaluate_det(
     ann_file: str,
     pred_file: str,
     out_dir: str,
