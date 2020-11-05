@@ -18,7 +18,7 @@ class COCOV2(COCO):
     def __init__(
         self,
         annotation_file: Optional[str] = None,
-        annotations: Optional[Dict[Any]] = None,
+        annotations: Optional[Dict[Any, Any]] = None,
     ) -> None:
         super().__init__(annotation_file)
         # initialize the annotations in COCO format without saving as json.
@@ -67,8 +67,8 @@ def evaluate_det(
 
     cat_ids = coco_dt.getCatIds()
     n_tit = 12  # number of evaluation titles
-    n_cls = (
-        8 if mode == "track" else 10
+    n_cls = len(
+        coco_gt.getCatIds()
     )  # 10 classes for BDD100K detection. 8 for classes tracking
     n_thr = 10  # [.5:.05:.95] T=10 IoU thresholds for evaluation
     n_rec = 101  # [0:.01:1] R=101 recall thresholds for evaluation
@@ -82,10 +82,16 @@ def evaluate_det(
             "imgIds": [],
             "catIds": [],
             "iouThrs": np.linspace(
-                0.5, 0.95, np.round((0.95 - 0.5) / 0.05) + 1, endpoint=True
+                0.5,
+                0.95,
+                int(np.round((0.95 - 0.5) / 0.05) + 1),
+                endpoint=True,
             ).tolist(),
             "recThrs": np.linspace(
-                0.0, 1.00, np.round((1.00 - 0.0) / 0.01) + 1, endpoint=True
+                0.0,
+                1.00,
+                int(np.round((1.00 - 0.0) / 0.01) + 1),
+                endpoint=True,
             ).tolist(),
             "maxDets": [1, 10, 100],
             "areaRng": [
@@ -155,16 +161,17 @@ def evaluate_det(
     scores = []
 
     for title, stat in zip(score_titles, stats):
-        scores.append("{}: {:3f}".format(title, stat))
+        scores.append("{}: {:.3f}".format(title, stat.item()))
 
-    output_filename = os.path.join(out_dir, "scores.txt")
-    with open(output_filename, "wb") as fp:
-        fp.write("\n".join(scores))
+    print(scores)
+    # output_filename = os.path.join(out_dir, "scores.txt")
+    # with open(output_filename, "wb") as fp:
+    #     fp.write("\n".join(scores))
 
     eval_param["precision"] = eval_param["precision"].flatten().tolist()
     eval_param["recall"] = eval_param["recall"].flatten().tolist()
 
-    with open(os.path.join(out_dir, "eval.json"), "wb") as fp:
+    with open(os.path.join(out_dir, "eval.json"), "w") as fp:
         json.dump(eval_param, fp)
 
 
@@ -174,10 +181,11 @@ def convert_preds(res_file: str, max_det: int = 100):
         res = json.load(fp)
 
     # get the list of image_ids in res.
+    name = "image_id"
     image_ids = set()
     for item in res:
-        if item["image_id"] not in image_ids:
-            image_ids.add(item["image_id"])
+        if item[name] not in image_ids:
+            image_ids.add(item[name])
     image_ids = sorted(list(image_ids))
 
     # sort res by 'image_id'.
@@ -190,10 +198,10 @@ def convert_preds(res_file: str, max_det: int = 100):
     for i, res_i in enumerate(res):
         if i == len(res) - 1:
             start_end[image_id] = (idx, i + 1)
-        if res_i["image_id"] != image_id:
+        if res_i[name] != image_id:
             start_end[image_id] = (idx, i)
             idx = i
-            image_id = res_i["image_id"]
+            image_id = res_i[name]
 
     # cut number of detections to max_det for each image.
     res_max_det = []
