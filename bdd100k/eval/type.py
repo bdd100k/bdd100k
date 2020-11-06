@@ -1,5 +1,11 @@
 """Define the types of the annotation files."""
-from typing import List, TypedDict
+import sys
+
+if sys.version_info >= (3, 8):
+    from typing import List, TypedDict
+else:
+    from typing import List
+    from typing_extensions import TypedDict
 
 
 class CatType(TypedDict):
