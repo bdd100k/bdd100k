@@ -5,6 +5,45 @@ Evaluation
 Detection
 ~~~~~~~~~
 
+Submission format
+^^^^^^^^^^^^^^^^^^^^^^
+
+To evaluate your algorithms on BDD100K detection benchmark, you may prepare 
+your prediction results as a list of bounding box predictions with the following format:
+
+{
+    | "name": str, name of the input image, \\
+    | "category": str, name of the predicted category,
+    | "score": float, confidence score of the prediction, 
+    | "bbox": List[float], [x1, y1, x2, y2] in `Scalabel Format <https://doc.scalabel.ai/format.html>`_
+
+}
+
+When you submit your results, save your results in a JSON file and then compress it into a zip file.
+
+Run Evaluation on Your Own
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can evaluate your algorithm with public annotations by running 
+::
+    
+    python3 -m bdd100k.eval.run -t det -g ${gt_file} -r ${res_file} 
+
+- `gt_file`: ground truth file in JSON, either in Scalabel format or COCO format. If using COCO format, add a flag `--ann-format coco`
+- `res_file`: prediction results file in JSON, format as described above.
+
+Other options.
+- If you want to evaluate the detection performance on the BDD100K MOT set, 
+you can add a flag `--mode track`. 
+- You can also specify the output directory to save the evaluation results by updating `--out-dir ${out_dir}`.
+
+
+Evaluation Metrics
+^^^^^^^^^^^^^^^^^^^^^^
+Similar to COCO evaluation, we report 12 scores as 
+"AP", "AP_50", "AP_75", "AP_small", "AP_medium", "AP_large", "AR_max_1", "AR_max_10",
+"AR_max_100", "AR_small", "AR_medium", "AR_large" across all the classes. 
+
 
 
 Multiple Object Tracking
@@ -21,15 +60,15 @@ with two save/submit options:
 
 - A zip file or a file that contains a JSON file of the entire evaluation set.
 
-Evaluation method
-^^^^^^^^^^^^^^^^^^^^^^
+Run Evaluation on Your Own
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can evaluate your algorithms with public annotations by running
 ::
 
     python -m bdd100k.eval.run -t mot -g ${gt_file} -r ${res_file} 
 
-To obain results on val/test phase, submit your result files at `BDD100K 2D Multiple Object Tracking Challenge <TODO>`_.
+To obtain results on val/test phase, submit your result files at `BDD100K 2D Multiple Object Tracking Challenge <TODO>`_.
 
 
 
