@@ -5,6 +5,7 @@ if sys.version_info >= (3, 8):
     from typing import List, TypedDict  # pylint: disable=no-name-in-module
 else:
     from typing import List
+
     from typing_extensions import TypedDict
 
 
