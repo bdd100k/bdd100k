@@ -57,8 +57,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--ann-format",
         type=str,
-        choices=["coco", "bdd"],
-        default="coco",
+        choices=["coco", "scalabel"],
+        default="scalabel",
         help="ground truth annotation format",
     )
     parser.add_argument(
