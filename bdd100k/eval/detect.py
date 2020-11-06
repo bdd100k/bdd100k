@@ -1,6 +1,6 @@
 """Evaluation code for BDD100K detection.
 
-predictions format: List[Dict[str, Any]]
+predictions format: List[PredType]
 Each predicted bounding box forms one dictionary in BDD100K foramt as follows.
 {
     "name": string
