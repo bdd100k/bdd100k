@@ -1,8 +1,19 @@
-"""Evaluation code for BDD100K detection."""
+"""Evaluation code for BDD100K detection.
+
+predictions format: List[Dict[str, Any]]
+Each predicted bounding box forms one dictionary in BDD100K foramt as follows. 
+{
+    "name": string
+    "category": string
+    "score": float
+    "bbox": [x1, y1, x2, y2]
+}
+"""
 import datetime
 import json
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
+from tabulate import tabulate
 
 import numpy as np
 from pycocotools.coco import COCO
@@ -50,19 +61,23 @@ def evaluate_det(
         ann_format: either in `scalabel` format or in `coco` format.
         mode: `det` or `track` for label conversion.
     """
+
+    # GT annotations can either in COCO format or in BDD100K format
+    # During evaluation, labels under `ignored` class will be ignored.
     if ann_format == "coco":
         coco_gt = COCOV2(ann_file)
+        with open(ann_file) as fp:
+            ann_coco = json.load(fp)
     else:
         # Convert the annotation file to COCO format
         with open(ann_file) as fp:
             ann_bdd100k = json.load(fp)
-
         convert_fn = bdd100k2coco_det if mode == "det" else bdd100k2coco_track
         ann_coco = convert_fn(ann_bdd100k)
         coco_gt = COCOV2(None, ann_coco)
 
     # Load results and convert the predictions
-    pred_res = convert_preds(pred_file)
+    pred_res = convert_preds(pred_file, ann_coco)
     coco_dt = coco_gt.loadRes(pred_res)
 
     cat_ids = coco_dt.getCatIds()
@@ -115,11 +130,13 @@ def evaluate_det(
     img_ids = sorted(coco_gt.getImgIds())
     ann_type = "bbox"
     for i, cat_id in enumerate(cat_ids):
-        print("evaluate category: %s" % (coco_gt.loadCats(cat_id)[0]["name"]))
-        coco_eval = COCOeval(coco_gt, coco_dt)
+        print(
+            "\nEvaluate category: %s" % (coco_gt.loadCats(cat_id)[0]["name"])
+        )
+        coco_eval = COCOeval(coco_gt, coco_dt, ann_type)
         coco_eval.params.imgIds = img_ids
         coco_eval.params.catIds = coco_dt.getCatIds(catIds=cat_id)
-        coco_eval.params.useSegm = ann_type == "segm"
+        # coco_eval.params.useSegm = ann_type == "segm"
         coco_eval.evaluate()
         coco_eval.accumulate()
         coco_eval.summarize()
@@ -133,7 +150,7 @@ def evaluate_det(
 
     # Print evaluation results
     stats = np.zeros((n_tit, 1))
-    print("overall performance")
+    print("\nOverall performance")
     coco_eval.eval = eval_param
     coco_eval.summarize()
 
@@ -158,15 +175,17 @@ def evaluate_det(
         "AR_medium",
         "AR_large",
     ]
-    scores = []
+    scores = {}
 
     for title, stat in zip(score_titles, stats):
-        scores.append("{}: {:.3f}".format(title, stat.item()))
+        scores[title] = stat.item()
 
-    print(scores)
-    # output_filename = os.path.join(out_dir, "scores.txt")
-    # with open(output_filename, "wb") as fp:
-    #     fp.write("\n".join(scores))
+    output_filename = os.path.join(out_dir, "scores.json")
+    with open(output_filename, "w") as fp:
+        json.dump(scores, fp)
+
+    # print the overall performance in the tabulate format
+    print(create_small_table(scores))
 
     eval_param["precision"] = eval_param["precision"].flatten().tolist()
     eval_param["recall"] = eval_param["recall"].flatten().tolist()
@@ -175,10 +194,14 @@ def evaluate_det(
         json.dump(eval_param, fp)
 
 
-def convert_preds(res_file: str, max_det: int = 100):
+def convert_preds(
+    res_file: str, ann_coco: Dict[str, Any], max_det: int = 100
+) -> List[Dict[str, Any]]:
     """Convert the prediction into the coco eval format."""
     with open(res_file, "rb") as fp:
         res = json.load(fp)
+
+    res = pred_to_coco(res, ann_coco)
 
     # get the list of image_ids in res.
     name = "image_id"
@@ -224,3 +247,57 @@ def convert_preds(res_file: str, max_det: int = 100):
         )
 
     return res_max_det
+
+
+def pred_to_coco(
+    pred: List[Dict[str, Any]], ann_coco: Dict[str, Any]
+) -> List[Dict[str, Any]]:
+    """Convert the prediction results into a compatabile format with COCOAPIs."""
+    # update the prediction results
+    imgs_maps = {item["file_name"]: item["id"] for item in ann_coco["images"]}
+    cls_maps = {item["name"]: item["id"] for item in ann_coco["categories"]}
+
+    # backward compatible replacement
+    naming_replacement_dict = {
+        "person": "pedestrian",
+        "motor": "motorcycle",
+        "bike": "bicycle",
+    }
+
+    for p in pred:
+        # add image_id and category_id
+        cls_name = p["category"]
+        if cls_name in naming_replacement_dict.keys():
+            cls_name = naming_replacement_dict[cls_name]
+        p["category_id"] = cls_maps[cls_name]
+        p["image_id"] = imgs_maps[p["name"]]
+        x1, y1, x2, y2 = p["bbox"]  # x1, y1, x2, y2
+        p["bbox"] = [x1, y1, x2 - x1, y2 - y1]
+
+    return pred
+
+
+def create_small_table(small_dict):
+    """
+    Create a small table with fixed length using the keys of small_dict as headers.
+    Args:
+        small_dict (dict): a result dictionary of only a few items.
+    Returns:
+        str: the table as a string.
+    """
+    keys, values = tuple(zip(*small_dict.items()))
+    values = ["{:.1f}".format(val * 100) for val in values]
+    stride = 3
+    items = []
+    for i in range(0, len(keys), stride):
+        items.append(keys[i : min(i + stride, len(keys))])
+        items.append(values[i : min(i + stride, len(keys))])
+    table = tabulate(
+        items[1:],
+        headers=items[0],
+        tablefmt="fancy_grid",
+        floatfmt=".3f",
+        stralign="center",
+        numalign="center",
+    )
+    return table
