@@ -13,8 +13,8 @@ from PIL import Image
 
 from ..common.logger import logger
 from ..common.typing import DictAny
-from .mot import evaluate_mot
 from .detect import evaluate_det
+from .mot import evaluate_mot
 
 
 def parse_args() -> argparse.Namespace:

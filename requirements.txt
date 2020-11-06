@@ -6,7 +6,7 @@ isort
 joblib
 matplotlib
 motmetrics
-mypy
+mypy==0.782
 numpy>=1.19
 pandas
 pillow
@@ -16,3 +16,4 @@ pytest
 sphinx
 sphinx-rtd-theme
 tqdm
+tabulate

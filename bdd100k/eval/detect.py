@@ -1,7 +1,7 @@
 """Evaluation code for BDD100K detection.
 
 predictions format: List[Dict[str, Any]]
-Each predicted bounding box forms one dictionary in BDD100K foramt as follows. 
+Each predicted bounding box forms one dictionary in BDD100K foramt as follows.
 {
     "name": string
     "category": string
@@ -12,25 +12,26 @@ Each predicted bounding box forms one dictionary in BDD100K foramt as follows.
 import datetime
 import json
 import os
-from typing import Any, Dict, Optional, List
-from tabulate import tabulate
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 from pycocotools.coco import COCO
-from pycocotools.cocoeval import COCOeval
+from pycocotools.cocoeval import COCOeval  # type: ignore
+from tabulate import tabulate
 
+from bdd100k.eval.type import GtType, PredType
 from bdd100k.label.to_coco import bdd100k2coco_det, bdd100k2coco_track
 
 
-class COCOV2(COCO):
-    """Modify the COCO API to support annotations dictionary as
-    input rather than the annotation file."""
+class COCOV2(COCO):  # type: ignore
+    """Modify the COCO API to support annotations dictionary as input."""
 
     def __init__(
         self,
         annotation_file: Optional[str] = None,
-        annotations: Optional[Dict[Any, Any]] = None,
+        annotations: Optional[GtType] = None,
     ) -> None:
+        """Init."""
         super().__init__(annotation_file)
         # initialize the annotations in COCO format without saving as json.
 
@@ -51,7 +52,7 @@ def evaluate_det(
     out_dir: str,
     ann_format: str = "coco",
     mode: str = "det",
-) -> Any:
+) -> None:
     """Load the ground truth and prediction results.
 
     Args:
@@ -61,7 +62,6 @@ def evaluate_det(
         ann_format: either in `scalabel` format or in `coco` format.
         mode: `det` or `track` for label conversion.
     """
-
     # GT annotations can either in COCO format or in BDD100K format
     # During evaluation, labels under `ignored` class will be ignored.
     if ann_format == "coco":
@@ -195,8 +195,8 @@ def evaluate_det(
 
 
 def convert_preds(
-    res_file: str, ann_coco: Dict[str, Any], max_det: int = 100
-) -> List[Dict[str, Any]]:
+    res_file: str, ann_coco: GtType, max_det: int = 100
+) -> List[PredType]:
     """Convert the prediction into the coco eval format."""
     with open(res_file, "rb") as fp:
         res = json.load(fp)
@@ -205,11 +205,11 @@ def convert_preds(
 
     # get the list of image_ids in res.
     name = "image_id"
-    image_ids = set()
+    image_idss = set()
     for item in res:
-        if item[name] not in image_ids:
-            image_ids.add(item[name])
-    image_ids = sorted(list(image_ids))
+        if item[name] not in image_idss:
+            image_idss.add(item[name])
+    image_ids = sorted(list(image_idss))
 
     # sort res by 'image_id'.
     res = sorted(res, key=lambda k: k["image_id"])
@@ -240,8 +240,8 @@ def convert_preds(
 
     if more_than_max_det > 0:
         print(
-            "Some images have more than {0} detections. Results were cut to {0}"
-            " detections per images on {1} images.".format(
+            "Some images have more than {0} detections. Results were "
+            "cut to {0} detections per images on {1} images.".format(
                 max_det, more_than_max_det
             )
         )
@@ -249,10 +249,8 @@ def convert_preds(
     return res_max_det
 
 
-def pred_to_coco(
-    pred: List[Dict[str, Any]], ann_coco: Dict[str, Any]
-) -> List[Dict[str, Any]]:
-    """Convert the prediction results into a compatabile format with COCOAPIs."""
+def pred_to_coco(pred: List[PredType], ann_coco: GtType) -> List[PredType]:
+    """Convert the predictions into a compatabile format with COCOAPIs."""
     # update the prediction results
     imgs_maps = {item["file_name"]: item["id"] for item in ann_coco["images"]}
     cls_maps = {item["name"]: item["id"] for item in ann_coco["categories"]}
@@ -263,10 +261,9 @@ def pred_to_coco(
         "motor": "motorcycle",
         "bike": "bicycle",
     }
-
     for p in pred:
         # add image_id and category_id
-        cls_name = p["category"]
+        cls_name: str = p["category"]
         if cls_name in naming_replacement_dict.keys():
             cls_name = naming_replacement_dict[cls_name]
         p["category_id"] = cls_maps[cls_name]
@@ -277,18 +274,19 @@ def pred_to_coco(
     return pred
 
 
-def create_small_table(small_dict):
-    """
-    Create a small table with fixed length using the keys of small_dict as headers.
+def create_small_table(small_dict: Dict[str, float]) -> str:
+    """Create a small table using the keys of small_dict as headers.
+
     Args:
         small_dict (dict): a result dictionary of only a few items.
+
     Returns:
         str: the table as a string.
     """
-    keys, values = tuple(zip(*small_dict.items()))
-    values = ["{:.1f}".format(val * 100) for val in values]
+    keys, values_t = tuple(zip(*small_dict.items()))
+    values = ["{:.1f}".format(val * 100) for val in values_t]
     stride = 3
-    items = []
+    items: List[Any] = []  # type: ignore
     for i in range(0, len(keys), stride):
         items.append(keys[i : min(i + stride, len(keys))])
         items.append(values[i : min(i + stride, len(keys))])
