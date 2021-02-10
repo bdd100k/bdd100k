@@ -7,7 +7,7 @@ joblib
 matplotlib
 motmetrics
 mypy==0.782
-numpy>=1.19
+numpy==1.19.5
 pandas
 pillow
 pycocotools

@@ -1,5 +1,7 @@
+.. _license:
+
 License
-----------
+=======
 
 The code and other resources provided by the BDD100K code repo are in `BSD
 3-Clause License <https://github.com/bdd100k/bdd100k/blob/master/LICENSE>`_.
