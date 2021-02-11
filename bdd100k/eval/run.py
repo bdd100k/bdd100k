@@ -13,6 +13,7 @@ from PIL import Image
 
 from ..common.logger import logger
 from ..common.typing import DictAny
+from .detect import evaluate_det
 from .mot import evaluate_mot
 
 
@@ -49,6 +50,25 @@ def parse_args() -> argparse.Namespace:
         default=4,
         help="number of processes for mot evaluation",
     )
+    # Flags for detection
+    parser.add_argument(
+        "--out-dir", type=str, default=".", help="Path to store output files"
+    )
+    parser.add_argument(
+        "--ann-format",
+        type=str,
+        choices=["coco", "scalabel"],
+        default="scalabel",
+        help="ground truth annotation format",
+    )
+    parser.add_argument(
+        "--mode",
+        type=str,
+        choices=["det", "track"],
+        default="det",
+        help="choose the detection set or the tracking set",
+    )
+
     args = parser.parse_args()
 
     return args
@@ -282,7 +302,9 @@ def run() -> None:
     elif args.task == "seg":
         evaluate_segmentation(args.gt, args.result, 19, 17)
     elif args.task == "det":
-        evaluate_detection(args.gt, args.result)
+        evaluate_det(
+            args.gt, args.result, args.out_dir, args.ann_format, args.mode
+        )
     elif args.task == "mot":
         evaluate_mot(
             gts=read(args.gt),
