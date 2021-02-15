@@ -12,7 +12,6 @@ else:
 class CatType(TypedDict):
     """Define types of categories in GT."""
 
-    # pylint: disable=C0103
     supercategory: str
     id: int
     name: str
@@ -34,7 +33,6 @@ class AnnType(TypedDict):
 class ImgType(TypedDict):
     """Define types of images in GT."""
 
-    # pylint: disable=C0103
     file_name: str
     height: int
     width: int

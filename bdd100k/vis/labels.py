@@ -20,8 +20,8 @@ from matplotlib.font_manager import FontProperties
 from matplotlib.path import Path
 from PIL import Image
 
+from ..label.label import labels
 from .geometry import Label3d
-from .label import labels
 
 __author__ = "Fisher Yu"
 __copyright__ = "Copyright (c) 2018, Fisher Yu"
