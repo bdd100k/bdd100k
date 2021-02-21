@@ -150,8 +150,8 @@ def bdd100k2coco_det(
                 label_counter += 1
                 annotation: DictAny = dict()
                 annotation["iscrowd"] = (
-                    int(label["attributes"]["crowd"])
-                    if "crowd" in label["attributes"]
+                    int(label["attributes"]["Crowd"])
+                    if "Crowd" in label["attributes"]
                     else 0
                 )
                 annotation["image_id"] = image["id"]
