@@ -61,6 +61,7 @@ def evaluate_det(
         out_dir: output_directory
         ann_format: either in `scalabel` format or in `coco` format.
         mode: `det` or `track` for label conversion.
+
     Returns:
         dict: detection metric scores
     """

@@ -10,11 +10,12 @@ from .detect import evaluate_det
 class TestBDD100KEval(unittest.TestCase):
     """Test cases for mot & det BDD100K evaluation."""
     def __init__(self, *args, **kwargs):
+        """Initialize test case."""
         super().__init__(*args, **kwargs)
         self.cur_dir = os.path.dirname(os.path.abspath(__file__))
 
     def test_mot(self) -> None:
-        """ Check mot evaluation correctness."""
+        """Check mot evaluation correctness."""
         gts = read('{}/testcases/track_sample_anns/'.format(self.cur_dir))
         preds = read('{}/testcases/track_predictions.json'.format(
             self.cur_dir))
@@ -33,7 +34,7 @@ class TestBDD100KEval(unittest.TestCase):
                                    overall_reference[key])
 
     def test_det(self) -> None:
-        """ Check detection evaluation correctness."""
+        """Check detection evaluation correctness."""
         gts = '{}/testcases/cocoformat_track_sample_annotations.json'.format(
             self.cur_dir)
         preds = '{}/testcases/bbox_predictions.json'.format(self.cur_dir)
