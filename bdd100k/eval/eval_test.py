@@ -9,16 +9,13 @@ from .detect import evaluate_det
 
 class TestBDD100KEval(unittest.TestCase):
     """Test cases for mot & det BDD100K evaluation."""
-    def __init__(self, *args, **kwargs) -> None:
-        """Initialize test case."""
-        super().__init__(*args, **kwargs)
-        self.cur_dir = os.path.dirname(os.path.abspath(__file__))
 
     def test_mot(self) -> None:
         """Check mot evaluation correctness."""
-        gts = read('{}/testcases/track_sample_anns/'.format(self.cur_dir))
+        cur_dir = os.path.dirname(os.path.abspath(__file__))
+        gts = read('{}/testcases/track_sample_anns/'.format(cur_dir))
         preds = read('{}/testcases/track_predictions.json'.format(
-            self.cur_dir))
+            cur_dir))
         result = evaluate_mot(gts, preds)
         overall_reference = {'IDF1': 0.7089966679007775,
                              'MOTA': 0.6400771952396269,
@@ -35,9 +32,10 @@ class TestBDD100KEval(unittest.TestCase):
 
     def test_det(self) -> None:
         """Check detection evaluation correctness."""
+        cur_dir = os.path.dirname(os.path.abspath(__file__))
         gts = '{}/testcases/cocoformat_track_sample_annotations.json'.format(
-            self.cur_dir)
-        preds = '{}/testcases/bbox_predictions.json'.format(self.cur_dir)
+            cur_dir)
+        preds = '{}/testcases/bbox_predictions.json'.format(cur_dir)
         result = evaluate_det(gts, preds)
         overall_reference = {'AP': 0.3310833329280097,
                              'AP_50': 0.5373587734237398,
