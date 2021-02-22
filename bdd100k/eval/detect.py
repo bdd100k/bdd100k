@@ -21,6 +21,7 @@ from tabulate import tabulate
 
 from bdd100k.eval.type import GtType, PredType
 from bdd100k.label.to_coco import bdd100k2coco_det, bdd100k2coco_track
+
 from ..common.typing import DictAny
 
 
@@ -50,7 +51,7 @@ class COCOV2(COCO):  # type: ignore
 def evaluate_det(
     ann_file: str,
     pred_file: str,
-    out_dir: str = "none" ,
+    out_dir: str = "none",
     ann_format: str = "coco",
     mode: str = "det",
 ) -> DictAny:
@@ -184,7 +185,7 @@ def evaluate_det(
     for title, stat in zip(score_titles, stats):
         scores[title] = stat.item()
 
-    if out_dir != 'none':
+    if out_dir != "none":
         write_eval(out_dir, scores, eval_param)
     print(scores)
     return scores
