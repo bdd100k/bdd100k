@@ -21,6 +21,7 @@ from tabulate import tabulate
 
 from bdd100k.eval.type import GtType, PredType
 from bdd100k.label.to_coco import bdd100k2coco_det, bdd100k2coco_track
+from ..common.typing import DictAny
 
 
 class COCOV2(COCO):  # type: ignore
@@ -52,7 +53,7 @@ def evaluate_det(
     out_dir: str = "none" ,
     ann_format: str = "coco",
     mode: str = "det",
-) -> dict:
+) -> DictAny:
     """Load the ground truth and prediction results.
 
     Args:
@@ -189,7 +190,7 @@ def evaluate_det(
     return scores
 
 
-def write_eval(out_dir: str, scores: dict, eval_param: dict) -> None:
+def write_eval(out_dir: str, scores: DictAny, eval_param: DictAny) -> None:
     """Write the evaluation results to file, print in tabulate format."""
     output_filename = os.path.join(out_dir, "scores.json")
     with open(output_filename, "w") as fp:

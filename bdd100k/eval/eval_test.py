@@ -9,7 +9,7 @@ from .detect import evaluate_det
 
 class TestBDD100KEval(unittest.TestCase):
     """Test cases for mot & det BDD100K evaluation."""
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         """Initialize test case."""
         super().__init__(*args, **kwargs)
         self.cur_dir = os.path.dirname(os.path.abspath(__file__))
