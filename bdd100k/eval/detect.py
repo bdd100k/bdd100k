@@ -22,6 +22,8 @@ from tabulate import tabulate
 from bdd100k.eval.type import GtType, PredType
 from bdd100k.label.to_coco import bdd100k2coco_det, bdd100k2coco_track
 
+from ..common.typing import DictAny
+
 
 class COCOV2(COCO):  # type: ignore
     """Modify the COCO API to support annotations dictionary as input."""
@@ -49,10 +51,10 @@ class COCOV2(COCO):  # type: ignore
 def evaluate_det(
     ann_file: str,
     pred_file: str,
-    out_dir: str,
+    out_dir: str = "none",
     ann_format: str = "coco",
     mode: str = "det",
-) -> None:
+) -> DictAny:
     """Load the ground truth and prediction results.
 
     Args:
@@ -61,6 +63,9 @@ def evaluate_det(
         out_dir: output_directory
         ann_format: either in `scalabel` format or in `coco` format.
         mode: `det` or `track` for label conversion.
+
+    Returns:
+        dict: detection metric scores
     """
     # GT annotations can either in COCO format or in BDD100K format
     # During evaluation, labels under `ignored` class will be ignored.
@@ -180,6 +185,14 @@ def evaluate_det(
     for title, stat in zip(score_titles, stats):
         scores[title] = stat.item()
 
+    if out_dir != "none":
+        write_eval(out_dir, scores, eval_param)
+    print(scores)
+    return scores
+
+
+def write_eval(out_dir: str, scores: DictAny, eval_param: DictAny) -> None:
+    """Write the evaluation results to file, print in tabulate format."""
     output_filename = os.path.join(out_dir, "scores.json")
     with open(output_filename, "w") as fp:
         json.dump(scores, fp)
