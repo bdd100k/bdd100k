@@ -6,7 +6,7 @@ isort
 joblib
 matplotlib
 motmetrics
-mypy==0.782
+mypy
 numpy==1.19.5
 pandas
 pillow
