@@ -36,5 +36,6 @@ setuptools.setup(
         "pillow",
         "pycocotools",
         "tqdm",
+        "tabulate",
     ],
 )
