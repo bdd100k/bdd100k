@@ -225,8 +225,7 @@ def convert_preds(
     image_ids = sorted(list(image_idss))
 
     # sort res by 'image_id'.
-    sort_key = lambda k: k["image_id"]
-    res = sorted(res, key=sort_key)
+    res = sorted(res, key=lambda k: int(k["image_id"]))
 
     # get the start and end index in res for each image.
     image_id = image_ids[0]
@@ -247,8 +246,9 @@ def convert_preds(
         r_img = res[start_end[image_id][0] : start_end[image_id][1]]
         if len(r_img) > max_det:
             more_than_max_det += 1
-            sort_key = lambda k: k["score"]
-            r_img = sorted(r_img, key=sort_key, reverse=True)[:max_det]
+            r_img = sorted(
+                r_img, key=lambda k: float(k["score"]), reverse=True
+            )[:max_det]
         res_max_det.extend(r_img)
 
     if more_than_max_det > 0:
