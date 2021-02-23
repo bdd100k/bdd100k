@@ -217,7 +217,7 @@ def render_results(
     logger.info(strsummary)
 
     outputs: DictAny = dict()
-    for i, item in enumerate(items[len(CLASSES) :], len(CLASSES)):
+    for i, item in enumerate(items):
         outputs[item] = dict()
         for j, metric in enumerate(METRIC_MAPS.values()):
             outputs[item][metric] = summaries[i][j]
