@@ -31,10 +31,11 @@ setuptools.setup(
         "joblib",
         "matplotlib",
         "motmetrics",
-        "numpy>=1.19",
+        "numpy==1.19.5",
         "pandas",
         "pillow",
         "pycocotools",
         "tqdm",
+        "tabulate",
     ],
 )
