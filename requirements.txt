@@ -10,7 +10,7 @@ mypy==0.782
 numpy==1.19.5
 pandas
 pillow
-pycocotools
+mmpycocotools
 pylint
 pytest
 sphinx
