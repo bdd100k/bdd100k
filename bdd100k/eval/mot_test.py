@@ -2,10 +2,8 @@
 import os
 import unittest
 
-from .mot import (
-    acc_single_video, aggregate_accs, evaluate_single_class,
-    METRIC_MAPS, render_results, SUPER_CLASSES)
-                 
+from .mot import (METRIC_MAPS, SUPER_CLASSES, acc_single_video, aggregate_accs,
+                  evaluate_single_class, render_results)
 from .run import read
 
 
@@ -22,18 +20,20 @@ class TestRenderResults(unittest.TestCase):
     summaries = [evaluate_single_class(name, acc)
                  for name, acc in zip(names, accs)]
     eval_results = render_results(summaries, items, metrics)
-    
+
     def test_categories(self) -> None:
+        """Check the correctness of the 1st-level keys in eval_results."""
         cate_names = ['OVERALL']
         for super_category, categories in SUPER_CLASSES.items():
             cate_names.append(super_category)
             cate_names.extend(categories)
 
         self.assertEqual(len(self.eval_results), len(cate_names))
-        for key in self.eval_results.keys():
+        for key in self.eval_results:
             self.assertIn(key, cate_names)
 
     def test_metrics(self) -> None:
+        """Check the correctness of the 2nd-level keys in eval_results."""
         cate_metrics = list(METRIC_MAPS.values())
         overall_metrics = cate_metrics + ['mIDF1', 'mMOTA', 'mMOTP']
 
