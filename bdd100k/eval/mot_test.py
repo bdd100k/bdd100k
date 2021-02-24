@@ -2,8 +2,14 @@
 import os
 import unittest
 
-from .mot import (METRIC_MAPS, SUPER_CLASSES, acc_single_video, aggregate_accs,
-                  evaluate_single_class, render_results)
+from .mot import (
+    METRIC_MAPS,
+    SUPER_CLASSES,
+    acc_single_video,
+    aggregate_accs,
+    evaluate_single_class,
+    render_results,
+)
 from .run import read
 
 
@@ -17,13 +23,14 @@ class TestRenderResults(unittest.TestCase):
     metrics = list(METRIC_MAPS.keys())
     accs = [acc_single_video(gts[0], preds[0])]
     names, accs, items = aggregate_accs(accs)
-    summaries = [evaluate_single_class(name, acc)
-                 for name, acc in zip(names, accs)]
+    summaries = [
+        evaluate_single_class(name, acc) for name, acc in zip(names, accs)
+    ]
     eval_results = render_results(summaries, items, metrics)
 
     def test_categories(self) -> None:
         """Check the correctness of the 1st-level keys in eval_results."""
-        cate_names = ['OVERALL']
+        cate_names = ["OVERALL"]
         for super_category, categories in SUPER_CLASSES.items():
             cate_names.append(super_category)
             cate_names.extend(categories)
@@ -35,10 +42,10 @@ class TestRenderResults(unittest.TestCase):
     def test_metrics(self) -> None:
         """Check the correctness of the 2nd-level keys in eval_results."""
         cate_metrics = list(METRIC_MAPS.values())
-        overall_metrics = cate_metrics + ['mIDF1', 'mMOTA', 'mMOTP']
+        overall_metrics = cate_metrics + ["mIDF1", "mMOTA", "mMOTP"]
 
         for cate, metrics in self.eval_results.items():
-            if cate == 'OVERALL':
+            if cate == "OVERALL":
                 target_metrics = overall_metrics
             else:
                 target_metrics = cate_metrics
