@@ -7,10 +7,41 @@ from .mot import (
     SUPER_CLASSES,
     acc_single_video,
     aggregate_accs,
+    evaluate_mot,
     evaluate_single_class,
     render_results,
 )
 from .run import read
+
+
+class TestBDD100KMotEval(unittest.TestCase):
+    """Test cases for BDD100K MOT evaluation."""
+
+    def test_mot(self) -> None:
+        """Check mot evaluation correctness."""
+        cur_dir = os.path.dirname(os.path.abspath(__file__))
+        gts = read("{}/testcases/track_sample_anns/".format(cur_dir))
+        preds = read("{}/testcases/track_predictions.json".format(cur_dir))
+        result = evaluate_mot(gts, preds)
+        overall_reference = {
+            "IDF1": 0.7089966679007775,
+            "MOTA": 0.6400771952396269,
+            "MOTP": 0.8682947680631947,
+            "FP": 129,
+            "FN": 945,
+            "IDSw": 45,
+            "MT": 62,
+            "PT": 47,
+            "ML": 33,
+            "FM": 68,
+            "mIDF1": 0.3223152925410833,
+            "mMOTA": 0.242952917616693,
+            "mMOTP": 0.12881014519276474,
+        }
+        for key in result["OVERALL"]:
+            self.assertAlmostEqual(
+                result["OVERALL"][key], overall_reference[key]
+            )
 
 
 class TestRenderResults(unittest.TestCase):
