@@ -19,6 +19,11 @@ your prediction results as a list of bounding box predictions with the following
 
 }
 
+You can find an example result file in |bdd100k_testcase_det|_.
+
+.. |bdd100k_testcase_det| replace:: ``bdd100k.eval.testcases``
+.. _bdd100k_testcase_det: https://github.com/bdd100k/bdd100k/blob/master/bdd100k/eval/testcases/bbox_predictions.json
+
 When you submit your results, save your results in a JSON file and then compress it into a zip file.
 
 Run Evaluation on Your Own
@@ -52,13 +57,37 @@ Multiple Object Tracking
 Submission format
 ^^^^^^^^^^^^^^^^^^^^^^
 
-To evaluate your algorithms on BDD100K multiple object tracking benchmark,
-please first format your results in `Scalabel Format <https://doc.scalabel.ai/format.html>`_ 
-with two save/submit options:
+To evaluate your algorithms on BDD100K multiple object tracking benchmark, there are two save/submit options:
 
 - A zip file or a folder that contains JSON files of each video.
 
 - A zip file or a file that contains a JSON file of the entire evaluation set.
+
+The JSON file for each video should contain a list of per-frame result dictionaries with the following structure:
+
+{
+    | "video_name": str, name of the current sequence, \\
+    | "name": str, name of the current frame,
+    | "index": int, index of the current frame within the sequence,
+    | "labels": List[dict], List of predictions for the current frame
+
+}
+
+The 'labels' list will contain the predictions for the current frame, each specified by another dict in `Scalabel Format <https://doc.scalabel.ai/format.html>`_:
+
+{
+    | "name": str, name of the input image, \\
+    | "category": str, name of the predicted category,
+    | "id": str, unique instance id of the prediction in the current sequence,
+    | "score": float, confidence score of the prediction,
+    | "box2d": dict[float], {x1, y1, x2, y2}
+
+}
+
+You can find an example result file in |bdd100k_testcase_track|_.
+
+.. |bdd100k_testcase_track| replace:: ``bdd100k.eval.testcases``
+.. _bdd100k_testcase_track: https://github.com/bdd100k/bdd100k/blob/master/bdd100k/eval/testcases/track_predictions.json
 
 Run Evaluation on Your Own
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -68,7 +97,7 @@ You can evaluate your algorithms with public annotations by running
 
     python -m bdd100k.eval.run -t mot -g ${gt_file} -r ${res_file} 
 
-To obtain results on val/test phase, submit your result files at `BDD100K 2D Multiple Object Tracking Challenge <TODO>`_.
+To obtain results on val/test phase, submit your result files at `BDD100K 2D Multiple Object Tracking Challenge <https://competitions.codalab.org/competitions/29388>`_.
 
 
 

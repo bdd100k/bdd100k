@@ -85,3 +85,12 @@ drawing all the labels.
 
 .. |vis_labels| replace:: ``bdd100k.vis.labels``
 .. _vis_labels: https://github.com/bdd100k/bdd100k/blob/master/bdd100k/vis/labels.py
+
+The labels for semantic segmentation are encoded in the field ``train_id`` defined in |bdd100k_label|_,
+e.g. car should be 13.
+
+.. |bdd100k_label| replace:: ``bdd100k.label.label``
+.. _bdd100k_label: https://github.com/bdd100k/bdd100k/blob/master/bdd100k/label/label.py
+
+At present time, the instance segmentation labels are provided through the 'id' field in the
+semantic segmentation maps and polygons in json will be provided in the future.
