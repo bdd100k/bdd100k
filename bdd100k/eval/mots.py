@@ -52,7 +52,7 @@ def parse_bitmasks(
     return [masks, instance_ids, attributes, category_ids]
 
 
-def mask_interaction_rate(
+def mask_intersection_rate(
     gt_masks: np.ndarray,
     pred_masks: np.ndarray,
 ) -> np.ndarray:
@@ -108,14 +108,14 @@ def acc_single_video(
         res_masks = np.asarray(Image.open(result)).astype(np.int32)
         gt_masks, gt_ids, gt_attrs, gt_cats = parse_bitmasks(gt_masks)
         pred_masks, pred_ids, pred_attrs, pred_cats = parse_bitmasks(res_masks)
-        ious, iofs = mask_interaction_rate(gt_masks, pred_masks)
+        ious, iofs = mask_intersection_rate(gt_masks, pred_masks)
 
-        gt_valids = np.bitwise_not(gt_attrs & 3).astype(np.bool8)
-        pred_valids = np.bitwise_not(pred_attrs & 3).astype(np.bool8)
+        gt_valids = np.logical_not((gt_attrs & 3).astype(np.bool8))
+        pred_valids = np.logical_not((pred_attrs & 3).astype(np.bool8))
         for i in range(num_classes):
             # cats starts from 1 and i starts from 0
-            gt_inds = (gt_cats - 1 == i) * gt_valids
-            pred_inds = (pred_cats - 1 == i) * pred_valids
+            gt_inds = (gt_cats == i + 1) * gt_valids
+            pred_inds = (pred_cats == i + 1) * pred_valids
             gt_ids_c, pred_ids_c = gt_ids[gt_inds], pred_ids[pred_inds]
 
             if gt_ids_c.shape[0] == 0 and pred_ids_c.shape[0] != 0:
@@ -130,14 +130,13 @@ def acc_single_video(
                 )
 
             gt_invalid = np.bitwise_not(gt_valids)
-            if (gt_invalid).any() > 0:
+            if (gt_invalid).any():
                 # 1. assign gt and preds
                 fps = np.ones(pred_ids_c.shape[0]).astype(np.bool8)
                 le, ri = mm.lap.linear_sum_assignment(distances)
                 for m, n in zip(le, ri):
-                    if not np.isfinite(distances[m, n]):
-                        continue
-                    fps[n] = False
+                    if np.isfinite(distances[m, n]):
+                        fps[n] = False
                 # 2. ignore by iof
                 iofs_c = iofs[gt_invalid, :][:, pred_inds]
                 ignores = (iofs_c > ignore_iof_thr).any(axis=0)

@@ -143,8 +143,8 @@ def segtrack2bitmasks(
                 if "poly2d" not in label:
                     continue
 
-                category_ignored = False
-                if label["category"] not in attr_id_dict.keys():
+                category_ignored: bool = False
+                if label["category"] not in attr_id_dict:
                     if ignore_as_class:
                         label["category"] = "ignored"
                         category_ignored = False
@@ -157,27 +157,28 @@ def segtrack2bitmasks(
                 category_id = attr_id_dict[label["category"]]
 
                 bdd100k_id = str(label["id"])
-                if bdd100k_id in instance_id_maps.keys():
+                if bdd100k_id in instance_id_maps:
                     instance_id = instance_id_maps[bdd100k_id]
                 else:
                     instance_id = global_instance_id
                     global_instance_id += 1
                     instance_id_maps[bdd100k_id] = instance_id
 
-                truncated = int(label["attributes"]["Truncated"])
-                occluded = int(label["attributes"]["Occluded"])
-                crowd = int(label["attributes"]["Crowd"])
+                truncated = int(bool(label["attributes"]["Truncated"]))
+                occluded = int(bool(label["attributes"]["Occluded"]))
+                crowd = int(bool(label["attributes"]["Crowd"]))
                 ignore = int(category_ignored)
                 color = np.array(
                     [
                         category_id & 255,
-                        (truncated & 8)
-                        + (occluded & 4)
-                        + (crowd & 2)
-                        + (ignore & 1),
+                        (truncated << 3)
+                        + (occluded << 2)
+                        + (crowd << 1)
+                        + ignore,
                         instance_id >> 8,
                         instance_id & 255,
-                    ]
+                    ],
+                    dtype=np.uint8,
                 )
                 colors.append(color)
                 poly2ds.append(label["poly2d"])

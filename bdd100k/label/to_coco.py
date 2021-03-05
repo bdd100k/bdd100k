@@ -252,7 +252,7 @@ def bdd100k2coco_track(
             # annotations
             for label in image_anns["labels"]:
                 category_ignored = False
-                if label["category"] not in attr_id_dict.keys():
+                if label["category"] not in attr_id_dict:
                     if ignore_as_class:
                         label["category"] = "ignored"
                         category_ignored = False
@@ -264,7 +264,7 @@ def bdd100k2coco_track(
                         continue
 
                 bdd100k_id = label["id"]
-                if bdd100k_id in instance_id_maps.keys():
+                if bdd100k_id in instance_id_maps:
                     instance_id = instance_id_maps[bdd100k_id]
                 else:
                     instance_id = global_instance_id

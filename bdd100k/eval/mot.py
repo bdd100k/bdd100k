@@ -103,9 +103,8 @@ def acc_single_video(
                 fps = np.ones(pred_bboxes_c.shape[0]).astype(np.bool8)
                 le, ri = mm.lap.linear_sum_assignment(distances)
                 for m, n in zip(le, ri):
-                    if not np.isfinite(distances[m, n]):
-                        continue
-                    fps[n] = False
+                    if np.isfinite(distances[m, n]):
+                        fps[n] = False
                 # 2. ignore by iof
                 iofs = intersection_over_area(pred_bboxes_c, gt_ignores)
                 ignores = (iofs > ignore_iof_thr).any(axis=1)

@@ -4,7 +4,7 @@ import unittest
 
 import numpy as np
 
-from .mots import evaluate_mots, mask_interaction_rate
+from .mots import evaluate_mots, mask_intersection_rate
 
 
 class TestMaskInteractionRate(unittest.TestCase):
@@ -17,7 +17,7 @@ class TestMaskInteractionRate(unittest.TestCase):
         b_bitmask = np.ones((10, 10), dtype=np.int32) * 2
         b_bitmask[:7, :7] = 1
 
-        ious, ioas = mask_interaction_rate(a_bitmask, b_bitmask)
+        ious, ioas = mask_intersection_rate(a_bitmask, b_bitmask)
         gt_ious = np.array([[40 / 73, 24 / 91], [9 / 76, 9 / 20]])
         gt_ioas = np.array([[40 / 49, 24 / 51], [9 / 49, 27 / 51]])
         for i in range(2):
