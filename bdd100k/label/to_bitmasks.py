@@ -22,10 +22,10 @@ import os
 from multiprocessing import Pool
 from typing import Dict, List, Tuple
 
-import matplotlib.patches as mpatches
-import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches  # type: ignore
+import matplotlib.pyplot as plt  # type: ignore
 import numpy as np
-from matplotlib.path import Path
+from matplotlib.path import Path  # type: ignore
 from PIL import Image
 from tqdm import tqdm
 
@@ -85,7 +85,7 @@ def poly2patch(
 ) -> mpatches.PathPatch:
     """Draw polygons using the Bezier curve."""
     moves = {"L": Path.LINETO, "C": Path.CURVE4}
-    points = [v for v in vertices]
+    points = list(vertices)
     codes = [moves[t] for t in types]
     codes[0] = Path.MOVETO
 

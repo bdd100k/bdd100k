@@ -10,8 +10,13 @@ from PIL import Image
 
 from ..common.logger import logger
 from ..common.typing import DictAny
-from .mot import METRIC_MAPS, CLASSES
-from .mot import aggregate_accs, evaluate_single_class, render_results
+from .mot import (
+    CLASSES,
+    METRIC_MAPS,
+    aggregate_accs,
+    evaluate_single_class,
+    render_results,
+)
 
 
 def parse_bitmasks(

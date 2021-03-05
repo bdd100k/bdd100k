@@ -311,7 +311,7 @@ def close_contour(contour: ListAny) -> ListAny:
 
 
 def mask_to_polygon(
-    binary_mask: np.array, tolerance: int = 2
+    binary_mask: np.array, x1: int, y1: int, tolerance: int = 2
 ) -> List[ListAny]:
     """Convert BitMask to polygon."""
     polygons = []
@@ -328,6 +328,12 @@ def mask_to_polygon(
         contour = np.flip(contour, axis=1)
         segmentation = contour.ravel().tolist()
         segmentation = [0 if i < 0 else i for i in segmentation]
+        for i, _ in enumerate(segmentation):
+            if i % 2 == 0:
+                segmentation[i] = (segmentation[i] + x1).tolist()
+            else:
+                segmentation[i] = (segmentation[i] + y1).tolist()
+
         polygons.append(segmentation)
 
     return polygons
@@ -384,7 +390,6 @@ def bdd100k2coco_seg_track(
                     continue
 
                 category_ignored = False
-                # fix legacy naming
                 if label["category"] not in attr_id_dict.keys():
                     if ignore_as_class:
                         label["category"] = "ignored"
@@ -419,13 +424,7 @@ def bdd100k2coco_seg_track(
 
                 mask = mask[y1:y2, x1:x2]
                 area = np.sum(mask).tolist()
-                polygon = mask_to_polygon(mask)
-                for p in polygon:
-                    for n, _ in enumerate(p):
-                        if n % 2 == 0:
-                            p[n] = (p[n] + x1).tolist()
-                        else:
-                            p[n] = (p[n] + y1).tolist()
+                polygon = mask_to_polygon(mask, x1, y1)
 
                 ann = dict(
                     id=ann_id,

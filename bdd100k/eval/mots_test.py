@@ -3,9 +3,8 @@ import os
 import unittest
 
 import numpy as np
-from PIL import Image
 
-from .mots import mask_interaction_rate, evaluate_mots
+from .mots import evaluate_mots, mask_interaction_rate
 
 
 class TestMaskInteractionRate(unittest.TestCase):
