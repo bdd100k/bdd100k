@@ -13,6 +13,7 @@ pillow
 pycocotools
 pylint
 pytest
+scikit-image
 sphinx
 sphinx-rtd-theme
 tqdm

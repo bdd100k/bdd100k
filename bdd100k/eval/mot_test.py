@@ -36,7 +36,7 @@ class TestBDD100KMotEval(unittest.TestCase):
             "FM": 68,
             "mIDF1": 0.3223152925410833,
             "mMOTA": 0.242952917616693,
-            "mMOTP": 0.12881014519276474,
+            "mMOTP": 0.49618985480723526,
         }
         for key in result["OVERALL"]:
             self.assertAlmostEqual(

@@ -173,6 +173,8 @@ def evaluate_single_class(
             sum_motp, num_dets["num_detections"]["OVERALL"]
         )
         results[motp_ind] = float(1 - motp)
+    else:
+        results[motp_ind] = 1 - results[motp_ind]
     return results
 
 

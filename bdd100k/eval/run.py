@@ -15,6 +15,7 @@ from ..common.logger import logger
 from ..common.typing import DictAny
 from .detect import evaluate_det
 from .mot import evaluate_mot
+from .mots import evaluate_mots
 
 
 def parse_args() -> argparse.Namespace:
@@ -23,7 +24,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--task",
         "-t",
-        choices=["seg", "det", "drivable", "mot"],
+        choices=["seg", "det", "drivable", "mot", "mots"],
         required=True,
     )
     parser.add_argument(
@@ -293,6 +294,20 @@ def read(inputs: str) -> List[List[DictAny]]:
     return outputs
 
 
+def list_files(inputs: str) -> List[List[str]]:
+    """List files names for a folder/nested folder."""
+    files_list: List[List[str]] = []
+    assert osp.isdir(inputs)
+    sub_dirs = sorted(os.listdir(inputs))
+    for sub_dir in sub_dirs:
+        dir_path = osp.join(inputs, sub_dir)
+        assert osp.isdir(dir_path)
+        files = sorted(os.listdir(dir_path))
+        files = [osp.join(dir_path, file_name) for file_name in files]
+        files_list.append(files)
+    return files_list
+
+
 def run() -> None:
     """Main."""
     args = parse_args()
@@ -309,6 +324,14 @@ def run() -> None:
         evaluate_mot(
             gts=read(args.gt),
             results=read(args.result),
+            iou_thr=args.mot_iou_thr,
+            ignore_iof_thr=args.mot_ignore_iof_thr,
+            nproc=args.mot_nproc,
+        )
+    elif args.task == "mots":
+        evaluate_mots(
+            gts=list_files(args.gt),
+            results=list_files(args.result),
             iou_thr=args.mot_iou_thr,
             ignore_iof_thr=args.mot_ignore_iof_thr,
             nproc=args.mot_nproc,
