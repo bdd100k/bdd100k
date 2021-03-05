@@ -225,10 +225,11 @@ def bdd100k2coco_track(
         mode="track", ignore_as_class=ignore_as_class
     )
 
-    video_id, image_id, ann_id, global_instance_id = 1, 1, 1, 1
+    video_id, image_id, ann_id = 1, 1, 1
     no_ann = 0
 
     for video_anns in tqdm(labels):
+        global_instance_id: int = 1
         instance_id_maps: DictAny = dict()
 
         # videos
