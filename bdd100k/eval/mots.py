@@ -1,5 +1,6 @@
 """BDD100K tracking evaluation with CLEAR MOT metrics."""
 import os
+import os.path as osp
 import time
 from multiprocessing import Pool
 from typing import List
@@ -17,6 +18,20 @@ from .mot import (
     evaluate_single_class,
     render_results,
 )
+
+
+def list_files(inputs: str) -> List[List[str]]:
+    """List files names for a folder/nested folder."""
+    files_list: List[List[str]] = []
+    assert osp.isdir(inputs)
+    sub_dirs = sorted(os.listdir(inputs))
+    for sub_dir in sub_dirs:
+        dir_path = osp.join(inputs, sub_dir)
+        assert osp.isdir(dir_path)
+        files = sorted(os.listdir(dir_path))
+        files = [osp.join(dir_path, file_name) for file_name in files]
+        files_list.append(files)
+    return files_list
 
 
 def parse_bitmasks(
@@ -150,8 +165,8 @@ def acc_single_video(
 
 
 def evaluate_mots(
-    gts: List[List[str]],
-    results: List[List[str]],
+    gts: str,
+    results: str,
     iou_thr: float = 0.5,
     ignore_iof_thr: float = 0.5,
     nproc: int = 4,
@@ -159,6 +174,9 @@ def evaluate_mots(
     """Evaluate CLEAR MOT metrics for BDD100K."""
     logger.info("BDD100K tracking evaluation with CLEAR MOT metrics.")
     t = time.time()
+    gts = list_files(gts)
+    results = list_files(results)
+
     assert len(gts) == len(results)
     metrics = list(METRIC_MAPS.keys())
 

@@ -32,6 +32,7 @@ from tqdm import tqdm
 from ..common.logger import logger
 from ..common.typing import DictAny, ListAny
 from .to_coco import init
+from ..eval.mots import list_files
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -73,6 +74,18 @@ def parse_arguments() -> argparse.Namespace:
         "--ignore-as-class",
         action="store_true",
         help="Put the ignored annotations to the `ignored` category.",
+    )
+    parser.add_argument(
+        "-cm",
+        "--colormap",
+        action="store_true",
+        help="Save the colorized labels for MOTS.",
+    )
+    parser.add_argument(
+        "-cp",
+        "--color-path",
+        default="/output/path",
+        help="Path to save colorized images.",
     )
     return parser.parse_args()
 
@@ -242,6 +255,47 @@ def poly2d2bitmasks_per_image(
     img.save(out_path)
 
 
+def bitmask2labelmap_per_img(bitmask_file: str, colormap_file: str) -> None:
+    """Convert BitMasks to labelmap for one image."""
+    bitmask = np.asarray(Image.open(bitmask_file))
+    colormap = np.zeros((*bitmask.shape[:2], 3), dtype=bitmask.dtype)
+    colormap[..., 0] = bitmask[..., 0] * 30
+    colormap[..., 1] = bitmask[..., 2]
+    colormap[..., 2] = bitmask[..., 3]
+
+    img = Image.fromarray(colormap)
+    img.save(colormap_file)
+
+
+def bitmask2labelmap(out_base: str, color_base: str, nproc: int) -> None:
+    """Convert BitMasks to labelmap."""
+    if not os.path.isdir(color_base):
+        os.makedirs(color_base)
+    files_list = list_files(out_base)
+    bitmasks_files = []
+    colormap_files = []
+    for files in files_list:
+        assert len(files) > 0
+        video_name = files[0].rsplit("/", 3)[-2]
+        video_path = os.path.join(color_base, video_name)
+        if not os.path.isdir(video_path):
+            os.makedirs(video_path)
+        for file_name in files:
+            image_name = os.path.split(file_name)[-1]
+            save_path = os.path.join(color_base, video_name, image_name)
+            bitmasks_files.append(file_name)
+            colormap_files.append(save_path)
+
+    pool = Pool(nproc)
+    pool.starmap(
+        bitmask2labelmap_per_img,
+        tqdm(
+            zip(bitmasks_files, colormap_files),
+            total=len(bitmasks_files),
+        ),
+    )
+
+
 def main() -> None:
     """Main function."""
     args = parse_arguments()
@@ -263,6 +317,7 @@ def main() -> None:
         with open(args.in_path) as f:
             labels = json.load(f)
 
+    logger.info("Converting annotations...")
     if args.mode == "seg_track":
         segtrack2bitmasks(
             labels,
@@ -271,6 +326,8 @@ def main() -> None:
             args.remove_ignore,
             args.nproc,
         )
+    if args.colormap:
+        bitmask2labelmap(args.out_path, args.color_path, args.nproc)
 
     logger.info("Finished!")
 

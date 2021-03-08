@@ -294,20 +294,6 @@ def read(inputs: str) -> List[List[DictAny]]:
     return outputs
 
 
-def list_files(inputs: str) -> List[List[str]]:
-    """List files names for a folder/nested folder."""
-    files_list: List[List[str]] = []
-    assert osp.isdir(inputs)
-    sub_dirs = sorted(os.listdir(inputs))
-    for sub_dir in sub_dirs:
-        dir_path = osp.join(inputs, sub_dir)
-        assert osp.isdir(dir_path)
-        files = sorted(os.listdir(dir_path))
-        files = [osp.join(dir_path, file_name) for file_name in files]
-        files_list.append(files)
-    return files_list
-
-
 def run() -> None:
     """Main."""
     args = parse_args()
@@ -330,8 +316,8 @@ def run() -> None:
         )
     elif args.task == "mots":
         evaluate_mots(
-            gts=list_files(args.gt),
-            results=list_files(args.result),
+            gts=args.gt,
+            results=args.result,
             iou_thr=args.mot_iou_thr,
             ignore_iof_thr=args.mot_ignore_iof_thr,
             nproc=args.mot_nproc,
