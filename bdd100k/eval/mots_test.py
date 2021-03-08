@@ -4,14 +4,14 @@ import unittest
 
 import numpy as np
 
-from .mots import evaluate_mots, mask_intersection_rate
+from .mots import evaluate_mots, mask_intersection_rate, parse_bitmasks
 
 
-class TestMaskInteractionRate(unittest.TestCase):
+class TestMaskIntersectionRate(unittest.TestCase):
     """Test cases for the mask iou/iof computation."""
 
-    def test_mask_interaction_rate(self) -> None:
-        """Check mask interaction rate correctness."""
+    def test_mask_intersection_rate(self) -> None:
+        """Check mask intersection rate correctness."""
         a_bitmask = np.ones((10, 10), dtype=np.int32)
         a_bitmask[4:, 4:] = 2
         b_bitmask = np.ones((10, 10), dtype=np.int32) * 2
@@ -42,6 +42,14 @@ class TestEvaluteMOTS(unittest.TestCase):
         self.assertAlmostEqual(res["pedestrian"]["MOTA"], 2 / 3)
         self.assertAlmostEqual(res["pedestrian"]["MOTP"], 3 / 4)
         self.assertAlmostEqual(res["pedestrian"]["IDF1"], 4 / 5)
+
+
+class TestParseBitmasks(unittest.TestCase):
+    """Test Cases for BDD100K MOTS evaluation input parser."""
+
+    def test_parse_bitmasks(self) -> None:
+        """Check input parsing for the MOTS evaluation."""
+        self.assertEqual(True, False)  # TODO
 
 
 if __name__ == "__main__":

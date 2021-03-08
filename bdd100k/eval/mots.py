@@ -37,7 +37,8 @@ def list_files(inputs: str) -> List[List[str]]:
 def parse_bitmasks(
     bitmask: np.ndarray,
 ) -> List[np.ndarray]:
-    """Parse informations from bitmasks and compress its value range.
+    """Parse information from bitmasks to evaluation format and compress
+    its value range.
 
     The compression works like: [4, 2, 9] --> [2, 1, 3]
     """

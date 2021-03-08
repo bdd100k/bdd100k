@@ -118,7 +118,7 @@ def poly2patch(
 
 
 def segtrack2bitmasks(
-    labels: List[DictAny],
+    labels: List[List[DictAny]],
     out_base: str,
     ignore_as_class: bool = False,
     remove_ignore: bool = False,
