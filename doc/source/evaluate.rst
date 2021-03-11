@@ -165,9 +165,9 @@ We also ignore object regions that are annotated as 3 distracting classes ("othe
 
 Pre-training
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-It is a fair game to pre-train your network with ImageNet or COCO, 
+It is a fair game to pre-train your network with **ImageNet**, 
 but if other datasets are used, please note in the submission description. 
-We will rank the methods without using external datasets except ImageNet and COCO.
+We will rank the methods without using external datasets except **ImageNet**.
 
 .. Jiangmiao: online or offline constrains??
 .. Jiangmiao: ranking metric by mMOTA? KITTI said no ranking metric. 
