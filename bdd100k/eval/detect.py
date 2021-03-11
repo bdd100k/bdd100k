@@ -189,7 +189,6 @@ def evaluate_det(
 
     if out_dir != "none":
         write_eval(out_dir, scores, eval_param)
-    print(scores)
     return scores
 
 

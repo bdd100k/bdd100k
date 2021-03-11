@@ -21,7 +21,9 @@ class TestToBitmasks(unittest.TestCase):
         labels = read("{}/testcases/example_annotation.json".format(cur_dir))
 
         example_bitmasks = [
-            Image.open("{}/testcases/example_bitmask.png".format(cur_dir))
+            np.asarray(
+                Image.open("{}/testcases/example_bitmask.png".format(cur_dir))
+            )
         ]
 
         iterator = SegTrack2BitMaskIterator(test_out, nproc=1)
@@ -30,13 +32,13 @@ class TestToBitmasks(unittest.TestCase):
         # load bitmasks from file
         seq_path = os.path.join(test_out, os.listdir(test_out)[0])
         converted_bitmasks = [
-            np.array(Image.open(os.path.join(seq_path, f)))
+            np.asarray(Image.open(os.path.join(seq_path, f)))
             for f in os.listdir(seq_path)
         ]
         shutil.rmtree(test_out)
 
         for e, c in zip(example_bitmasks, converted_bitmasks):
-            self.assertTrue(np.isclose(e, c).all())
+            self.assertTrue((e == c).all())
 
 
 if __name__ == "__main__":

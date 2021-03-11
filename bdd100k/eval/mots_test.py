@@ -3,9 +3,10 @@ import os
 import unittest
 
 import numpy as np
+from PIL import Image
 
 from .mot import evaluate_track
-from .mots import acc_single_video_mots, mask_intersection_rate
+from .mots import acc_single_video_mots, mask_intersection_rate, parse_bitmasks
 
 
 class TestMaskIntersectionRate(unittest.TestCase):
@@ -50,7 +51,18 @@ class TestParseBitmasks(unittest.TestCase):
 
     def test_parse_bitmasks(self) -> None:
         """Check input parsing for the MOTS evaluation."""
-        self.assertEqual(True, False)  # TODO
+        cur_dir = os.path.dirname(os.path.abspath(__file__))
+        bitmask = np.asarray(
+            Image.open("{}/testcases/example_bitmask.png".format(cur_dir))
+        )
+        cvt_maps = parse_bitmasks(bitmask)
+        gt_maps = [
+            np.load("{}/testcases/gt_{}.npy".format(cur_dir, name))
+            for name in ["masks", "ins_ids", "attrs", "cat_ids"]
+        ]
+
+        for cvt_map, gt_map in zip(cvt_maps, gt_maps):
+            self.assertTrue(np.isclose(cvt_map, gt_map).all())
 
 
 if __name__ == "__main__":
