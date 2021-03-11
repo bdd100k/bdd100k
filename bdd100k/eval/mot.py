@@ -1,14 +1,14 @@
 """BDD100K tracking evaluation with CLEAR MOT metrics."""
 import time
 from multiprocessing import Pool
-from typing import List, Tuple, Union
+from typing import Callable, List, Tuple, Union
 
 import motmetrics as mm
 import numpy as np
 import pandas as pd
 
 from ..common.logger import logger
-from ..common.typing import DictAny
+from ..common.typing import DictAny, ListAny
 
 METRIC_MAPS = {
     "idf1": "IDF1",
@@ -67,7 +67,7 @@ def intersection_over_area(preds: np.ndarray, gts: np.ndarray) -> np.ndarray:
     return out
 
 
-def acc_single_video(
+def acc_single_video_mot(
     gts: List[DictAny],
     results: List[DictAny],
     iou_thr: float = 0.5,
@@ -229,9 +229,12 @@ def render_results(
     return outputs
 
 
-def evaluate_mot(
-    gts: List[List[DictAny]],
-    results: List[List[DictAny]],
+def evaluate_track(
+    acc_single_video: Callable[
+        [ListAny, ListAny, float, float], List[mm.MOTAccumulator]
+    ],
+    gts: List[ListAny],
+    results: List[ListAny],
     iou_thr: float = 0.5,
     ignore_iof_thr: float = 0.5,
     nproc: int = 4,

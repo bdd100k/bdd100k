@@ -1,37 +1,12 @@
 """BDD100K tracking evaluation with CLEAR MOT metrics."""
 import os
-import os.path as osp
-import time
-from multiprocessing import Pool
 from typing import List
 
 import motmetrics as mm
 import numpy as np
 from PIL import Image
 
-from ..common.logger import logger
-from ..common.typing import DictAny
-from .mot import (
-    CLASSES,
-    METRIC_MAPS,
-    aggregate_accs,
-    evaluate_single_class,
-    render_results,
-)
-
-
-def list_files(inputs: str) -> List[List[str]]:
-    """List files names for a folder/nested folder."""
-    files_list: List[List[str]] = []
-    assert osp.isdir(inputs)
-    sub_dirs = sorted(os.listdir(inputs))
-    for sub_dir in sub_dirs:
-        dir_path = osp.join(inputs, sub_dir)
-        assert osp.isdir(dir_path)
-        files = sorted(os.listdir(dir_path))
-        files = [osp.join(dir_path, file_name) for file_name in files]
-        files_list.append(files)
-    return files_list
+from .mot import CLASSES
 
 
 def parse_bitmasks(
@@ -104,7 +79,7 @@ def mask_intersection_rate(
     return ious, iofs
 
 
-def acc_single_video(
+def acc_single_video_mots(
     gts: List[str],
     results: List[str],
     iou_thr: float = 0.5,
@@ -162,43 +137,3 @@ def acc_single_video(
             if distances.shape != (0, 0):
                 accs[i].update(gt_ids_c, pred_ids_c, distances)
     return accs
-
-
-def evaluate_mots(
-    gts: str,
-    results: str,
-    iou_thr: float = 0.5,
-    ignore_iof_thr: float = 0.5,
-    nproc: int = 4,
-) -> DictAny:
-    """Evaluate CLEAR MOT metrics for BDD100K."""
-    logger.info("BDD100K tracking evaluation with CLEAR MOT metrics.")
-    t = time.time()
-    gts = list_files(gts)
-    results = list_files(results)
-
-    assert len(gts) == len(results)
-    metrics = list(METRIC_MAPS.keys())
-
-    logger.info("accumulating...")
-    pool = Pool(nproc)
-    accs = pool.starmap(
-        acc_single_video,
-        zip(
-            gts,
-            results,
-            [iou_thr for _ in range(len(gts))],
-            [ignore_iof_thr for _ in range(len(gts))],
-        ),
-    )
-    names, accs, items = aggregate_accs(accs)
-
-    logger.info("evaluating...")
-    summaries = pool.starmap(evaluate_single_class, zip(names, accs))
-    pool.close()
-
-    logger.info("rendering...")
-    eval_results = render_results(summaries, items, metrics)
-    t = time.time() - t
-    logger.info("evaluation finishes with %.1f s.", t)
-    return eval_results

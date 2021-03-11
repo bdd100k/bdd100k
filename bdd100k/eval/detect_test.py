@@ -32,3 +32,7 @@ class TestBDD100KDetectEval(unittest.TestCase):
         }
         for key in result:
             self.assertAlmostEqual(result[key], overall_reference[key])
+
+
+if __name__ == "__main__":
+    unittest.main()

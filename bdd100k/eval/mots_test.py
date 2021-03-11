@@ -4,7 +4,8 @@ import unittest
 
 import numpy as np
 
-from .mots import evaluate_mots, mask_intersection_rate
+from .mot import evaluate_track
+from .mots import acc_single_video_mots, mask_intersection_rate
 
 
 class TestMaskInteractionRate(unittest.TestCase):
@@ -38,7 +39,7 @@ class TestEvaluteMOTS(unittest.TestCase):
         gts = [[a_path]]
         results = [[b_path]]
 
-        res = evaluate_mots(gts, results)
+        res = evaluate_track(acc_single_video_mots, gts, results)
         self.assertAlmostEqual(res["pedestrian"]["MOTA"], 2 / 3)
         self.assertAlmostEqual(res["pedestrian"]["MOTP"], 3 / 4)
         self.assertAlmostEqual(res["pedestrian"]["IDF1"], 4 / 5)

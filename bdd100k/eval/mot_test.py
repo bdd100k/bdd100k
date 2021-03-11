@@ -2,16 +2,16 @@
 import os
 import unittest
 
+from ..common.utils import read
 from .mot import (
     METRIC_MAPS,
     SUPER_CLASSES,
-    acc_single_video,
+    acc_single_video_mot,
     aggregate_accs,
-    evaluate_mot,
     evaluate_single_class,
+    evaluate_track,
     render_results,
 )
-from .run import read
 
 
 class TestBDD100KMotEval(unittest.TestCase):
@@ -22,7 +22,7 @@ class TestBDD100KMotEval(unittest.TestCase):
         cur_dir = os.path.dirname(os.path.abspath(__file__))
         gts = read("{}/testcases/track_sample_anns/".format(cur_dir))
         preds = read("{}/testcases/track_predictions.json".format(cur_dir))
-        result = evaluate_mot(gts, preds)
+        result = evaluate_track(acc_single_video_mot, gts, preds)
         overall_reference = {
             "IDF1": 0.7089966679007775,
             "MOTA": 0.6400771952396269,
@@ -52,7 +52,7 @@ class TestRenderResults(unittest.TestCase):
     preds = read("{}/testcases/track_predictions.json".format(cur_dir))
 
     metrics = list(METRIC_MAPS.keys())
-    accs = [acc_single_video(gts[0], preds[0])]
+    accs = [acc_single_video_mot(gts[0], preds[0])]
     names, accs, items = aggregate_accs(accs)
     summaries = [
         evaluate_single_class(name, acc) for name, acc in zip(names, accs)
