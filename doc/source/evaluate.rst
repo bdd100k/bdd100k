@@ -10,14 +10,14 @@ Submission format
 
 To evaluate your algorithms on BDD100K detection benchmark, you may prepare 
 your prediction results as a list of bounding box predictions with the following format:
+::
 
-{
-    | "name": str, name of the input image, \\
-    | "category": str, name of the predicted category,
-    | "score": float, confidence score of the prediction, 
-    | "bbox": List[float], [x1, y1, x2, y2] in `Scalabel Format <https://doc.scalabel.ai/format.html>`_
-
-}
+    {
+        "name": str, name of the input image,
+        "category": str, name of the predicted category,
+        "score": float, confidence score of the prediction
+        "box2d": List[float], [x1, y1, x2, y2]
+    }
 
 You can find an example result file in |bdd100k_testcase_det|_.
 
@@ -64,25 +64,25 @@ To evaluate your algorithms on BDD100K multiple object tracking benchmark, there
 - A zip file or a file that contains a JSON file of the entire evaluation set.
 
 The JSON file for each video should contain a list of per-frame result dictionaries with the following structure:
+::
 
-{
-    | "video_name": str, name of the current sequence, \\
-    | "name": str, name of the current frame,
-    | "index": int, index of the current frame within the sequence,
-    | "labels": List[dict], List of predictions for the current frame
-
-}
+    {
+        "video_name": str, name of the current sequence,
+        "name": str, name of the current frame,
+        "index": int, index of the current frame within the sequence,
+        "labels": List[dict], List of predictions for the current frame
+    }
 
 The 'labels' list will contain the predictions for the current frame, each specified by another dict in `Scalabel Format <https://doc.scalabel.ai/format.html>`_:
+::
 
-{
-    | "name": str, name of the input image, \\
-    | "category": str, name of the predicted category,
-    | "id": str, unique instance id of the prediction in the current sequence,
-    | "score": float, confidence score of the prediction,
-    | "box2d": dict[float], {x1, y1, x2, y2}
-
-}
+    {
+        "name": str, name of the input image,
+        "category": str, name of the predicted category,
+        "id": str, unique instance id of the prediction in the current sequence,
+        "score": float, confidence score of the prediction,
+        "box2d": dict[float], {x1, y1, x2, y2}
+    }
 
 You can find an example result file in |bdd100k_testcase_track|_.
 
@@ -97,7 +97,7 @@ You can evaluate your algorithms with public annotations by running
 
     python -m bdd100k.eval.run -t mot -g ${gt_file} -r ${res_file} 
 
-To obtain results on val/test phase, submit your result files at `BDD100K 2D Multiple Object Tracking Challenge <https://competitions.codalab.org/competitions/29388>`_.
+To obtain results on val/test phase, submit your result files at `BDD100K 2D Multiple Object Tracking & Segmentation Challenge <https://competitions.codalab.org/competitions/29388>`_.
 
 
 
@@ -173,43 +173,44 @@ We will rank the methods without using external datasets except ImageNet and COC
 .. Jiangmiao: ranking metric by mMOTA? KITTI said no ranking metric. 
 
 
-Segmentation Tracking
+Multi Object Tracking and Segmentation
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-We use the following 3 metrics to evaluate the performance of segmetation tracking:
-
-+--------+------------------------------------------------------+
-| Metric | Description                                          |
-+========+======================================================+
-| AP     | instance segmentation AP                             |
-+--------+------------------------------------------------------+
-| MOTSA  | multi-object tracking and segmentation accuracy      |
-+--------+------------------------------------------------------+
-| MOTSP  | multi-object tracking and segmentation precision     |
-+--------+------------------------------------------------------+
-| sMOTSA | soft multi-object tracking and segmentation accuracy |
-+--------+------------------------------------------------------+
-| IDSW   | identity switch                                      |
-+--------+------------------------------------------------------+
-| IDF1   | identification F1                                    |
-+--------+------------------------------------------------------+
+We use the same metrics set as MOT above. The only difference lies in the computation of distance matrixs.
+Concretely, in MOT, it is computed using box IoU. While for MOTS, the mask IoU is used.
 
 Submission format
 ^^^^^^^^^^^^^^^^^
 
-The entire result struct array is stored as a single JSON file (save via gason in Matlab or json.dump in Python), which consists a list of frame objects with the fields below.
+The submission should be a zipped nested folder for bitmask images.
+For each image, the results should be saved in an RGBA image with png format, and named as "${image_name}.png".
+Moreover, images belonging to the same video should be places in the same folder, named by ${video_name}.
+
+For the image, The first byte, R, is used for the category id range from 1 (instead of 0).
+And G is for the instance attributes. Currently, four attributes are used, they are "truncated", "occluded", "crowd" and "ignore".
+Note that boxes with "crowd" or "ignore" labels will not be considered during testing.
+The above four attributes are stored in lowest important bits of G. Given this, ``G = 8 & truncated + 4 & occluded + 2 & crowd + ignore``
+. Finally, the B channel and A channel together store the instance_id, which can be computed as ``B * 255 + A``.
+You can also refer to the below image for reference.
+
+.. figure:: ../images/bitmask.png
+   :alt: Downloading buttons
+
+Label format
+^^^^^^^^^^^^^^^^^
+
+We provide labels in both json and bitmask formats. Note that polygons stored in jsons is not the same format with COCO.
+Instead, the "poly2d" entry in jsons stores vertices and control points of Bezeir Curves. 
+We provides the scripts for convert BDD jsons into bitmask.
+However, as the conversion process is not determinitic, we don't recommend converting it by yourself.
+The evaluation scripts uses bitmasks as ground-truth, so we suggest using bitmasks as input all the way.
+
+Run Evaluation on Your Own
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can evaluate your algorithms with public annotations by running
 ::
 
-    - name: string
-    - video_name: string
-    - index: int (frame index in this video)
-    - labels []:
-        - id: int32
-        - category: string
-        - poly2d []:
-                - vertices: [][]float (list of 2-tuples [x, y])
-                - types: string (each character corresponds to the type of the vertex with the same index in vertices. ‘L’ for vertex and ‘C’ for control point of a bezier curve.
-                - closed: boolean (closed for polygon and otherwise for path)
+    python -m bdd100k.eval.run -t mots -g ${gt_folder} -r ${res_folder} 
 
-Note that, the "id" of the same object through an video should be the same.
-Candidates for `category` are `['person', 'rider', 'car', 'bus', 'truck', 'bike', 'motor', 'train']`.
+To obtain results on val/test phase, submit your result files at `BDD100K 2D Multiple Object Tracking Challenge <https://competitions.codalab.org/competitions/29388>`_.
