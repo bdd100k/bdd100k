@@ -12,7 +12,7 @@ from .mot import CLASSES
 def parse_bitmasks(
     bitmask: np.ndarray,
 ) -> List[np.ndarray]:
-    """Parse informations from bitmasks and compress its value range.
+    """Parse information from bitmasks and compress its value range.
 
     The compression works like: [4, 2, 9] --> [2, 1, 3]
     """
