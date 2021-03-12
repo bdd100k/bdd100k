@@ -30,7 +30,7 @@ jobs:
           unzip master.zip && mv doc-media-master media
           make html
       - name: deploy website to AWS
-      - uses: jakejarvis/s3-sync-action@master
+        uses: jakejarvis/s3-sync-action@master
         with:
           args: --acl public-read --follow-symlinks --exclude ".DS_Store"
         env:
