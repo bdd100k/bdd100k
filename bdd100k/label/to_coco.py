@@ -1,6 +1,6 @@
 """Convert BDD100K to COCO format.
 
-The annotation files in BDD100K format has additional annotaitons
+The annotation files in BDD100K format has additional annotations
 ('other person', 'other vehicle' and 'trail') besides the considered
 categories ('car', 'pedestrian', 'truck', etc.) to indicate the uncertain
 regions. Given the different handlings of these additional classes, we
@@ -42,9 +42,9 @@ def parser_definition() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "-o",
-        "--out-path",
-        default="/output/path",
-        help="Path to save coco formatted label file.",
+        "--out-filename",
+        default="/output/path/out.json",
+        help="Filepath to save coco formatted label file.",
     )
     parser.add_argument(
         "-m",
@@ -153,7 +153,7 @@ class Det2COCOIterator(ImageLabelIterator):
     def __init__(
         self, ignore_as_class: bool = False, remove_ignore: bool = False
     ) -> None:
-        """Initialize the det2cooc iterator."""
+        """Initialize the det2coco iterator."""
         super().__init__("det", ignore_as_class, remove_ignore)
         self.naming_replacement_dict = {
             "person": "pedestrian",
@@ -340,7 +340,6 @@ def start_converting() -> Tuple[argparse.Namespace, List[List[DictAny]]]:
 def main() -> None:
     """Main function."""
     args, labels = start_converting()
-    out_fn = os.path.join(args.out_path)
 
     if args.mode == "det":
         iterator: ImageLabelIterator = Det2COCOIterator(
@@ -357,7 +356,7 @@ def main() -> None:
     coco = iterator(labels)
 
     logger.info("Saving converted annotations to disk...")
-    with open(out_fn, "w") as f:
+    with open(args.out_filename, "w") as f:
         json.dump(coco, f)
     logger.info("Finished!")
 

@@ -1,6 +1,6 @@
 """Convert poly2d to bitmasks.
 
-The annotation files in BDD100K format has additional annotaitons
+The annotation files in BDD100K format has additional annotations
 ('other person', 'other vehicle' and 'trail') besides the considered
 categories ('car', 'pedestrian', 'truck', etc.) to indicate the uncertain
 regions. Given the different handlings of these additional classes, we
@@ -78,7 +78,7 @@ def poly2patch(
     return mpatches.PathPatch(
         Path(points, codes),
         facecolor=color if closed else "none",
-        edgecolor=color,  # if not closed else 'none',
+        edgecolor=color,
         lw=0 if closed else 1,
         alpha=1,
         antialiased=False,
