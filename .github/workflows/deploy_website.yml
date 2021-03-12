@@ -4,35 +4,37 @@ name: deploy_website
 
 on:
   push:
-    branches: [master]
+    branches:
+      - master
     paths:
       - 'doc/**'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v1
-      with:
-        python-version: 3.8
-    - name: Install dependencies
-      run: |
-        python3 -m pip install --upgrade pip
-        pip install --ignore-installed -r requirements.txt
-    - name: test website build
-      run: |
-        cd doc
-        git clone git@github.com:bdd100k/doc-media.git
-        ln -s doc-media media
-        make html
-    - name: deploy website to AWS
-    - uses: jakejarvis/s3-sync-action@master
-      with:
-        args: --acl public-read --follow-symlinks --exclude ".DS_Store"
-      env:
-        AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        SOURCE_DIR: 'doc/_build/html/'
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.8
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install --ignore-installed -r requirements.txt
+      - name: test website build
+        run: |
+          cd doc
+          wget https://github.com/bdd100k/doc-media/archive/master.zip
+          unzip master.zip && mv doc-media-master media
+          make html
+      - name: deploy website to AWS
+      - uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --acl public-read --follow-symlinks --exclude ".DS_Store"
+        env:
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          SOURCE_DIR: 'doc/_build/html/'
