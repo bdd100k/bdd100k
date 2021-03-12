@@ -13,8 +13,9 @@ pillow
 pycocotools
 pylint
 pytest
+scalabel
 scikit-image
 sphinx
 sphinx-rtd-theme
-tqdm
 tabulate
+tqdm
