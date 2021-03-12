@@ -202,9 +202,11 @@ def render_results(
     eval_results.loc["AVERAGE"] = avg_results
     eval_results = eval_results.astype(dtypes)
 
+    metric_host = mm.metrics.create()
+    metric_host.register(mm.metrics.motp, formatter="{:.1%}".format)
     strsummary = mm.io.render_summary(
         eval_results,
-        formatters=mm.metrics.create().formatters,
+        formatters=metric_host.formatters,
         namemap=METRIC_MAPS,
     )
     strsummary = strsummary.split("\n")
