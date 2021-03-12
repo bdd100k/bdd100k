@@ -13,9 +13,10 @@ pillow
 pycocotools
 pylint
 pytest
-scalabel
 scikit-image
 sphinx
 sphinx-rtd-theme
 tabulate
 tqdm
+
+git+git://github.com/scalabel/scalabel.git
