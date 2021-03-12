@@ -1,21 +1,20 @@
 """Test cases for bdd100k2coco.py."""
-import json
 import os
 import unittest
 
-from .to_coco import bdd100k2coco_det
+from ..common.utils import read
+from .to_coco import Det2COCOIterator
 
 
 class TestBDD100K2COCO(unittest.TestCase):
     """Test cases for converting BDD100K labels to COCO format."""
 
     cur_dir = os.path.dirname(os.path.abspath(__file__))
-    with open(
-        "{}/testcases/unitest_val_bdd.json".format(cur_dir), "r"
-    ) as _file:
-        val_bdd = json.load(_file)
+    bdd_list = read("{}/testcases/unitest_val_bdd.json".format(cur_dir))
 
-    val_coco = bdd100k2coco_det(val_bdd)
+    iterator = Det2COCOIterator()
+    val_coco = iterator(bdd_list)
+    val_bdd = bdd_list[0]
 
     def test_type(self) -> None:
         """Check coco format type."""

@@ -20,9 +20,10 @@ from pycocotools.cocoeval import COCOeval  # type: ignore
 from tabulate import tabulate
 
 from bdd100k.eval.type import GtType, PredType
-from bdd100k.label.to_coco import bdd100k2coco_det, bdd100k2coco_track
+from bdd100k.label.to_coco import BoxTrack2COCOIterator, SegTrack2COCOIterator
 
 from ..common.typing import DictAny
+from ..common.utils import read
 
 
 class COCOV2(COCO):  # type: ignore
@@ -75,10 +76,11 @@ def evaluate_det(
             ann_coco = json.load(fp)
     else:
         # Convert the annotation file to COCO format
-        with open(ann_file) as fp:
-            ann_bdd100k = json.load(fp)
-        convert_fn = bdd100k2coco_det if mode == "det" else bdd100k2coco_track
-        ann_coco = convert_fn(ann_bdd100k)
+        labels = read(ann_file)
+        iterator = (
+            BoxTrack2COCOIterator if mode == "det" else SegTrack2COCOIterator
+        )
+        ann_coco = iterator(labels)
         coco_gt = COCOV2(None, ann_coco)
 
     # Load results and convert the predictions
@@ -187,7 +189,6 @@ def evaluate_det(
 
     if out_dir != "none":
         write_eval(out_dir, scores, eval_param)
-    print(scores)
     return scores
 
 

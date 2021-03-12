@@ -1,14 +1,14 @@
 """BDD100K tracking evaluation with CLEAR MOT metrics."""
 import time
 from multiprocessing import Pool
-from typing import List, Tuple, Union
+from typing import Callable, List, Tuple, Union
 
 import motmetrics as mm
 import numpy as np
 import pandas as pd
 
 from ..common.logger import logger
-from ..common.typing import DictAny
+from ..common.typing import DictAny, ListAny
 
 METRIC_MAPS = {
     "idf1": "IDF1",
@@ -67,7 +67,7 @@ def intersection_over_area(preds: np.ndarray, gts: np.ndarray) -> np.ndarray:
     return out
 
 
-def acc_single_video(
+def acc_single_video_mot(
     gts: List[DictAny],
     results: List[DictAny],
     iou_thr: float = 0.5,
@@ -103,9 +103,8 @@ def acc_single_video(
                 fps = np.ones(pred_bboxes_c.shape[0]).astype(np.bool8)
                 le, ri = mm.lap.linear_sum_assignment(distances)
                 for m, n in zip(le, ri):
-                    if not np.isfinite(distances[m, n]):
-                        continue
-                    fps[n] = False
+                    if np.isfinite(distances[m, n]):
+                        fps[n] = False
                 # 2. ignore by iof
                 iofs = intersection_over_area(pred_bboxes_c, gt_ignores)
                 ignores = (iofs > ignore_iof_thr).any(axis=1)
@@ -173,6 +172,8 @@ def evaluate_single_class(
             sum_motp, num_dets["num_detections"]["OVERALL"]
         )
         results[motp_ind] = float(1 - motp)
+    else:
+        results[motp_ind] = 1 - results[motp_ind]
     return results
 
 
@@ -201,9 +202,11 @@ def render_results(
     eval_results.loc["AVERAGE"] = avg_results
     eval_results = eval_results.astype(dtypes)
 
+    metric_host = mm.metrics.create()
+    metric_host.register(mm.metrics.motp, formatter="{:.1%}".format)
     strsummary = mm.io.render_summary(
         eval_results,
-        formatters=mm.metrics.create().formatters,
+        formatters=metric_host.formatters,
         namemap=METRIC_MAPS,
     )
     strsummary = strsummary.split("\n")
@@ -228,9 +231,12 @@ def render_results(
     return outputs
 
 
-def evaluate_mot(
-    gts: List[List[DictAny]],
-    results: List[List[DictAny]],
+def evaluate_track(
+    acc_single_video: Callable[
+        [ListAny, ListAny, float, float], List[mm.MOTAccumulator]
+    ],
+    gts: List[ListAny],
+    results: List[ListAny],
     iou_thr: float = 0.5,
     ignore_iof_thr: float = 0.5,
     nproc: int = 4,

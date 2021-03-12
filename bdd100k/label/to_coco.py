@@ -1,6 +1,6 @@
 """Convert BDD100K to COCO format.
 
-The annotation files in BDD100K format has additional annotaitons
+The annotation files in BDD100K format has additional annotations
 ('other person', 'other vehicle' and 'trail') besides the considered
 categories ('car', 'pedestrian', 'truck', etc.) to indicate the uncertain
 regions. Given the different handlings of these additional classes, we
@@ -19,17 +19,20 @@ the annotations in `ignored` class. To achieve this, add the flag
 import argparse
 import json
 import os
-from collections import defaultdict
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
-from tqdm import tqdm
+import numpy as np
+from PIL import Image
+from skimage import measure
 
+from ..common.iterator import ImageLabelIterator, VideoLabelIterator
 from ..common.logger import logger
-from ..common.typing import DictAny
+from ..common.typing import DictAny, ListAny
+from ..common.utils import read
 
 
-def parse_arguments() -> argparse.Namespace:
-    """arguments."""
+def parser_definition() -> argparse.ArgumentParser:
+    """Definition of the parser."""
     parser = argparse.ArgumentParser(description="BDD100K to COCO format")
     parser.add_argument(
         "-i",
@@ -39,16 +42,21 @@ def parse_arguments() -> argparse.Namespace:
     )
     parser.add_argument(
         "-o",
-        "--out-path",
-        default="/output/path",
-        help="Path to save coco formatted label file.",
+        "--out-filename",
+        default="/output/path/out.json",
+        help="Filepath to save coco formatted label file.",
     )
     parser.add_argument(
         "-m",
         "--mode",
         default="det",
-        choices=["det", "track"],
+        choices=["det", "box_track", "seg_track"],
         help="conversion mode: detection or tracking.",
+    )
+    parser.add_argument(
+        "-mb",
+        "--mask-base",
+        help="Path to the BitMasks base folder.",
     )
     parser.add_argument(
         "-ri",
@@ -62,242 +70,259 @@ def parse_arguments() -> argparse.Namespace:
         action="store_true",
         help="Put the ignored annotations to the `ignored` category.",
     )
-    return parser.parse_args()
+    return parser
 
 
-def init(
-    mode: str = "det", ignore_as_class: bool = False
-) -> Tuple[DictAny, Dict[str, str], DictAny]:
-    """Initialze the annotation dictionary."""
-    coco: DictAny = defaultdict(list)
-    coco["categories"] = [
-        {"supercategory": "human", "id": 1, "name": "pedestrian"},
-        {"supercategory": "human", "id": 2, "name": "rider"},
-        {"supercategory": "vehicle", "id": 3, "name": "car"},
-        {"supercategory": "vehicle", "id": 4, "name": "truck"},
-        {"supercategory": "vehicle", "id": 5, "name": "bus"},
-        {"supercategory": "vehicle", "id": 6, "name": "train"},
-        {"supercategory": "bike", "id": 7, "name": "motorcycle"},
-        {"supercategory": "bike", "id": 8, "name": "bicycle"},
-    ]
-    if mode == "det":
-        coco["categories"] += [
-            {
-                "supercategory": "traffic light",
-                "id": 9,
-                "name": "traffic light",
-            },
-            {
-                "supercategory": "traffic sign",
-                "id": 10,
-                "name": "traffic sign",
-            },
-        ]
-
-    if ignore_as_class:
-        coco["categories"].append(
-            {
-                "supercategory": "none",
-                "id": len(coco["categories"]) + 1,
-                "name": "ignored",
-            }
-        )
-
-    # Mapping the ignored classes to standard classes.
-    ignore_map = {
-        "other person": "pedestrian",
-        "other vehicle": "car",
-        "trailer": "truck",
-    }
-
-    attr_id_dict: DictAny = {
-        frame["name"]: frame["id"] for frame in coco["categories"]
-    }
-    return coco, ignore_map, attr_id_dict
+def close_contour(contour: ListAny) -> ListAny:
+    """Explicitly close the contour."""
+    if not np.array_equal(contour[0], contour[-1]):
+        contour = np.vstack((contour, contour[0]))
+    return contour
 
 
-def bdd100k2coco_det(
-    labels: List[DictAny],
-    ignore_as_class: bool = False,
-    remove_ignore: bool = False,
-) -> DictAny:
-    """Converting BDD100K Detection Set to COCO format."""
-    naming_replacement_dict = {
-        "person": "pedestrian",
-        "motor": "motorcycle",
-        "bike": "bicycle",
-    }
-
-    coco, ignore_map, attr_id_dict = init(
-        mode="det", ignore_as_class=ignore_as_class
+def mask_to_polygon(
+    binary_mask: np.array, x_1: int, y_1: int, tolerance: int = 2
+) -> List[ListAny]:
+    """Convert BitMask to polygon."""
+    polygons = []
+    padded_binary_mask = np.pad(
+        binary_mask, pad_width=1, mode="constant", constant_values=0
     )
-    counter = 0
-    label_counter = 0
-    for frame in tqdm(labels):
-        counter += 1
-        image: DictAny = dict()
-        image["file_name"] = frame["name"]
-        image["height"] = 720
-        image["width"] = 1280
-
-        image["id"] = counter
-
-        if frame["labels"]:
-            for label in frame["labels"]:
-                # skip for drivable area and lane marking
-                if "box2d" not in label:
-                    continue
-                label_counter += 1
-                annotation: DictAny = dict()
-                annotation["iscrowd"] = (
-                    int(label["attributes"]["Crowd"])
-                    if "Crowd" in label["attributes"]
-                    else 0
-                )
-                annotation["image_id"] = image["id"]
-
-                x1 = label["box2d"]["x1"]
-                y1 = label["box2d"]["y1"]
-                x2 = label["box2d"]["x2"]
-                y2 = label["box2d"]["y2"]
-
-                annotation["bbox"] = [x1, y1, x2 - x1, y2 - y1]
-                annotation["area"] = float((x2 - x1) * (y2 - y1))
-                # fix legacy naming
-                if label["category"] in naming_replacement_dict:
-                    label["category"] = naming_replacement_dict[
-                        label["category"]
-                    ]
-                category_ignored = label["category"] not in attr_id_dict
-
-                if remove_ignore and category_ignored:
-                    continue
-
-                # Merging the ignored examples to car but
-                # the annotation is ignored for training and evaluation.
-                if category_ignored:
-                    if ignore_as_class:
-                        cls_id = attr_id_dict["ignored"]
-                    else:
-                        cls_id = attr_id_dict[ignore_map[label["category"]]]
-                else:
-                    cls_id = attr_id_dict[label["category"]]
-                annotation["category_id"] = cls_id
-                if ignore_as_class:
-                    annotation["ignore"] = 0
-                else:
-                    annotation["ignore"] = int(category_ignored)
-                # COCOAPIs only ignores the crowd region.
-                annotation["iscrowd"] = annotation["iscrowd"] or int(
-                    category_ignored
-                )
-
-                annotation["id"] = label_counter
-                # save the original bdd100k_id for backup.
-                # The BDD100K ID might be string in the future.
-                annotation["bdd100k_id"] = label["id"]
-                annotation["segmentation"] = [[x1, y1, x1, y2, x2, y2, x2, y1]]
-                coco["annotations"].append(annotation)
-        else:
+    contours = measure.find_contours(padded_binary_mask, 0.5)
+    contours = np.subtract(contours, 1)
+    for contour in contours:
+        contour = close_contour(contour)
+        contour = measure.approximate_polygon(contour, tolerance)
+        if len(contour) < 3:
             continue
+        contour = np.flip(contour, axis=1)
+        segmentation = contour.ravel().tolist()
+        segmentation = [0 if i < 0 else i for i in segmentation]
+        for i, _ in enumerate(segmentation):
+            if i % 2 == 0:
+                segmentation[i] = (segmentation[i] + x_1).tolist()
+            else:
+                segmentation[i] = (segmentation[i] + y_1).tolist()
 
-        coco["images"].append(image)
-    coco["type"] = "instances"
+        polygons.append(segmentation)
 
-    return coco
+    return polygons
 
 
-def bdd100k2coco_track(
-    labels: List[DictAny],
-    ignore_as_class: bool = False,
-    remove_ignore: bool = False,
-) -> DictAny:
-    """Converting BDD100K Tracking Set to COCO format."""
-    coco, ignore_map, attr_id_dict = init(
-        mode="track", ignore_as_class=ignore_as_class
+def parse_box_object(
+    labels_per_object: DictAny,
+) -> Tuple[List[int], float, List[List[int]]]:
+    """Parsing bbox, area, polygon from bbox object."""
+    x1 = labels_per_object["box2d"]["x1"]
+    y1 = labels_per_object["box2d"]["y1"]
+    x2 = labels_per_object["box2d"]["x2"]
+    y2 = labels_per_object["box2d"]["y2"]
+
+    bbox = [x1, y1, x2 - x1, y2 - y1]
+    area = float((x2 - x1) * (y2 - y1))
+    polygon = [[x1, y1, x1, y2, x2, y2, x2, y1]]
+    return bbox, area, polygon
+
+
+def parse_seg_object(
+    labels_per_object: DictAny,
+) -> Tuple[List[int], float, List[List[int]]]:
+    """Parsing bbox, area, polygon from seg object."""
+    mask = np.logical_and(
+        labels_per_object["category_map"] == labels_per_object["category_id"],
+        labels_per_object["instance_map"] == labels_per_object["instance_id"],
     )
+    if not mask.sum():
+        return [], 0.0, [[]]
 
-    video_id, image_id, ann_id = 1, 1, 1
-    no_ann = 0
+    x_inds = np.sum(mask, axis=0).nonzero()[0]
+    y_inds = np.sum(mask, axis=1).nonzero()[0]
+    x1, x2 = np.min(x_inds), np.max(x_inds) + 1
+    y1, y2 = np.min(y_inds), np.max(y_inds) + 1
+    bbox = np.array([x1, y1, x2 - x1, y2 - y1]).tolist()
 
-    for video_anns in tqdm(labels):
-        global_instance_id: int = 1
-        instance_id_maps: DictAny = dict()
-
-        # videos
-        video = dict(id=video_id, name=video_anns[0]["video_name"])
-        coco["videos"].append(video)
-        video_name = video_anns[0]["video_name"]
-
-        # images
-        for image_anns in video_anns:
-            image = dict(
-                file_name=os.path.join(video_name, image_anns["name"]),
-                height=720,
-                width=1280,
-                id=image_id,
-                video_id=video_id,
-                frame_id=image_anns["index"],
-            )
-            coco["images"].append(image)
-
-            # annotations
-            for label in image_anns["labels"]:
-                category_ignored = False
-                if label["category"] not in attr_id_dict.keys():
-                    if ignore_as_class:
-                        label["category"] = "ignored"
-                        category_ignored = False
-                    else:
-                        label["category"] = ignore_map[label["category"]]
-                        category_ignored = True
-                    if category_ignored and remove_ignore:
-                        # remove the ignored annotations
-                        continue
-
-                bdd100k_id = label["id"]
-                if bdd100k_id in instance_id_maps.keys():
-                    instance_id = instance_id_maps[bdd100k_id]
-                else:
-                    instance_id = global_instance_id
-                    global_instance_id += 1
-                    instance_id_maps[bdd100k_id] = instance_id
-
-                x1 = label["box2d"]["x1"]
-                x2 = label["box2d"]["x2"]
-                y1 = label["box2d"]["y1"]
-                y2 = label["box2d"]["y2"]
-                area = float((x2 - x1) * (y2 - y1))
-                ann = dict(
-                    id=ann_id,
-                    image_id=image_id,
-                    category_id=attr_id_dict[label["category"]],
-                    instance_id=instance_id,
-                    bdd100k_id=bdd100k_id,
-                    occluded=label["attributes"]["Occluded"],
-                    truncated=label["attributes"]["Truncated"],
-                    bbox=[x1, y1, x2 - x1, y2 - y1],
-                    area=area,
-                    iscrowd=int(label["attributes"]["Crowd"])
-                    or int(category_ignored),
-                    ignore=int(category_ignored),
-                    segmentation=[[x1, y1, x1, y2, x2, y2, x2, y1]],
-                )
-
-                coco["annotations"].append(ann)
-                ann_id += 1
-            if len(image_anns["labels"]) == 0:
-                no_ann += 1
-
-            image_id += 1
-        video_id += 1
-
-    return coco
+    mask = mask[y1:y2, x1:x2]
+    area = np.sum(mask).tolist()
+    polygon = mask_to_polygon(mask, x1, y1)
+    return bbox, area, polygon
 
 
-def main() -> None:
-    """Main function."""
-    args = parse_arguments()
+class Det2COCOIterator(ImageLabelIterator):
+    """Iterator for conversion of detection to coco format."""
+
+    def __init__(
+        self, ignore_as_class: bool = False, remove_ignore: bool = False
+    ) -> None:
+        """Initialize the det2coco iterator."""
+        super().__init__("det", ignore_as_class, remove_ignore)
+        self.naming_replacement_dict = {
+            "person": "pedestrian",
+            "motor": "motorcycle",
+            "bike": "bicycle",
+        }
+        self.parse_object = parse_box_object
+
+    def image_iteration(self, labels_per_image: DictAny) -> None:
+        """Actions for the video iteration."""
+        super().image_iteration(labels_per_image)
+        image = dict(
+            file_name=labels_per_image["name"],
+            height=720,
+            width=1280,
+            id=self.image_id,
+        )
+        self.coco["images"].append(image)
+
+    def object_iteration(self, labels_per_object: DictAny) -> None:
+        """Actions for the object iteration."""
+        if labels_per_object["category"] in self.naming_replacement_dict:
+            labels_per_object["category"] = self.naming_replacement_dict[
+                labels_per_object["category"]
+            ]
+        super().object_iteration(labels_per_object)
+        if labels_per_object["category_ignored"] and self.remove_ignore:
+            return
+
+        bbox, area, polygon = self.parse_object(labels_per_object)
+        if area == 0:
+            return
+
+        ann = dict(
+            id=self.object_id,
+            image_id=self.image_id,
+            category_id=labels_per_object["category_id"],
+            bdd100k_id=labels_per_object["id"],
+            occluded=int(
+                labels_per_object["attributes"].get("Occluded", False)
+            ),
+            truncated=int(
+                labels_per_object["attributes"].get("Truncated", False)
+            ),
+            iscrowd=int(labels_per_object["attributes"].get("Crowd", False))
+            or int(labels_per_object["category_ignored"]),
+            ignore=int(labels_per_object["category_ignored"]),
+            bbox=bbox,
+            area=area,
+            segmentation=polygon,
+        )
+        self.coco["annotations"].append(ann)
+
+    def after_iteration(self) -> DictAny:
+        """Return the coco dict."""
+        self.coco["type"] = "instances"
+        return self.coco
+
+
+class BoxTrack2COCOIterator(VideoLabelIterator):
+    """Iterator for conversion of boxtrack to coco format."""
+
+    def __init__(
+        self, ignore_as_class: bool = False, remove_ignore: bool = False
+    ) -> None:
+        """Initialize the boxtrack2cooc iterator."""
+        super().__init__("track", ignore_as_class, remove_ignore)
+        self.parse_object = parse_box_object
+
+    def video_iteration(self, labels_per_video: List[DictAny]) -> None:
+        """Actions for the video iteration."""
+        super().video_iteration(labels_per_video)
+        assert len(labels_per_video) > 0
+        video_name = labels_per_video[0]["video_name"]
+        video = dict(id=self.video_id, name=video_name)
+        self.coco["videos"].append(video)
+
+    def image_iteration(self, labels_per_image: DictAny) -> None:
+        """Actions for the image iteration."""
+        super().image_iteration(labels_per_image)
+        image = dict(
+            file_name=os.path.join(
+                labels_per_image["video_name"], labels_per_image["name"]
+            ),
+            height=720,
+            width=1280,
+            id=self.image_id,
+            video_id=self.video_id,
+            frame_id=labels_per_image["index"],
+        )
+        self.coco["images"].append(image)
+
+    def object_iteration(self, labels_per_object: DictAny) -> None:
+        """Actions for the object iteration."""
+        super().object_iteration(labels_per_object)
+
+        if labels_per_object["category_ignored"] and self.remove_ignore:
+            return
+
+        bbox, area, polygon = self.parse_object(labels_per_object)
+        if area == 0:
+            return
+
+        ann = dict(
+            id=self.object_id,
+            image_id=self.image_id,
+            category_id=labels_per_object["category_id"],
+            instance_id=labels_per_object["instance_id"],
+            bdd100k_id=labels_per_object["id"],
+            occluded=int(
+                labels_per_object["attributes"].get("Occluded", False)
+            ),
+            truncated=int(
+                labels_per_object["attributes"].get("Truncated", False)
+            ),
+            iscrowd=int(labels_per_object["attributes"].get("Crowd", False))
+            or int(labels_per_object["category_ignored"]),
+            ignore=int(labels_per_object["category_ignored"]),
+            bbox=bbox,
+            area=area,
+            segmentation=polygon,
+        )
+        self.coco["annotations"].append(ann)
+
+    def after_iteration(self) -> DictAny:
+        """Return the coco dict."""
+        return self.coco
+
+
+class SegTrack2COCOIterator(BoxTrack2COCOIterator):
+    """Iterator for conversion of segtrack to coco format."""
+
+    def __init__(
+        self,
+        mask_base: str,
+        ignore_as_class: bool = False,
+        remove_ignore: bool = False,
+    ) -> None:
+        """Initialize the segtrack2coco iterator."""
+        super().__init__(ignore_as_class, remove_ignore)
+        assert os.path.isdir(mask_base)
+        self.mask_base = mask_base
+        self.parse_object = parse_seg_object
+
+    def image_iteration(self, labels_per_image: DictAny) -> None:
+        """Actions for the image iteration."""
+        super().image_iteration(labels_per_image)
+        mask_name = labels_per_image["name"].replace(".jpg", ".png")
+        mask_path = os.path.join(
+            self.mask_base, labels_per_image["video_name"], mask_name
+        )
+        bitmask = np.asarray(Image.open(mask_path)).astype(np.int32)
+        labels_per_image["category_map"] = bitmask[:, :, 0]
+        labels_per_image["instance_map"] = (bitmask[:, :, 2] << 8) + bitmask[
+            :, :, 3
+        ]
+        for labels_per_object in labels_per_image["labels"]:
+            labels_per_object["category_map"] = labels_per_image[
+                "category_map"
+            ]
+            labels_per_object["instance_map"] = labels_per_image[
+                "instance_map"
+            ]
+
+
+def start_converting() -> Tuple[argparse.Namespace, List[List[DictAny]]]:
+    """Parses arguments, and logs settings."""
+    parser = parser_definition()
+    args = parser.parse_args()
 
     logger.info(
         "Mode: %s\nremove-ignore: %s\nignore-as-class: %s",
@@ -306,30 +331,32 @@ def main() -> None:
         args.ignore_as_class,
     )
     logger.info("Loading annotations...")
-    if os.path.isdir(args.in_path):
-        # labels are provided in multiple json files in a folder
-        labels = []
-        for p in sorted(os.listdir(args.in_path)):
-            with open(os.path.join(args.in_path, p)) as f:
-                labels.append(json.load(f))
-    else:
-        with open(args.in_path) as f:
-            labels = json.load(f)
+    labels = read(args.in_path)
 
     logger.info("Converting annotations...")
-    out_fn = os.path.join(args.out_path)
+    return args, labels
+
+
+def main() -> None:
+    """Main function."""
+    args, labels = start_converting()
 
     if args.mode == "det":
-        coco = bdd100k2coco_det(
-            labels, args.ignore_as_class, args.remove_ignore
+        iterator: ImageLabelIterator = Det2COCOIterator(
+            args.ignore_as_class, args.remove_ignore
         )
-    elif args.mode == "track":
-        coco = bdd100k2coco_track(
-            labels, args.ignore_as_class, args.remove_ignore
+    elif args.mode == "box_track":
+        iterator = BoxTrack2COCOIterator(
+            args.ignore_as_class, args.remove_ignore
         )
+    elif args.mode == "seg_track":
+        iterator = SegTrack2COCOIterator(
+            args.mask_base, args.ignore_as_class, args.remove_ignore
+        )
+    coco = iterator(labels)
 
     logger.info("Saving converted annotations to disk...")
-    with open(out_fn, "w") as f:
+    with open(args.out_filename, "w") as f:
         json.dump(coco, f)
     logger.info("Finished!")
 
