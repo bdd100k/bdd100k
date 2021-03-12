@@ -5,10 +5,8 @@ name: deploy_website
 on:
   push:
     branches: [master]
-  pull_request:
-    branches: [master]
-  paths:
-    - 'docs/**'
+    paths:
+      - 'doc/**'
 
 jobs:
   deploy:
