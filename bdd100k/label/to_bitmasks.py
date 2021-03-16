@@ -19,7 +19,7 @@ the annotations in `ignored` class. To achieve this, add the flag
 import argparse
 import os
 from multiprocessing import Pool
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 import matplotlib.patches as mpatches  # type: ignore
 import matplotlib.pyplot as plt  # type: ignore
@@ -28,16 +28,20 @@ from matplotlib.path import Path  # type: ignore
 from PIL import Image
 from tqdm import tqdm
 
-from ..common.iterator import VideoLabelIterator
 from ..common.logger import logger
 from ..common.typing import DictAny, ListAny
-from ..common.utils import list_files
-from .to_coco import parser_definition, start_converting
+from ..common.utils import init, list_files
+from .to_coco import (
+    get_instance_id,
+    parser_definition_coco,
+    process_category,
+    start_converting,
+)
 
 
 def parser_definition_bitmasks() -> argparse.ArgumentParser:
     """Definition of the parser."""
-    parser = parser_definition()
+    parser = parser_definition_coco()
     parser.add_argument(
         "--nproc",
         type=int,
@@ -129,95 +133,163 @@ def poly2d2bitmasks_per_image(
     img.save(out_path)
 
 
-class SegTrack2BitMaskIterator(VideoLabelIterator):
-    """Iterator for conversion of segtrack to bitmasks."""
+def set_color(
+    label: DictAny, category_id: int, ann_id: int, category_ignored: bool
+) -> np.ndarray:
+    """Set the color for an instance given its attributes and ID."""
+    attributes = label["attributes"]
+    truncated = int(attributes.get("Truncated", False))
+    occluded = int(attributes.get("Occluded", False))
+    crowd = int(attributes.get("Crowd", False))
+    ignore = int(category_ignored)
+    color = np.array(
+        [
+            category_id & 255,
+            (truncated << 3) + (occluded << 2) + (crowd << 1) + ignore,
+            ann_id >> 8,
+            ann_id & 255,
+        ],
+        dtype=np.uint8,
+    )
+    return color
 
-    def __init__(
-        self,
-        out_base: str,
-        nproc: int,
-        ignore_as_class: bool = False,
-        remove_ignore: bool = False,
-    ):
-        """Initialize the segtrack2bitmask iterator."""
-        super().__init__("track", ignore_as_class, remove_ignore)
-        self.out_base = out_base
-        self.nproc = nproc
 
-        self.out_paths: List[str] = []
-        self.colors_list: List[ListAny] = []
-        self.poly2ds_list: List[ListAny] = []
+def bitmask_conversion(
+    nproc: int,
+    out_paths: List[str],
+    colors_list: List[ListAny],
+    poly2ds_list: List[ListAny],
+) -> None:
+    """Execute the bitmask conversion in parallel."""
+    logger.info("Converting annotations...")
 
-        self.colors: List[np.ndarray] = []
-        self.poly2ds: ListAny = []
+    pool = Pool(nproc)
+    pool.starmap(
+        poly2d2bitmasks_per_image,
+        tqdm(
+            zip(out_paths, colors_list, poly2ds_list),
+            total=len(out_paths),
+        ),
+    )
+    pool.close()
 
-    def video_iteration(self, labels_per_video: List[DictAny]) -> None:
-        """Actions for the video iteration."""
-        assert len(labels_per_video) > 0
-        video_name = labels_per_video[0]["video_name"]
-        out_dir = os.path.join(self.out_base, video_name)
+
+def insseg2bitmasks(
+    labels: List[List[DictAny]],
+    out_base: str,
+    ignore_as_class: bool = False,
+    remove_ignore: bool = False,
+    nproc: int = 4,
+) -> None:
+    """Converting seg_track poly2d to bitmasks."""
+    assert len(labels) == 1
+    if not os.path.isdir(out_base):
+        os.makedirs(out_base)
+
+    _, cat_name2id = init(mode="track", ignore_as_class=ignore_as_class)
+
+    out_paths: List[str] = []
+    colors_list: List[ListAny] = []
+    poly2ds_list: List[ListAny] = []
+
+    logger.info("Preparing annotations for InsSeg to Bitmasks")
+
+    for image_anns in tqdm(labels[0]):
+        ann_id = 1
+
+        image_name = image_anns["name"].replace(".jpg", ".png")
+        image_name = os.path.split(image_name)[-1]
+        out_path = os.path.join(out_base, image_name)
+        out_paths.append(out_path)
+
+        colors: List[np.ndarray] = []
+        poly2ds: ListAny = []
+
+        for label in image_anns["labels"]:
+            if "poly2d" not in label:
+                continue
+
+            category_ignored, category_id = process_category(
+                label["category"], ignore_as_class, cat_name2id
+            )
+            if remove_ignore and category_ignored:
+                continue
+            label["category_ignored"] = category_ignored
+
+            color = set_color(label, category_id, ann_id, category_ignored)
+            colors.append(color)
+            poly2ds.append(label["poly2d"])
+            ann_id += 1
+
+        colors_list.append(colors)
+        poly2ds_list.append(poly2ds)
+
+    bitmask_conversion(nproc, out_paths, colors_list, poly2ds_list)
+
+
+def segtrack2bitmasks(
+    labels: List[List[DictAny]],
+    out_base: str,
+    ignore_as_class: bool = False,
+    remove_ignore: bool = False,
+    nproc: int = 4,
+) -> None:
+    """Converting seg_track poly2d to bitmasks."""
+    _, cat_name2id = init(mode="track", ignore_as_class=ignore_as_class)
+
+    out_paths: List[str] = []
+    colors_list: List[ListAny] = []
+    poly2ds_list: List[ListAny] = []
+
+    logger.info("Preparing annotations for SegTrack to Bitmasks")
+
+    for video_anns in tqdm(labels):
+        global_instance_id: int = 1
+        instance_id_maps: Dict[str, int] = dict()
+
+        video_name = video_anns[0]["video_name"]
+        out_dir = os.path.join(out_base, video_name)
         if not os.path.isdir(out_dir):
             os.makedirs(out_dir)
 
-    def image_iteration(self, labels_per_image: DictAny) -> None:
-        """Actions for the image iteration."""
-        super().image_iteration(labels_per_image)
-        video_name = labels_per_image["video_name"]
-        out_name = labels_per_image["name"].replace(".jpg", ".png")
-        out_path = os.path.join(self.out_base, video_name, out_name)
-        self.out_paths.append(out_path)
+        for image_anns in video_anns:
+            image_name = image_anns["name"].replace(".jpg", ".png")
+            image_name = os.path.split(image_name)[-1]
+            out_path = os.path.join(out_dir, image_name)
+            out_paths.append(out_path)
 
-        self.colors = []
-        self.poly2ds = []
+            colors: List[np.ndarray] = []
+            poly2ds: ListAny = []
 
-    def object_iteration(self, labels_per_object: DictAny) -> None:
-        """Actions for the object iteration."""
-        super().object_iteration(labels_per_object)
-        truncated = int(bool(labels_per_object["attributes"]["Truncated"]))
-        occluded = int(bool(labels_per_object["attributes"]["Occluded"]))
-        crowd = int(bool(labels_per_object["attributes"]["Crowd"]))
-        ignore = int(bool(labels_per_object["category_ignored"]))
-        color = np.array(
-            [
-                labels_per_object["category_id"] & 255,
-                (truncated << 3) + (occluded << 2) + (crowd << 1) + ignore,
-                labels_per_object["instance_id"] >> 8,
-                labels_per_object["instance_id"] & 255,
-            ],
-            dtype=np.uint8,
-        )
-        self.colors.append(color)
-        self.poly2ds.append(labels_per_object["poly2d"])
+            for label in image_anns["labels"]:
+                if "poly2d" not in label:
+                    continue
 
-    def after_iteration(self) -> DictAny:
-        """Actions after the iteration."""
-        logger.info("Converting annotations...")
+                category_ignored, category_id = process_category(
+                    label["category"], ignore_as_class, cat_name2id
+                )
+                if category_ignored and remove_ignore:
+                    continue
+                label["category_ignored"] = category_ignored
 
-        pool = Pool(self.nproc)
-        pool.starmap(
-            poly2d2bitmasks_per_image,
-            tqdm(
-                zip(self.out_paths, self.colors_list, self.poly2ds_list),
-                total=len(self.out_paths),
-            ),
-        )
-        pool.close()
-        return self.coco
+                bdd100k_id = str(label["id"])
+                instance_id, global_instance_id = get_instance_id(
+                    instance_id_maps, global_instance_id, bdd100k_id
+                )
 
-    def __call__(self, labels: List[List[DictAny]]) -> DictAny:
-        """Executes iterations."""
-        for labels_per_video in tqdm(labels):
-            self.video_iteration(labels_per_video)
-            for labels_per_image in labels_per_video:
-                self.image_iteration(labels_per_image)
-                for labels_per_object in labels_per_image["labels"]:
-                    self.object_iteration(labels_per_object)
-                self.colors_list.append(self.colors)
-                self.poly2ds_list.append(self.poly2ds)
-        return self.after_iteration()
+                color = set_color(
+                    label, category_id, instance_id, category_ignored
+                )
+                colors.append(color)
+                poly2ds.append(label["poly2d"])
+
+            colors_list.append(colors)
+            poly2ds_list.append(poly2ds)
+
+    bitmask_conversion(nproc, out_paths, colors_list, poly2ds_list)
 
 
-def bitmask2labelmap_per_img(bitmask_file: str, colormap_file: str) -> None:
+def bitmask2labelmap_per_image(bitmask_file: str, colormap_file: str) -> None:
     """Convert BitMasks to labelmap for one image."""
     bitmask = np.asarray(Image.open(bitmask_file))
     colormap = np.zeros((*bitmask.shape[:2], 3), dtype=bitmask.dtype)
@@ -231,14 +303,37 @@ def bitmask2labelmap_per_img(bitmask_file: str, colormap_file: str) -> None:
     img.save(colormap_file)
 
 
-def bitmask2labelmap(out_base: str, color_base: str, nproc: int) -> None:
-    """Convert BitMasks to labelmap."""
+def insseg2colormap(out_base: str, color_base: str, nproc: int) -> None:
+    """Convert instance segmentation bitmasks to labelmap."""
+    if not os.path.isdir(color_base):
+        os.makedirs(color_base)
+    files_list = os.listdir(out_base)
+    bitmasks_files: List[str] = []
+    colormap_files: List[str] = []
+
+    logger.info("Preparing annotations for InsSeg to Colormap")
+
+    for file_name in tqdm(files_list):
+        if not file_name.endswith(".png"):
+            continue
+        label_path = os.path.join(out_base, file_name)
+        color_path = os.path.join(color_base, file_name)
+        bitmasks_files.append(label_path)
+        colormap_files.append(color_path)
+    colormap_conversion(nproc, bitmasks_files, colormap_files)
+
+
+def segtrack2colormap(out_base: str, color_base: str, nproc: int) -> None:
+    """Convert segmentation tracking bitmasks to labelmap."""
     if not os.path.isdir(color_base):
         os.makedirs(color_base)
     files_list = list_files(out_base)
-    bitmasks_files = []
-    colormap_files = []
-    for files in files_list:
+    bitmasks_files: List[str] = []
+    colormap_files: List[str] = []
+
+    logger.info("Preparing annotations for SegTrack to Colormap")
+
+    for files in tqdm(files_list):
         assert len(files) > 0
         video_name = files[0].rsplit("/", 3)[-2]
         video_path = os.path.join(color_base, video_name)
@@ -249,10 +344,20 @@ def bitmask2labelmap(out_base: str, color_base: str, nproc: int) -> None:
             save_path = os.path.join(color_base, video_name, image_name)
             bitmasks_files.append(file_name)
             colormap_files.append(save_path)
+    colormap_conversion(nproc, bitmasks_files, colormap_files)
+
+
+def colormap_conversion(
+    nproc: int,
+    bitmasks_files: List[str],
+    colormap_files: List[str],
+) -> None:
+    """Execute the colormap conversion in parallel."""
+    logger.info("Converting annotations...")
 
     pool = Pool(nproc)
     pool.starmap(
-        bitmask2labelmap_per_img,
+        bitmask2labelmap_per_image,
         tqdm(
             zip(bitmasks_files, colormap_files),
             total=len(bitmasks_files),
@@ -262,17 +367,23 @@ def bitmask2labelmap(out_base: str, color_base: str, nproc: int) -> None:
 
 def main() -> None:
     """Main function."""
-    args, labels = start_converting()
-    if args.mode == "seg_track":
-        iterator = SegTrack2BitMaskIterator(
-            args.out_path,
-            args.nproc,
-            args.ignore_as_class,
-            args.remove_ignore,
-        )
-        iterator(labels)
+    args, labels = start_converting(parser_definition_bitmasks)
+    bitmask_func = dict(ins_seg=insseg2bitmasks, seg_track=segtrack2bitmasks)[
+        args.mode
+    ]
+    bitmask_func(
+        labels,
+        args.out_path,
+        args.ignore_as_class,
+        args.remove_ignore,
+        args.nproc,
+    )
+
+    colormap_func = dict(ins_seg=insseg2colormap, seg_track=segtrack2colormap)[
+        args.mode
+    ]
     if args.colormap:
-        bitmask2labelmap(args.out_path, args.color_path, args.nproc)
+        colormap_func(args.out_path, args.color_path, args.nproc)
 
     logger.info("Finished!")
 

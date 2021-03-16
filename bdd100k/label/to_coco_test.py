@@ -3,7 +3,7 @@ import os
 import unittest
 
 from ..common.utils import read
-from .to_coco import Det2COCOIterator
+from .to_coco import bdd100k2coco_det
 
 
 class TestBDD100K2COCO(unittest.TestCase):
@@ -12,8 +12,7 @@ class TestBDD100K2COCO(unittest.TestCase):
     cur_dir = os.path.dirname(os.path.abspath(__file__))
     bdd_list = read("{}/testcases/unitest_val_bdd.json".format(cur_dir))
 
-    iterator = Det2COCOIterator()
-    val_coco = iterator(bdd_list)
+    val_coco = bdd100k2coco_det(bdd_list)
     val_bdd = bdd_list[0]
 
     def test_type(self) -> None:

@@ -7,7 +7,7 @@ import numpy as np
 from PIL import Image
 
 from ..common.utils import read
-from .to_bitmasks import SegTrack2BitMaskIterator
+from .to_bitmasks import segtrack2bitmasks
 
 
 class TestToBitmasks(unittest.TestCase):
@@ -26,8 +26,7 @@ class TestToBitmasks(unittest.TestCase):
             )
         ]
 
-        iterator = SegTrack2BitMaskIterator(test_out, nproc=1)
-        iterator(labels)
+        segtrack2bitmasks(labels, test_out, nproc=1)
 
         # load bitmasks from file
         seq_path = os.path.join(test_out, os.listdir(test_out)[0])
