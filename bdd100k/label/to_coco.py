@@ -109,13 +109,17 @@ def mask_to_polygon(
     return polygons
 
 
-def set_image_attributes(image_name: str, image_id: int) -> DictAny:
+def set_image_attributes(
+    image: DictAny, image_name: str, image_id: int
+) -> None:
     """Set attributes for the image dict."""
-    return dict(
-        file_name=image_name,
-        height=720,
-        width=1280,
-        id=image_id,
+    image.update(
+        dict(
+            file_name=image_name,
+            height=720,
+            width=1280,
+            id=image_id,
+        )
     )
 
 
@@ -211,7 +215,8 @@ def bdd100k2coco_det(
     image_id, ann_id = 1, 1
 
     for frame in tqdm(labels[0]):
-        image = set_image_attributes(frame["name"], image_id)
+        image = dict()
+        set_image_attributes(image, frame["name"], image_id)
         coco["images"].append(image)
 
         if not frame["labels"]:
@@ -265,7 +270,7 @@ def bdd100k2coco_box_track(
         for image_anns in video_anns:
             image = dict(video_id=video_id, frame_id=image_anns["index"])
             image_name = os.path.join(video_name, image_anns["name"])
-            image = set_image_attributes(image_name, image_id)
+            set_image_attributes(image, image_name, image_id)
             coco["images"].append(image)
 
             # annotations
@@ -325,7 +330,7 @@ def bdd100k2coco_seg_track(
         for image_anns in video_anns:
             image = dict(video_id=video_id, frame_id=image_anns["index"])
             image_name = os.path.join(video_name, image_anns["name"])
-            image = set_image_attributes(image_name, image_id)
+            set_image_attributes(image, image_name, image_id)
             coco["images"].append(image)
 
             mask_name = os.path.join(
