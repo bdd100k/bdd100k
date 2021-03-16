@@ -215,7 +215,7 @@ def bdd100k2coco_det(
     image_id, ann_id = 1, 1
 
     for frame in tqdm(labels[0]):
-        image = dict()
+        image: DictAny = dict()
         set_image_attributes(image, frame["name"], image_id)
         coco["images"].append(image)
 
@@ -350,9 +350,9 @@ def bdd100k2coco_seg_track(
                 category_ignored, category_id = process_category(
                     label["category"], ignore_as_class, cat_name2id
                 )
-                if remove_ignore and category_ignored:
-                    continue
                 label["category_ignored"] = category_ignored
+                if category_ignored and remove_ignore:
+                    continue
 
                 bdd100k_id = str(label["id"])
                 instance_id, global_instance_id = get_instance_id(
