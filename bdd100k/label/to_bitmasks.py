@@ -366,7 +366,7 @@ def colormap_conversion(
 
 def main() -> None:
     """Main function."""
-    os.environ["QT_QPA_PLATFORM"] = "offscreen"  # matplotlib offscreen rendering
+    os.environ["QT_QPA_PLATFORM"] = "offscreen"  # matplotlib offscreen render
     args, labels = start_converting(parser_definition_bitmasks)
     bitmask_func = dict(ins_seg=insseg2bitmasks, seg_track=segtrack2bitmasks)[
         args.mode

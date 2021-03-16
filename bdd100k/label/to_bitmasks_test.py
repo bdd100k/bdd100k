@@ -12,11 +12,11 @@ from .to_bitmasks import segtrack2bitmasks
 
 class TestToBitmasks(unittest.TestCase):
     """Test cases for converting BDD100K labels to bitmasks."""
+
     test_out = "./test_bitmasks"
 
     def test_conversion(self) -> None:
         """Check conversion to and from bitmask."""
-
         cur_dir = os.path.dirname(os.path.abspath(__file__))
         labels = read("{}/testcases/example_annotation.json".format(cur_dir))
 
@@ -39,9 +39,11 @@ class TestToBitmasks(unittest.TestCase):
             self.assertTrue((e == c).all())
 
     @classmethod
-    def tearDownClass(cls):
+    def tearDownClass(cls) -> None:
+        """Class teardown for bitmask tests."""
         if os.path.exists(cls.test_out):
             shutil.rmtree(cls.test_out)
+
 
 if __name__ == "__main__":
     unittest.main()
