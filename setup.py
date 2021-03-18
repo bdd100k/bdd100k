@@ -36,6 +36,8 @@ setuptools.setup(
         "pillow",
         "pycocotools",
         "scalabel",
+        "scikit-image",
+        "tqdm",
         "tabulate",
         "tqdm",
     ],

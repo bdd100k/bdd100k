@@ -9,6 +9,66 @@ from typing import Dict, List, Tuple
 
 from .typing import DictAny
 
+NAME_MAPPING = {
+    "bike": "bicycle",
+    "caravan": "car",
+    "motor": "motorcycle",
+    "person": "pedestrian",
+    "van": "car",
+}
+
+IGNORE_MAP: Dict[str, str] = {
+    "other person": "pedestrian",
+    "other vehicle": "car",
+    "trailer": "truck",
+}
+
+CATEGORIES: List[DictAny] = [
+    {"supercategory": "human", "id": 1, "name": "pedestrian"},
+    {"supercategory": "human", "id": 2, "name": "rider"},
+    {"supercategory": "vehicle", "id": 3, "name": "car"},
+    {"supercategory": "vehicle", "id": 4, "name": "truck"},
+    {"supercategory": "vehicle", "id": 5, "name": "bus"},
+    {"supercategory": "vehicle", "id": 6, "name": "train"},
+    {"supercategory": "bike", "id": 7, "name": "motorcycle"},
+    {"supercategory": "bike", "id": 8, "name": "bicycle"},
+]
+
+
+def init(
+    mode: str = "det", ignore_as_class: bool = False
+) -> Tuple[DictAny, Dict[str, int]]:
+    """Initialze the annotation dictionary."""
+    coco: DictAny = defaultdict(list)
+    coco["categories"] = CATEGORIES
+    if mode == "det":
+        coco["categories"] += [
+            {
+                "supercategory": "traffic light",
+                "id": 9,
+                "name": "traffic light",
+            },
+            {
+                "supercategory": "traffic sign",
+                "id": 10,
+                "name": "traffic sign",
+            },
+        ]
+
+    if ignore_as_class:
+        coco["categories"].append(
+            {
+                "supercategory": "none",
+                "id": len(coco["categories"]) + 1,
+                "name": "ignored",
+            }
+        )
+    category_name2id: Dict[str, int] = {
+        category["name"]: category["id"] for category in coco["categories"]
+    }
+
+    return coco, category_name2id
+
 
 def list_files(inputs: str) -> List[List[str]]:
     """List files names for a folder/nested folder."""
@@ -40,54 +100,3 @@ def read(inputs: str) -> List[List[DictAny]]:
     if "video_name" in outputs[0][0]:
         outputs = sorted(outputs, key=lambda x: str(x[0]["video_name"]))
     return outputs
-
-
-def init(
-    mode: str = "det", ignore_as_class: bool = False
-) -> Tuple[DictAny, Dict[str, str], DictAny]:
-    """Initialze the annotation dictionary."""
-    coco: DictAny = defaultdict(list)
-    coco["categories"] = [
-        {"supercategory": "human", "id": 1, "name": "pedestrian"},
-        {"supercategory": "human", "id": 2, "name": "rider"},
-        {"supercategory": "vehicle", "id": 3, "name": "car"},
-        {"supercategory": "vehicle", "id": 4, "name": "truck"},
-        {"supercategory": "vehicle", "id": 5, "name": "bus"},
-        {"supercategory": "vehicle", "id": 6, "name": "train"},
-        {"supercategory": "bike", "id": 7, "name": "motorcycle"},
-        {"supercategory": "bike", "id": 8, "name": "bicycle"},
-    ]
-    if mode == "det":
-        coco["categories"] += [
-            {
-                "supercategory": "traffic light",
-                "id": 9,
-                "name": "traffic light",
-            },
-            {
-                "supercategory": "traffic sign",
-                "id": 10,
-                "name": "traffic sign",
-            },
-        ]
-
-    if ignore_as_class:
-        coco["categories"].append(
-            {
-                "supercategory": "none",
-                "id": len(coco["categories"]) + 1,
-                "name": "ignored",
-            }
-        )
-
-    # Mapping the ignored classes to standard classes.
-    ignore_map = {
-        "other person": "pedestrian",
-        "other vehicle": "car",
-        "trailer": "truck",
-    }
-
-    attr_id_dict: DictAny = {
-        frame["name"]: frame["id"] for frame in coco["categories"]
-    }
-    return coco, ignore_map, attr_id_dict
