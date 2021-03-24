@@ -24,7 +24,7 @@ from typing import Callable, Dict, List, Tuple
 
 import numpy as np
 from PIL import Image
-from pycocotools import mask as mask_util
+from pycocotools import mask as mask_util  # type: ignore
 from skimage import measure
 from tqdm import tqdm
 
@@ -217,7 +217,9 @@ def set_seg_object_geometry(
         segmentation = mask_util.encode(
             np.array(mask[:, :, None], order="F", dtype="uint8")
         )[0]
-        segmentation["counts"] = segmentation["counts"].decode("utf-8")  # type: ignore
+        segmentation["counts"] = segmentation["counts"].decode(  # type: ignore
+            "utf-8"
+        )
         bbox = mask_util.toBbox(segmentation).tolist()
         area = mask_util.area(segmentation).tolist()
 

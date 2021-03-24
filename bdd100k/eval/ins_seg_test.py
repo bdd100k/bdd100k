@@ -32,7 +32,7 @@ class TestBDD100KInsSegEval(unittest.TestCase):
             self.assertAlmostEqual(result[key], overall_reference[key])
 
 
-def create_test_file():
+def create_test_file() -> None:
     """Creat mocking files for the InsSeg test case."""
     cur_dir = os.path.dirname(os.path.abspath(__file__))
     gt_base = "{}/testcases/ins_seg/gt".format(cur_dir)

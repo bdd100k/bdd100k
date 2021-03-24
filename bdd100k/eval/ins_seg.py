@@ -75,32 +75,33 @@ class BDDInsSegEval(COCOeval):  # type: ignore
         self.dt_score_file = dt_score_file
         self.img_names: List[str] = list()
         self.img2score: Dict[str, Dict[int, float]] = defaultdict(dict)
+        self.evalImgs: List[DictAny] = []
 
-    def _prepare(self):
+    def _prepare(self) -> None:
         """Prepare file list for evaluation."""
         gt_imgs = sorted(os.listdir(self.gt_base))
         dt_imgs = sorted(os.listdir(self.dt_base))
         for gt_img, dt_img in zip(gt_imgs, dt_imgs):
             assert gt_img == dt_img
         self.img_names = gt_imgs
-        self.params.imgIds = self.img_names
+        self.params.imgIds = self.img_names  # type: ignore
 
         with open(self.dt_score_file) as fp:
             score_lines = fp.readlines()
         for score_line in score_lines:
-            img_name, ann_id, score = score_line.strip().split(" ")
-            ann_id, score = int(ann_id), float(score)
+            img_name, ann_id_str, score_str = score_line.strip().split(" ")
+            ann_id, score = int(ann_id_str), float(score_str)
             self.img2score[img_name][ann_id] = score
 
-        p = self.params
+        p = self.params  # type: ignore
         eval_num = len(p.catIds) * len(p.areaRng) * len(self.img_names)
-        self.evalImgs = [None for i in range(eval_num)]
+        self.evalImgs = [dict() for i in range(eval_num)]
 
-    def evaluate(self):
+    def evaluate(self) -> None:
         """Run per image evaluation."""
         tic = time.time()
         print("Running per image evaluation...")
-        p = self.params
+        p = self.params  # type: ignore
         print("Evaluate annotation type *{}*".format(p.iouType))
         p.maxDets = sorted(p.maxDets)
 
@@ -196,15 +197,17 @@ class BDDInsSegEval(COCOeval):  # type: ignore
                 eval_ind: int = (
                     cat_ind * area_num * img_num + area_ind * img_num + img_ind
                 )
-                self.evalImgs[eval_ind] = dict(
-                    category_id=cat_id,
-                    aRng=p.areaRng[area_ind],
-                    maxDet=p.maxDets[-1],
-                    dtMatches=dt_matches_a,
-                    gtMatches=gt_matches_a,
-                    dtScores=dt_scores_c,
-                    gtIgnore=gt_ignores_a,
-                    dtIgnore=dt_ignores_a,
+                self.evalImgs[eval_ind].update(
+                    dict(
+                        category_id=cat_id,
+                        aRng=p.areaRng[area_ind],
+                        maxDet=p.maxDets[-1],
+                        dtMatches=dt_matches_a,
+                        gtMatches=gt_matches_a,
+                        dtScores=dt_scores_c,
+                        gtIgnore=gt_ignores_a,
+                        dtIgnore=dt_ignores_a,
+                    )
                 )
 
 
