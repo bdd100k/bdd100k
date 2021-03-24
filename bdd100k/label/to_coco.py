@@ -19,10 +19,12 @@ the annotations in `ignored` class. To achieve this, add the flag
 import argparse
 import json
 import os
+from multiprocessing import Pool
 from typing import Callable, Dict, List, Tuple
 
 import numpy as np
 from PIL import Image
+from pycocotools import mask as mask_util
 from skimage import measure
 from tqdm import tqdm
 
@@ -54,6 +56,13 @@ def parser_definition_coco() -> argparse.ArgumentParser:
         help="conversion mode: detection or tracking.",
     )
     parser.add_argument(
+        "-mm",
+        "--mask-mode",
+        default="rle",
+        choices=["rle", "polygon"],
+        help="conversion mode: rle or polygon.",
+    )
+    parser.add_argument(
         "-mb",
         "--mask-base",
         help="Path to the BitMasks base folder.",
@@ -70,10 +79,16 @@ def parser_definition_coco() -> argparse.ArgumentParser:
         action="store_true",
         help="Put the ignored annotations to the `ignored` category.",
     )
+    parser.add_argument(
+        "--nproc",
+        type=int,
+        default=4,
+        help="number of processes for mot evaluation",
+    )
     return parser
 
 
-def close_contour(contour: ListAny) -> ListAny:
+def close_contour(contour: np.ndarray) -> np.ndarray:
     """Explicitly close the contour."""
     if not np.array_equal(contour[0], contour[-1]):
         contour = np.vstack((contour, contour[0]))
@@ -81,7 +96,7 @@ def close_contour(contour: ListAny) -> ListAny:
 
 
 def mask_to_polygon(
-    binary_mask: np.array, x_1: int, y_1: int, tolerance: int = 2
+    binary_mask: np.ndarray, x_1: int, y_1: int, tolerance: int = 2
 ) -> List[ListAny]:
     """Convert BitMask to polygon."""
     polygons = []
@@ -182,24 +197,31 @@ def set_box_object_geometry(annotation: DictAny, label: DictAny) -> None:
     )
 
 
-def set_seg_object_geometry(ann: DictAny, mask: np.ndarray) -> None:
+def set_seg_object_geometry(
+    ann: DictAny, mask: np.ndarray, mask_mode: str = "rle"
+) -> None:
     """Parsing bbox, area, polygon from seg ann."""
     if not mask.sum():
         return
 
-    x_inds = np.sum(mask, axis=0).nonzero()[0]
-    y_inds = np.sum(mask, axis=1).nonzero()[0]
-    x1, x2 = np.min(x_inds), np.max(x_inds) + 1
-    y1, y2 = np.min(y_inds), np.max(y_inds) + 1
-    mask = mask[y1:y2, x1:x2]
+    if mask_mode == "polygon":
+        x_inds = np.nonzero(np.sum(mask, axis=0))[0]
+        y_inds = np.nonzero(np.sum(mask, axis=1))[0]
+        x1, x2 = np.min(x_inds), np.max(x_inds) + 1
+        y1, y2 = np.min(y_inds), np.max(y_inds) + 1
+        mask = mask[y1:y2, x1:x2]
+        segmentation = mask_to_polygon(mask, x1, y1)
+        bbox = np.array([x1, y1, x2 - x1, y2 - y1]).tolist()
+        area = np.sum(mask).tolist()
+    elif mask_mode == "rle":
+        segmentation = mask_util.encode(
+            np.array(mask[:, :, None], order="F", dtype="uint8")
+        )[0]
+        segmentation["counts"] = segmentation["counts"].decode("utf-8")  # type: ignore
+        bbox = mask_util.toBbox(segmentation).tolist()
+        area = mask_util.area(segmentation).tolist()
 
-    ann.update(
-        dict(
-            bbox=np.array([x1, y1, x2 - x1, y2 - y1]).tolist(),
-            area=np.sum(mask).tolist(),
-            segmentation=mask_to_polygon(mask, x1, y1),
-        )
-    )
+    ann.update(dict(bbox=bbox, area=area, segmentation=segmentation))
 
 
 def bdd100k2coco_det(
@@ -307,15 +329,155 @@ def bdd100k2coco_box_track(
     return coco
 
 
+def bitmask2coco(
+    annotations: List[DictAny],
+    mask_name: str,
+    category_ids: List[int],
+    instance_ids: List[int],
+    mask_mode: str = "rle",
+) -> List[DictAny]:
+    """Convert bitmasks annotations of an image to RLEs or polygons."""
+    bitmask = np.asarray(Image.open(mask_name)).astype(np.int32)
+    category_map = bitmask[..., 0]
+    instance_map = (bitmask[..., 2] << 2) + bitmask[..., 3]
+    for annotation, category_id, instance_id in zip(
+        annotations, category_ids, instance_ids
+    ):
+        mask = np.logical_and(
+            category_map == category_id, instance_map == instance_id
+        )
+        set_seg_object_geometry(annotation, mask, mask_mode)
+    return annotations
+
+
+def coco_parellel_conversion(
+    annotations_list: List[List[DictAny]],
+    mask_names: List[str],
+    category_ids_list: List[List[int]],
+    instance_ids_list: List[List[int]],
+    mask_mode: str = "rle",
+    nproc: int = 4,
+) -> List[List[DictAny]]:
+    """Execute the bitmask conversion in parallel."""
+    logger.info("Converting annotations...")
+
+    pool = Pool(nproc)
+    annotations_list = pool.starmap(
+        bitmask2coco,
+        tqdm(
+            zip(
+                annotations_list,
+                mask_names,
+                category_ids_list,
+                instance_ids_list,
+                [mask_mode for _ in range(len(annotations_list))],
+            ),
+            total=len(annotations_list),
+        ),
+    )
+    pool.close()
+    return annotations_list
+
+
+def bdd100k2coco_ins_seg(
+    labels: List[List[DictAny]],
+    mask_base: str,
+    ignore_as_class: bool = False,
+    remove_ignore: bool = False,
+    mask_mode: str = "rle",
+    nproc: int = 4,
+) -> DictAny:
+    """Converting BDD100K Instance Segmentation Set to COCO format."""
+    assert len(labels) == 1
+
+    coco, cat_name2id = init(mode="track", ignore_as_class=ignore_as_class)
+    coco["type"] = "instances"
+    image_id, ann_id = 1, 1
+
+    mask_names: List[str] = []
+    category_ids_list: List[List[int]] = []
+    instance_ids_list: List[List[int]] = []
+    annotations_list: List[List[DictAny]] = []
+
+    logger.info("Collecting bitmasks...")
+
+    for frame in tqdm(labels[0]):
+        instance_id = 1
+        image: DictAny = dict()
+        set_image_attributes(image, frame["name"], image_id)
+        coco["images"].append(image)
+
+        mask_name = os.path.join(
+            mask_base,
+            frame["name"].replace(".jpg", ".png"),
+        )
+        mask_names.append(mask_name)
+
+        category_ids: List[int] = []
+        instance_ids: List[int] = []
+        annotations: List[DictAny] = []
+
+        # annotations
+        for label in frame["labels"]:
+            if "poly2d" not in label:
+                continue
+
+            category_ignored, category_id = process_category(
+                label["category"], ignore_as_class, cat_name2id
+            )
+            label["category_ignored"] = category_ignored
+            if category_ignored and remove_ignore:
+                continue
+
+            annotation: DictAny = dict(
+                id=ann_id,
+                image_id=image_id,
+                category_id=category_id,
+                bdd100k_id=str(label["id"]),
+            )
+            set_object_attributes(annotation, label)
+
+            category_ids.append(category_id)
+            instance_ids.append(instance_id)
+            annotations.append(annotation)
+            ann_id += 1
+            instance_id += 1
+
+        category_ids_list.append(category_ids)
+        instance_ids_list.append(instance_ids)
+        annotations_list.append(annotations)
+        image_id += 2
+
+    annotations_list = coco_parellel_conversion(
+        annotations_list,
+        mask_names,
+        category_ids_list,
+        instance_ids_list,
+        mask_mode,
+        nproc,
+    )
+    for annotations in annotations_list:
+        coco["annotations"].extend(annotations)
+
+    return coco
+
+
 def bdd100k2coco_seg_track(
     labels: List[List[DictAny]],
     mask_base: str,
     ignore_as_class: bool = False,
     remove_ignore: bool = False,
+    mask_mode: str = "rle",
+    nproc: int = 4,
 ) -> DictAny:
     """Converting BDD100K Segmentation Tracking Set to COCO format."""
     coco, cat_name2id = init(mode="track", ignore_as_class=ignore_as_class)
     video_id, image_id, ann_id = 1, 1, 1
+
+    mask_names: List[str] = []
+    category_ids_list: List[List[int]] = []
+    instance_ids_list: List[List[int]] = []
+    annotations_list: List[List[DictAny]] = []
 
     for video_anns in tqdm(labels):
         global_instance_id: int = 1
@@ -338,9 +500,11 @@ def bdd100k2coco_seg_track(
                 video_name,
                 image_anns["name"].replace(".jpg", ".png"),
             )
-            bitmask = np.asarray(Image.open(mask_name)).astype(np.int32)
-            category_map = bitmask[..., 0]
-            instance_map = (bitmask[..., 2] << 2) + bitmask[..., 3]
+            mask_names.append(mask_name)
+
+            category_ids: List[int] = []
+            instance_ids: List[int] = []
+            annotations: List[DictAny] = []
 
             # annotations
             for label in image_anns["labels"]:
@@ -359,24 +523,37 @@ def bdd100k2coco_seg_track(
                     instance_id_maps, global_instance_id, bdd100k_id
                 )
 
-                mask = np.logical_and(
-                    category_map == category_id, instance_map == instance_id
-                )
-
-                ann = dict(
+                annotation = dict(
                     id=ann_id,
                     image_id=image_id,
                     category_id=category_id,
                     instance_id=instance_id,
                     bdd100k_id=bdd100k_id,
                 )
-                set_object_attributes(ann, label)
-                set_seg_object_geometry(ann, mask)
-                coco["annotations"].append(ann)
+                set_object_attributes(annotation, label)
 
+                category_ids.append(category_id)
+                instance_ids.append(instance_id)
+                annotations.append(annotation)
                 ann_id += 1
+
+            category_ids_list.append(category_ids)
+            instance_ids_list.append(instance_ids)
+            annotations_list.append(annotations)
             image_id += 1
+
         video_id += 1
+
+    annotations_list = coco_parellel_conversion(
+        annotations_list,
+        mask_names,
+        category_ids_list,
+        instance_ids_list,
+        mask_mode,
+        nproc,
+    )
+    for annotations in annotations_list:
+        coco["annotations"].extend(annotations)
 
     return coco
 
@@ -397,7 +574,6 @@ def start_converting(
     logger.info("Loading annotations...")
     labels = read(args.in_path)
 
-    logger.info("Converting annotations...")
     return args, labels
 
 
@@ -409,13 +585,27 @@ def main() -> None:
         coco = bdd100k2coco_det(
             labels, args.ignore_as_class, args.remove_ignore
         )
+    elif args.mode == "ins_seg":
+        coco = bdd100k2coco_ins_seg(
+            labels,
+            args.mask_base,
+            args.ignore_as_class,
+            args.remove_ignore,
+            args.mask_mode,
+            args.nproc,
+        )
     elif args.mode == "box_track":
         coco = bdd100k2coco_box_track(
             labels, args.ignore_as_class, args.remove_ignore
         )
     elif args.mode == "seg_track":
         coco = bdd100k2coco_seg_track(
-            labels, args.mask_base, args.ignore_as_class, args.remove_ignore
+            labels,
+            args.mask_base,
+            args.ignore_as_class,
+            args.remove_ignore,
+            args.mask_mode,
+            args.nproc,
         )
 
     logger.info("Saving converted annotations to disk...")
