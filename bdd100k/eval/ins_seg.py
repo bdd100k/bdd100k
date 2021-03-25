@@ -90,8 +90,13 @@ class BDDInsSegEval(COCOeval):  # type: ignore
             score_lines = fp.readlines()
         for score_line in score_lines:
             img_name, ann_id_str, score_str = score_line.strip().split(" ")
+            if img_name not in dt_imgs:
+                continue
             ann_id, score = int(ann_id_str), float(score_str)
             self.img2score[img_name][ann_id] = score
+        img_set_1 = set(self.img_names)
+        img_set_2 = set(self.img2score.keys())
+        assert len(img_set_1 & img_set_2) == len(img_set_1) == len(img_set_2)
 
         p = self.params  # type: ignore
         eval_num = len(p.catIds) * len(p.areaRng) * len(self.img_names)
