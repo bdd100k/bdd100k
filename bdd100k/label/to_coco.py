@@ -349,6 +349,9 @@ def bitmask2coco(
             category_map == category_id, instance_map == instance_id
         )
         set_seg_object_geometry(annotation, mask, mask_mode)
+    annotations = [
+        ann for ann in annotations if "bbox" in ann and "segmentation" in ann
+    ]
     return annotations
 
 
