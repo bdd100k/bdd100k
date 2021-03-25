@@ -3,6 +3,7 @@
 predictions format: BitMasks
 """
 import copy
+import json
 import os
 import time
 from collections import defaultdict
@@ -67,12 +68,12 @@ def get_mask_areas(masks: np.ndarray) -> np.ndarray:
 class BDDInsSegEval(COCOeval):  # type: ignore
     """Modify the COCO API to support bitmasks as input."""
 
-    def __init__(self, gt_base: str, dt_base: str, dt_score_file: str) -> None:
+    def __init__(self, gt_base: str, dt_base: str, dt_json: str) -> None:
         """Initialize InsSeg eval."""
         super().__init__(iouType="segm")
         self.gt_base = gt_base
         self.dt_base = dt_base
-        self.dt_score_file = dt_score_file
+        self.dt_json = dt_json
         self.img_names: List[str] = list()
         self.img2score: Dict[str, Dict[int, float]] = defaultdict(dict)
         self.evalImgs: List[DictAny] = []
@@ -86,14 +87,11 @@ class BDDInsSegEval(COCOeval):  # type: ignore
         self.img_names = gt_imgs
         self.params.imgIds = self.img_names  # type: ignore
 
-        with open(self.dt_score_file) as fp:
-            score_lines = fp.readlines()
-        for score_line in score_lines:
-            img_name, ann_id_str, score_str = score_line.strip().split(" ")
-            if img_name not in dt_imgs:
-                continue
-            ann_id, score = int(ann_id_str), float(score_str)
-            self.img2score[img_name][ann_id] = score
+        with open(self.dt_json) as fp:
+            dt_pred = json.load(fp)
+        for image in dt_pred:
+            for label in image["labels"]:
+                self.img2score[image["name"]][label["index"]] = label["score"]
         img_set_1 = set(self.img_names)
         img_set_2 = set(self.img2score.keys())
         assert len(img_set_1 & img_set_2) == len(img_set_1) == len(img_set_2)

@@ -1,4 +1,5 @@
 """Test cases for evaluation scripts."""
+import json
 import os
 import unittest
 
@@ -16,8 +17,8 @@ class TestBDD100KInsSegEval(unittest.TestCase):
         cur_dir = os.path.dirname(os.path.abspath(__file__))
         gt_base = "{}/testcases/ins_seg/gt".format(cur_dir)
         pred_base = "{}/testcases/ins_seg/pred".format(cur_dir)
-        pred_score_file = "{}/testcases/ins_seg/pred.txt".format(cur_dir)
-        result = evaluate_ins_seg(gt_base, pred_base, pred_score_file)
+        pred_json = "{}/testcases/ins_seg/pred.json".format(cur_dir)
+        result = evaluate_ins_seg(gt_base, pred_base, pred_json)
         overall_reference = {
             "AP": 0.686056105610561,
             "AP_50": 0.8968646864686468,
@@ -37,7 +38,7 @@ def create_test_file() -> None:
     cur_dir = os.path.dirname(os.path.abspath(__file__))
     gt_base = "{}/testcases/ins_seg/gt".format(cur_dir)
     dt_base = "{}/testcases/ins_seg/pred".format(cur_dir)
-    dt_score_file = "{}/testcases/ins_seg/pred.txt".format(cur_dir)
+    dt_json = "{}/testcases/ins_seg/pred.json".format(cur_dir)
 
     if not os.path.isdir(gt_base):
         os.makedirs(gt_base)
@@ -61,7 +62,7 @@ def create_test_file() -> None:
         dt_mask[60:70, 50:54] = np.array([3, 0, 0, 8], dtype=np.uint8)
         Image.fromarray(dt_mask).save(os.path.join(dt_base, "a.png"))
 
-    if not os.path.isfile(dt_score_file):
+    if not os.path.isfile(dt_json):
         scores = [
             [1, 0.4],
             [2, 0.9],
@@ -72,13 +73,20 @@ def create_test_file() -> None:
             [8, 0.9],
             [9, 0.9],
         ]
-        lines = []
-        for score in scores:
-            lines.append(
-                " ".join(["a.png"] + [str(num) for num in score]) + "\n"
-            )
-        with open(dt_score_file, "w") as fp:
-            fp.writelines(lines)
+        dt_pred = [
+            {
+                "name": "a.png",
+                "labels": [
+                    {
+                        "index": item[0],
+                        "score": item[1],
+                    }
+                    for item in scores
+                ],
+            }
+        ]
+        with open(dt_json, "w") as fp:
+            json.dump(dt_pred, fp)
 
 
 if __name__ == "__main__":

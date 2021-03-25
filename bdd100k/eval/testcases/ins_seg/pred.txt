@@ -1,7 +1,0 @@
-a.png 1 0.4
-a.png 2 0.9
-a.png 4 0.8
-a.png 6 0.9
-a.png 7 0.9
-a.png 8 0.9
-a.png 9 0.9
