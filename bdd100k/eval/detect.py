@@ -89,16 +89,26 @@ def evaluate_det(
     coco_dt = coco_gt.loadRes(pred_res)
 
     cat_ids = coco_dt.getCatIds()
+    cat_names = [cat["name"] for cat in coco_dt.loadCats(cat_ids)]
+
+    img_ids = sorted(coco_gt.getImgIds())
+    ann_type = "bbox"
+    coco_eval = COCOeval(coco_gt, coco_dt, ann_type)
+    coco_eval.params.imgIds = img_ids
+
+    return evaluate_workflow(coco_eval, cat_ids, cat_names, out_dir)
+
+
+def evaluate_workflow(
+    coco_eval: COCOeval, cat_ids: List[int], cat_names: List[str], out_dir: str
+) -> DictAny:
+    """Execute evaluation."""
     n_tit = 12  # number of evaluation titles
-    n_cls = len(
-        coco_gt.getCatIds()
-    )  # 10 classes for BDD100K detection. 8 for classes tracking
+    n_cls = len(cat_ids)  # 10/8 classes for BDD100K detection/tracking
     n_thr = 10  # [.5:.05:.95] T=10 IoU thresholds for evaluation
     n_rec = 101  # [0:.01:1] R=101 recall thresholds for evaluation
     n_area = 4  # A=4 object area ranges for evaluation
     n_mdet = 3  # [1 10 100] M=3 thresholds on max detections per image
-
-    stats_all = -np.ones((n_cls, n_tit))
 
     eval_param = {
         "params": {
@@ -135,15 +145,11 @@ def evaluate_det(
         ),
         "recall": -np.ones((n_thr, n_cls, n_area, n_mdet), order="F"),
     }
-    img_ids = sorted(coco_gt.getImgIds())
-    ann_type = "bbox"
-    for i, cat_id in enumerate(cat_ids):
-        print(
-            "\nEvaluate category: %s" % (coco_gt.loadCats(cat_id)[0]["name"])
-        )
-        coco_eval = COCOeval(coco_gt, coco_dt, ann_type)
-        coco_eval.params.imgIds = img_ids
-        coco_eval.params.catIds = coco_dt.getCatIds(catIds=cat_id)
+    stats_all = -np.ones((n_cls, n_tit))
+
+    for i, (cat_id, cat_name) in enumerate(zip(cat_ids, cat_names)):
+        print("\nEvaluate category: %s" % cat_name)
+        coco_eval.params.catIds = [cat_id]
         # coco_eval.params.useSegm = ann_type == "segm"
         coco_eval.evaluate()
         coco_eval.accumulate()

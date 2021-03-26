@@ -43,12 +43,6 @@ def parser_definition_bitmasks() -> argparse.ArgumentParser:
     """Definition of the parser."""
     parser = parser_definition_coco()
     parser.add_argument(
-        "--nproc",
-        type=int,
-        default=4,
-        help="number of processes for mot evaluation",
-    )
-    parser.add_argument(
         "-cm",
         "--colormap",
         action="store_true",
@@ -129,8 +123,8 @@ def poly2d2bitmasks_per_image(
     for i, color in enumerate(colors):
         # 0 is for the background
         img[out == i + 1] = color
-    img = Image.fromarray(img)
-    img.save(out_path)
+    pil_img = Image.fromarray(img)
+    pil_img.save(out_path)
 
 
 def set_color(
