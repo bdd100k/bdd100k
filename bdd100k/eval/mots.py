@@ -1,12 +1,14 @@
 """BDD100K tracking evaluation with CLEAR MOT metrics."""
 import os
-from typing import List
+from typing import List, Tuple
 
 import motmetrics as mm
 import numpy as np
 from PIL import Image
 
 from .mot import CLASSES
+
+MAX_DET = 100
 
 
 def parse_bitmasks(
@@ -45,13 +47,15 @@ def parse_bitmasks(
 def mask_intersection_rate(
     gt_masks: np.ndarray,
     pred_masks: np.ndarray,
-) -> np.ndarray:
+) -> Tuple[np.ndarray, np.ndarray]:
     """Returns the intersection over the area of the predicted box."""
     assert gt_masks.shape == pred_masks.shape
-    m, n = gt_masks.max(), pred_masks.max()
+    m: int = np.max(gt_masks)
+    n: int = min(np.max(pred_masks), MAX_DET)
 
     gt_masks = gt_masks.reshape(-1)
     pred_masks = pred_masks.reshape(-1)
+    pred_masks[pred_masks > MAX_DET] = 0
 
     confusion = gt_masks * (1 + n) + pred_masks
     bin_num = (1 + m) * (1 + n)
@@ -119,7 +123,7 @@ def acc_single_video_mots(
                     distances > 1 - iou_thr, np.nan, distances
                 )
 
-            gt_invalid = np.bitwise_not(gt_valids)
+            gt_invalid = np.logical_not(gt_valids)
             if (gt_invalid).any():
                 # 1. assign gt and preds
                 fps = np.ones(pred_ids_c.shape[0]).astype(np.bool8)
