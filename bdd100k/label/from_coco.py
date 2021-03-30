@@ -57,7 +57,7 @@ def transform(label_file: str) -> List[LabeledFrame]:
                     "category": cat_map[ann["category_id"]],
                     "manualShape": True,
                     "manualAttributes": True,
-                    "box2d": {
+                    "box_2d": {
                         "x1": ann["bbox"][0],
                         "y1": ann["bbox"][1],
                         "x2": ann["bbox"][0] + ann["bbox"][2] - 1,

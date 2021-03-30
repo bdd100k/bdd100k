@@ -146,7 +146,7 @@ def set_object_attributes(
     attributes = label.attributes
     if attributes is None:
         return
-    iscrowd = bool(attributes.get("Crowd", False))
+    iscrowd = bool(attributes.get("crowd", False))
     annotation.update(
         dict(
             iscrowd=int(iscrowd or ignore),
@@ -188,13 +188,13 @@ def get_instance_id(
 
 def set_box_object_geometry(annotation: DictAny, label: Label) -> None:
     """Parsing bbox, area, polygon for bbox ann."""
-    box2d = label.box2d
-    if box2d is None:
+    box_2d = label.box_2d
+    if box_2d is None:
         return
-    x1 = box2d.x1
-    y1 = box2d.y1
-    x2 = box2d.x2
-    y2 = box2d.y2
+    x1 = box_2d.x1
+    y1 = box_2d.y1
+    x2 = box_2d.x2
+    y2 = box_2d.y2
 
     annotation.update(
         dict(
@@ -254,7 +254,7 @@ def bdd100k2coco_det(
         if frame.labels is None:
             continue
         for label in frame.labels:
-            if label.box2d is None:
+            if label.box_2d is None:
                 continue
 
             category_ignored, category_id = process_category(
@@ -306,7 +306,7 @@ def bdd100k2coco_box_track(
 
             # annotations
             for label in image_anns.labels:
-                if label.box2d is None:
+                if label.box_2d is None:
                     continue
 
                 category_ignored, category_id = process_category(
@@ -430,7 +430,7 @@ def bdd100k2coco_ins_seg(
 
         # annotations
         for label in frame.labels:
-            if label.poly2d is None:
+            if label.poly_2d is None:
                 continue
 
             category_ignored, category_id = process_category(
@@ -518,7 +518,7 @@ def bdd100k2coco_seg_track(
 
             # annotations
             for label in image_anns.labels:
-                if label.poly2d is None:
+                if label.poly_2d is None:
                     continue
 
                 category_ignored, category_id = process_category(

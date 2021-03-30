@@ -45,19 +45,19 @@ def parse_objects(objects: List[Label]) -> List[np.ndarray]:
     """Parse objects under Scalable formats."""
     bboxes, labels, ids, ignore_bboxes = [], [], [], []
     for obj in objects:
-        box2d = obj.box2d
-        if box2d is None:
+        box_2d = obj.box_2d
+        if box_2d is None:
             continue
         bbox = [
-            box2d.x1,
-            box2d.y1,
-            box2d.x2 - box2d.x1,
-            box2d.y2 - box2d.y1,
+            box_2d.x1,
+            box_2d.y1,
+            box_2d.x2 - box_2d.x1,
+            box_2d.y2 - box_2d.y1,
         ]
         category = obj.category
         if category in CLASSES:
             if obj.attributes is not None and bool(
-                obj.attributes.get("Crowd", False)
+                obj.attributes.get("crowd", False)
             ):
                 ignore_bboxes.append(bbox)
             else:

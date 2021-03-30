@@ -7,6 +7,7 @@ import os.path as osp
 from collections import defaultdict
 from typing import Dict, List, Tuple, Union
 
+import humps  # type: ignore
 from scalabel.label.typing import Frame, Label
 
 from .typing import DictAny
@@ -102,6 +103,7 @@ def read(inputs: str) -> List[List[Frame]]:
     if "video_name" in outputs[0][0]:
         outputs = sorted(outputs, key=lambda x: str(x[0]["video_name"]))
 
+    outputs = humps.decamelize(outputs)
     frames_list: List[List[Frame]] = []
     for output in outputs:
         frames: List[Frame] = []

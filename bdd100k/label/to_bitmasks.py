@@ -135,9 +135,9 @@ def set_color(
     if attributes is None:
         truncated, occluded, crowd, ignore = 0, 0, 0, 0
     else:
-        truncated = int(attributes.get("Truncated", False))
-        occluded = int(attributes.get("Occluded", False))
-        crowd = int(attributes.get("Crowd", False))
+        truncated = int(attributes.get("truncated", False))
+        occluded = int(attributes.get("occluded", False))
+        crowd = int(attributes.get("crowd", False))
         ignore = int(category_ignored)
     color = np.array(
         [
@@ -202,7 +202,7 @@ def insseg2bitmasks(
         poly2ds: List[List[Poly2D]] = []
 
         for label in image_anns.labels:
-            if label.poly2d is None:
+            if label.poly_2d is None:
                 continue
 
             category_ignored, category_id = process_category(
@@ -213,7 +213,7 @@ def insseg2bitmasks(
 
             color = set_color(label, category_id, ann_id, category_ignored)
             colors.append(color)
-            poly2ds.append(label.poly2d)
+            poly2ds.append(label.poly_2d)
             ann_id += 1
 
         colors_list.append(colors)
@@ -257,7 +257,7 @@ def segtrack2bitmasks(
             poly2ds: List[List[Poly2D]] = []
 
             for label in image_anns.labels:
-                if label.poly2d is None:
+                if label.poly_2d is None:
                     continue
 
                 category_ignored, category_id = process_category(
@@ -274,7 +274,7 @@ def segtrack2bitmasks(
                     label, category_id, instance_id, category_ignored
                 )
                 colors.append(color)
-                poly2ds.append(label.poly2d)
+                poly2ds.append(label.poly_2d)
 
             colors_list.append(colors)
             poly2ds_list.append(poly2ds)
