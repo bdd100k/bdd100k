@@ -26,7 +26,7 @@ class TestBDD100K2COCO(unittest.TestCase):
 
     def test_num_anns(self) -> None:
         """Check the number of annotations is unchanged."""
-        len_bdd = sum([len(item["labels"]) for item in self.val_bdd])
+        len_bdd = sum([len(item.labels) for item in self.val_bdd])
         len_coco = len(self.val_coco["annotations"])
         self.assertEqual(len_coco, len_bdd)
 

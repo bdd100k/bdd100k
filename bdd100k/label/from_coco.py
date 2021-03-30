@@ -1,13 +1,11 @@
 """Convert coco to bdd100k format."""
 import argparse
-from typing import Any, Dict, List
+from typing import List
 
 from pycocotools.coco import COCO
 from scalabel.label.io import save as save_bdd100k
 from scalabel.label.typing import Frame as LabeledFrame
 from scalabel.label.typing import Label
-
-DictAny = Dict[str, Any]  # type: ignore[misc]
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -51,10 +49,11 @@ def transform(label_file: str) -> List[LabeledFrame]:
             "timeofday": "undefined",
         }
         det_dict.labels = []
-        for ann in anns:
+        for i, ann in enumerate(anns):
             label = Label(
                 **{
                     "id": ann["id"],
+                    "index": i + 1,
                     "category": cat_map[ann["category_id"]],
                     "manualShape": True,
                     "manualAttributes": True,

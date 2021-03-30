@@ -5,7 +5,9 @@ import json
 import os
 import os.path as osp
 from collections import defaultdict
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
+
+from scalabel.label.typing import Frame, Label
 
 from .typing import DictAny
 
@@ -23,7 +25,7 @@ IGNORE_MAP: Dict[str, str] = {
     "trailer": "truck",
 }
 
-CATEGORIES: List[DictAny] = [
+CATEGORIES: List[Dict[str, Union[int, str]]] = [
     {"supercategory": "human", "id": 1, "name": "pedestrian"},
     {"supercategory": "human", "id": 2, "name": "rider"},
     {"supercategory": "vehicle", "id": 3, "name": "car"},
@@ -84,7 +86,7 @@ def list_files(inputs: str) -> List[List[str]]:
     return files_list
 
 
-def read(inputs: str) -> List[List[DictAny]]:
+def read(inputs: str) -> List[List[Frame]]:
     """Read annotations from file/files."""
     if osp.isdir(inputs):
         files = glob.glob(osp.join(inputs, "*.json"))
@@ -99,4 +101,23 @@ def read(inputs: str) -> List[List[DictAny]]:
         raise TypeError("Inputs must be a folder or a JSON file.")
     if "video_name" in outputs[0][0]:
         outputs = sorted(outputs, key=lambda x: str(x[0]["video_name"]))
-    return outputs
+
+    frames_list: List[List[Frame]] = []
+    for output in outputs:
+        frames: List[Frame] = []
+        for oup in output:
+            labels, oup["labels"] = oup["labels"], []
+            frame = Frame(**oup)
+            frame.frame_index = oup["index"]
+
+            for label in labels:
+                attributes, label["attributes"] = label["attributes"], []
+                frame_label = Label(**label)
+                frame_label.attributes = dict()
+                for attr, val in attributes.items():
+                    if isinstance(val, (str, float, bool)):
+                        frame_label.attributes[attr] = val
+                frame.labels.append(frame_label)
+            frames.append(frame)
+        frames_list.append(frames)
+    return frames_list

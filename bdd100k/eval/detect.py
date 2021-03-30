@@ -55,7 +55,7 @@ def evaluate_det(
     out_dir: str = "none",
     ann_format: str = "coco",
     mode: str = "det",
-) -> DictAny:
+) -> Dict[str, float]:
     """Load the ground truth and prediction results.
 
     Args:
@@ -101,7 +101,7 @@ def evaluate_det(
 
 def evaluate_workflow(
     coco_eval: COCOeval, cat_ids: List[int], cat_names: List[str], out_dir: str
-) -> DictAny:
+) -> Dict[str, float]:
     """Execute evaluation."""
     n_tit = 12  # number of evaluation titles
     n_cls = len(cat_ids)  # 10/8 classes for BDD100K detection/tracking
@@ -189,7 +189,7 @@ def evaluate_workflow(
         "AR_medium",
         "AR_large",
     ]
-    scores = {}
+    scores: Dict[str, float] = {}
 
     for title, stat in zip(score_titles, stats):
         scores[title] = stat.item()
@@ -199,7 +199,9 @@ def evaluate_workflow(
     return scores
 
 
-def write_eval(out_dir: str, scores: DictAny, eval_param: DictAny) -> None:
+def write_eval(
+    out_dir: str, scores: Dict[str, float], eval_param: DictAny
+) -> None:
     """Write the evaluation results to file, print in tabulate format."""
     output_filename = os.path.join(out_dir, "scores.json")
     with open(output_filename, "w") as fp:

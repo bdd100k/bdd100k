@@ -219,7 +219,7 @@ def evaluate_ins_seg(
     pred_base: str,
     pred_score_file: str,
     out_dir: str = "none",
-) -> DictAny:
+) -> Dict[str, float]:
     """Load the ground truth and prediction results.
 
     Args:
@@ -232,6 +232,6 @@ def evaluate_ins_seg(
         dict: detection metric scores
     """
     bdd_eval = BDDInsSegEval(ann_base, pred_base, pred_score_file)
-    cat_ids: List[int] = [category["id"] for category in CATEGORIES]
-    cat_names: List[str] = [category["name"] for category in CATEGORIES]
+    cat_ids = [int(category["id"]) for category in CATEGORIES]
+    cat_names = [str(category["name"]) for category in CATEGORIES]
     return evaluate_workflow(bdd_eval, cat_ids, cat_names, out_dir)
