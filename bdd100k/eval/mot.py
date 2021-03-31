@@ -51,8 +51,8 @@ def parse_objects(objects: List[Label]) -> List[np.ndarray]:
         bbox = [
             box_2d.x1,
             box_2d.y1,
-            box_2d.x2 - box_2d.x1,
-            box_2d.y2 - box_2d.y1,
+            box_2d.x2 - box_2d.x1 + 1,
+            box_2d.y2 - box_2d.y1 + 1,
         ]
         category = obj.category
         if category in CLASSES:
@@ -76,9 +76,9 @@ def intersection_over_area(preds: np.ndarray, gts: np.ndarray) -> np.ndarray:
     out = np.zeros((len(preds), len(gts)))
     for i, p in enumerate(preds):
         for j, g in enumerate(gts):
-            x1, x2 = max(p[0], g[0]), min(p[0] + p[2], g[0] + g[2])
-            y1, y2 = max(p[1], g[1]), min(p[1] + p[3], g[1] + g[3])
-            out[i][j] = max(x2 - x1, 0) * max(y2 - y1, 0) / float(p[2] * p[3])
+            w = min(p[0] + p[2], g[0] + g[2]) - max(p[0], g[0])
+            h = min(p[1] + p[3], g[1] + g[3]) - max(p[1], g[1])
+            out[i][j] = max(w, 0) * max(h, 0) / float(p[2] * p[3])
     return out
 
 

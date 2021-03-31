@@ -292,7 +292,7 @@ def pred_to_coco(pred: List[PredType], ann_coco: GtType) -> List[PredType]:
         p["category_id"] = cls_maps[cls_name]
         p["image_id"] = imgs_maps[p["name"]]
         x1, y1, x2, y2 = p["bbox"]  # x1, y1, x2, y2
-        p["bbox"] = [x1, y1, x2 - x1, y2 - y1]
+        p["bbox"] = [x1, y1, x2 - x1 + 1, y2 - y1 + 1]
 
     return pred
 

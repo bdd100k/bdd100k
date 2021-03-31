@@ -198,8 +198,8 @@ def set_box_object_geometry(annotation: DictAny, label: Label) -> None:
 
     annotation.update(
         dict(
-            bbox=[x1, y1, x2 - x1, y2 - y1],
-            area=float((x2 - x1) * (y2 - y1)),
+            bbox=[x1, y1, x2 - x1 + 1, y2 - y1 + 1],
+            area=float((x2 - x1 + 1) * (y2 - y1 + 1)),
             segmentation=[[x1, y1, x1, y2, x2, y2, x2, y1]],
         )
     )
@@ -215,11 +215,11 @@ def set_seg_object_geometry(
     if mask_mode == "polygon":
         x_inds = np.nonzero(np.sum(mask, axis=0))[0]
         y_inds = np.nonzero(np.sum(mask, axis=1))[0]
-        x1, x2 = np.min(x_inds), np.max(x_inds) + 1
-        y1, y2 = np.min(y_inds), np.max(y_inds) + 1
-        mask = mask[y1:y2, x1:x2]
+        x1, x2 = np.min(x_inds), np.max(x_inds)
+        y1, y2 = np.min(y_inds), np.max(y_inds)
+        mask = mask[y1 : y2 + 1, x1 : x2 + 1]
         segmentation = mask_to_polygon(mask, x1, y1)
-        bbox = np.array([x1, y1, x2 - x1, y2 - y1]).tolist()
+        bbox = np.array([x1, y1, x2 - x1 + 1, y2 - y1 + 1]).tolist()
         area = np.sum(mask).tolist()
     elif mask_mode == "rle":
         segmentation = mask_util.encode(
