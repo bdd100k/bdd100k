@@ -17,18 +17,18 @@ class TestBDD100KDetectEval(unittest.TestCase):
         preds = "{}/testcases/bbox_predictions.json".format(cur_dir)
         result = evaluate_det(gts, preds)
         overall_reference = {
-            "AP": 0.3310833329280097,
-            "AP_50": 0.5373587734237398,
-            "AP_75": 0.34287281244106843,
-            "AP_small": 0.20356852321079935,
-            "AP_medium": 0.48831230759261923,
-            "AP_large": 0.6425314827066648,
-            "AR_max_1": 0.23178269105404029,
-            "AR_max_10": 0.3713671493592072,
-            "AR_max_100": 0.3993805135329416,
-            "AR_small": 0.24934537065196868,
-            "AR_medium": 0.5545010044684765,
-            "AR_large": 0.6604448777029422,
+            "AP": 0.3129270786276149,
+            "AP_50": 0.5208928611619372,
+            "AP_75": 0.31352210114424733,
+            "AP_small": 0.18365219335000335,
+            "AP_medium": 0.4841288233364759,
+            "AP_large": 0.6320439295297166,
+            "AR_max_1": 0.21599709015331267,
+            "AR_max_10": 0.3531322234358392,
+            "AR_max_100": 0.3793465642222695,
+            "AR_small": 0.22512489216925038,
+            "AR_medium": 0.553898980511434,
+            "AR_large": 0.6504448777029422,
         }
         for key in result:
             self.assertAlmostEqual(result[key], overall_reference[key])
