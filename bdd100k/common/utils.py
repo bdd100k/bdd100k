@@ -6,7 +6,7 @@ import os.path as osp
 from collections import defaultdict
 from typing import Dict, List, Tuple, Union
 
-from scalabel.label.io import load
+from scalabel.label.io import load as load_bdd100k
 from scalabel.label.typing import Frame
 
 from .typing import DictAny
@@ -90,9 +90,9 @@ def read(inputs: str) -> List[List[Frame]]:
     """Read annotations from file/files."""
     if osp.isdir(inputs):
         files = glob.glob(osp.join(inputs, "*.json"))
-        outputs = [load(file_) for file_ in files]
+        outputs = [load_bdd100k(file_) for file_ in files]
     elif osp.isfile(inputs) and inputs.endswith("json"):
-        outputs = [load(inputs)]
+        outputs = [load_bdd100k(inputs)]
     else:
         raise TypeError("Inputs must be a folder or a JSON file.")
     if outputs[0][0].video_name is not None:

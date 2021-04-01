@@ -14,6 +14,7 @@ from ..common.logger import logger
 from ..common.typing import DictAny
 from ..common.utils import list_files, read
 from .detect import evaluate_det
+from .ins_seg import evaluate_ins_seg
 from .mot import acc_single_video_mot, evaluate_track
 from .mots import acc_single_video_mots
 
@@ -24,7 +25,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--task",
         "-t",
-        choices=["seg", "det", "drivable", "mot", "mots"],
+        choices=["seg", "det", "ins_seg", "drivable", "mot", "mots"],
         required=True,
     )
     parser.add_argument(
@@ -51,9 +52,16 @@ def parse_args() -> argparse.Namespace:
         default=4,
         help="number of processes for mot evaluation",
     )
-    # Flags for detection
+    # Flags for detection and instance segmentation
     parser.add_argument(
         "--out-dir", type=str, default=".", help="Path to store output files"
+    )
+    # Flags for instance segmentatoin
+    parser.add_argument(
+        "--score-file",
+        type=str,
+        default=".",
+        help="Path to store the prediction scoring file",
     )
     parser.add_argument(
         "--ann-format",
@@ -293,6 +301,8 @@ def run() -> None:
         evaluate_det(
             args.gt, args.result, args.out_dir, args.ann_format, args.mode
         )
+    elif args.task == "ins_seg":
+        evaluate_ins_seg(args.gt, args.result, args.score_file, args.out_dir)
     elif args.task == "mot":
         evaluate_track(
             acc_single_video_mot,
