@@ -19,10 +19,7 @@ your prediction results as a list of bounding box predictions with the following
         "box2d": List[float], [x1, y1, x2, y2]
     }
 
-You can find an example result file in |bdd100k_testcase_det|_.
-
-.. |bdd100k_testcase_det| replace:: ``bdd100k.eval.testcases``
-.. _bdd100k_testcase_det: https://github.com/bdd100k/bdd100k/blob/master/bdd100k/eval/testcases/bbox_predictions.json
+You can find an example result file in `bdd100k.eval.testcases <https://github.com/bdd100k/bdd100k/blob/master/bdd100k/eval/testcases/bbox_predictions.json>`_
 
 When you submit your results, save your results in a JSON file and then compress it into a zip file.
 
@@ -50,6 +47,54 @@ Similar to COCO evaluation, we report 12 scores as
 "AR_max_100", "AR_small", "AR_medium", "AR_large" across all the classes. 
 
 
+Instance Segmentation
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+We use the same metrics set as DET above. The only difference lies in the computation of distance matrixs.
+Concretely, in DET, it is computed using box IoU. While for InsSeg, the mask IoU is used.
+
+Submission format
+^^^^^^^^^^^^^^^^^^^^^^
+
+To evaluate your algorithms on BDD100K detection benchmark, you may prepare predictions in bitmask format,
+which is illustrated in `Label Format <https://doc.bdd100k.com/format.html>`_.
+Moreover, a score file is needed, with the following format:
+::
+
+    {
+        "name": str, name of the input image,
+        "labels": [
+            {
+                "index": int in range [1, 255], the index in R channel
+                "score": float, confidence score of the prediction
+            } 
+        ]
+    }
+
+- `index`: the value correspondence to the "ann_id" stored in B and A channels.
+
+To evaluate on the Codalab server, the submission file should be a zipped nested folder with the following structure:
+::
+
+    - score.json
+    - bitmasks
+        - xxx.png
+        - yyy.png
+        ...
+
+Run Evaluation on Your Own
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can evaluate your algorithm with public annotations by running 
+::
+    
+    python3 -m bdd100k.eval.run -t ins_seg -g ${gt_path} -r ${res_path} --score-file ${res_score_file} 
+
+- `gt_path`: the path to ground-truch bitmask images folder.
+- `res_path`: the path to the results bitmask images folder.
+- `res_score_file`: the json file with the confidence scores.
+
+
 
 Multiple Object Tracking
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -67,9 +112,9 @@ The JSON file for each video should contain a list of per-frame result dictionar
 ::
 
     {
-        "video_name": str, name of the current sequence,
+        "videoName": str, name of the current sequence,
         "name": str, name of the current frame,
-        "index": int, index of the current frame within the sequence,
+        "framIndex": int, index of the current frame within the sequence,
         "labels": List[dict], List of predictions for the current frame
     }
 
@@ -79,15 +124,16 @@ The 'labels' list will contain the predictions for the current frame, each speci
     {
         "name": str, name of the input image,
         "category": str, name of the predicted category,
-        "id": str, unique instance id of the prediction in the current sequence,
+        "id": int, unique instance id of the prediction in the current sequence,
         "score": float, confidence score of the prediction,
-        "box2d": dict[float], {x1, y1, x2, y2}
+        "box2d": 
+            "x1": float,
+            "y1": float,
+            "x2": float,
+            "y2": float
     }
 
-You can find an example result file in |bdd100k_testcase_track|_.
-
-.. |bdd100k_testcase_track| replace:: ``bdd100k.eval.testcases``
-.. _bdd100k_testcase_track: https://github.com/bdd100k/bdd100k/blob/master/bdd100k/eval/testcases/track_predictions.json
+You can find an example result file in `bbd100k.eval.testcases <https://github.com/bdd100k/bdd100k/blob/master/bdd100k/eval/testcases/track_predictions.json>`_
 
 Run Evaluation on Your Own
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -97,13 +143,9 @@ You can evaluate your algorithms with public annotations by running
 
     python -m bdd100k.eval.run -t mot -g ${gt_file} -r ${res_file} 
 
-To obtain results on val/test phase, submit your result files at `BDD100K 2D Multiple Object Tracking & Segmentation Challenge <https://competitions.codalab.org/competitions/29388>`_.
-
-
 
 Evaluation Metrics
 ^^^^^^^^^^^^^^^^^^^^^^
-
 
 We employ mean Multiple Object Tracking Accuracy (mMOTA, mean of MOTA of the 8 categories)
 as our primary evaluation metric for ranking. 
@@ -152,6 +194,7 @@ we also evaluate results for 3 super-categories specified below.
 The super-category evaluation results are provided only for the purpose of reference.
 
 ::
+
     "HUMAN":   ["pedestrian", "rider"],
     "VEHICLE": ["car", "bus", "truck", "train"],
     "BIKE":    ["motorcycle", "bicycle"]
@@ -174,7 +217,7 @@ We will rank the methods without using external datasets except **ImageNet**.
 .. Jiangmiao: ranking metric by mMOTA? KITTI said no ranking metric. 
 
 
-Multi Object Tracking and Segmentation
+Multi Object Tracking and Segmentation (Segmentation Tracking)
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 We use the same metrics set as MOT above. The only difference lies in the computation of distance matrixs.
@@ -184,27 +227,7 @@ Submission format
 ^^^^^^^^^^^^^^^^^
 
 The submission should be a zipped nested folder for bitmask images.
-For each image, the results should be saved in an RGBA image with png format, and named as "${image_name}.png".
 Moreover, images belonging to the same video should be places in the same folder, named by ${video_name}.
-
-For the image, The first byte, R, is used for the category id range from 1 (instead of 0).
-And G is for the instance attributes. Currently, four attributes are used, they are "truncated", "occluded", "crowd" and "ignore".
-Note that boxes with "crowd" or "ignore" labels will not be considered during testing.
-The above four attributes are stored in lowest important bits of G. Given this, ``G = 8 & truncated + 4 & occluded + 2 & crowd + ignore``
-. Finally, the B channel and A channel together store the instance_id, which can be computed as ``B * 255 + A``.
-You can also refer to the below image for reference.
-
-.. figure:: ../images/bitmask.png
-   :alt: Downloading buttons
-
-Label format
-^^^^^^^^^^^^^^^^^
-
-We provide labels in both json and bitmask formats. Note that polygons stored in jsons is not the same format with COCO.
-Instead, the "poly2d" entry in jsons stores vertices and control points of Bezeir Curves. 
-We provides the scripts for convert BDD jsons into bitmask.
-However, as the conversion process is not determinitic, we don't recommend converting it by yourself.
-The evaluation scripts uses bitmasks as ground-truth, so we suggest using bitmasks as input all the way.
 
 Run Evaluation on Your Own
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -212,6 +235,7 @@ Run Evaluation on Your Own
 You can evaluate your algorithms with public annotations by running
 ::
 
-    python -m bdd100k.eval.run -t mots -g ${gt_folder} -r ${res_folder} 
+    python -m bdd100k.eval.run -t mots -g ${gt_path} -r ${res_path} 
 
-To obtain results on val/test phase, submit your result files at `BDD100K 2D Multiple Object Tracking Challenge <https://competitions.codalab.org/competitions/29388>`_.
+- `gt_path`: the path to ground-truch bitmask images folder.
+- `res_path`: the path to the results bitmask images folder.
