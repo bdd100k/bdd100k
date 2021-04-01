@@ -1,7 +1,6 @@
 """Evaluation helper functoins."""
 
 import argparse
-import glob
 import json
 import os
 import os.path as osp
@@ -13,8 +12,10 @@ from PIL import Image
 
 from ..common.logger import logger
 from ..common.typing import DictAny
+from ..common.utils import list_files, read
 from .detect import evaluate_det
-from .mot import evaluate_mot
+from .mot import acc_single_video_mot, evaluate_track
+from .mots import acc_single_video_mots
 
 
 def parse_args() -> argparse.Namespace:
@@ -23,7 +24,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--task",
         "-t",
-        choices=["seg", "det", "drivable", "mot"],
+        choices=["seg", "det", "drivable", "mot", "mots"],
         required=True,
     )
     parser.add_argument(
@@ -280,19 +281,6 @@ def evaluate_detection(gt_path: str, result_path: str) -> None:
     )
 
 
-def read(inputs: str) -> List[List[DictAny]]:
-    """Read annotations from file/files."""
-    if osp.isdir(inputs):
-        files = glob.glob(osp.join(inputs, "*.json"))
-        outputs = [json.load(open(file)) for file in files]
-    elif osp.isfile(inputs) and inputs.endswith("json"):
-        outputs = json.load(open(inputs))
-    else:
-        raise TypeError("Inputs must be a folder or a JSON file.")
-    outputs = sorted(outputs, key=lambda x: str(x[0]["video_name"]))
-    return outputs
-
-
 def run() -> None:
     """Main."""
     args = parse_args()
@@ -306,9 +294,19 @@ def run() -> None:
             args.gt, args.result, args.out_dir, args.ann_format, args.mode
         )
     elif args.task == "mot":
-        evaluate_mot(
+        evaluate_track(
+            acc_single_video_mot,
             gts=read(args.gt),
             results=read(args.result),
+            iou_thr=args.mot_iou_thr,
+            ignore_iof_thr=args.mot_ignore_iof_thr,
+            nproc=args.mot_nproc,
+        )
+    elif args.task == "mots":
+        evaluate_track(
+            acc_single_video_mots,
+            gts=list_files(args.gt),
+            results=list_files(args.result),
             iou_thr=args.mot_iou_thr,
             ignore_iof_thr=args.mot_ignore_iof_thr,
             nproc=args.mot_nproc,

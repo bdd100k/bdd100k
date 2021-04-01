@@ -106,8 +106,8 @@ Multi-object bounding box tracking training and validation labels released in
 | md5  | 00398674e62d05206b0847be3f638d74 |
 +------+----------------------------------+
 
-MOT 2020 Data
-~~~~~~~~~~~~~~
+MOT 2020 Images
+~~~~~~~~~~~~~~~~
 
 Multi-object bounding box tracking videos in frames released in 2020
 
@@ -124,3 +124,20 @@ is deprecated.
 +------+----------------------------------+
 | md5  | 6e761be56b6c2f6cf6a0c3a38eb5da0e |
 +------+----------------------------------+
+
+MOTS 2020 Labels
+~~~~~~~~~~~~~~~~~
+
+Multi-object tracking aand segmentation training and validation labels released in 2020
+
+
++------+----------------------------------+
+| Size | 465.5MB                          |
++------+----------------------------------+
+| md5  | c6968ad8b86c31f49dd66efde97f53f0 |
++------+----------------------------------+
+
+MOTS 2020 Images
+~~~~~~~~~~~~~~~~~
+
+Multi-object tracking aand segmentation videos in frames released in 2020
