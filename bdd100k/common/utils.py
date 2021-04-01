@@ -1,11 +1,13 @@
 """Util functions."""
 
 import glob
-import json
 import os
 import os.path as osp
 from collections import defaultdict
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
+
+from scalabel.label.io import load
+from scalabel.label.typing import Frame
 
 from .typing import DictAny
 
@@ -23,7 +25,7 @@ IGNORE_MAP: Dict[str, str] = {
     "trailer": "truck",
 }
 
-CATEGORIES: List[DictAny] = [
+CATEGORIES: List[Dict[str, Union[int, str]]] = [
     {"supercategory": "human", "id": 1, "name": "pedestrian"},
     {"supercategory": "human", "id": 2, "name": "rider"},
     {"supercategory": "vehicle", "id": 3, "name": "car"},
@@ -84,19 +86,18 @@ def list_files(inputs: str) -> List[List[str]]:
     return files_list
 
 
-def read(inputs: str) -> List[List[DictAny]]:
+def read(inputs: str) -> List[List[Frame]]:
     """Read annotations from file/files."""
     if osp.isdir(inputs):
         files = glob.glob(osp.join(inputs, "*.json"))
-        outputs = [json.load(open(file)) for file in files]
+        outputs = [load(file_) for file_ in files]
     elif osp.isfile(inputs) and inputs.endswith("json"):
-        outputs = json.load(open(inputs))
-        if isinstance(outputs, dict):
-            outputs = [[outputs]]
-        elif isinstance(outputs, list) and isinstance(outputs[0], dict):
-            outputs = [outputs]
+        outputs = [load(inputs)]
     else:
         raise TypeError("Inputs must be a folder or a JSON file.")
-    if "video_name" in outputs[0][0]:
-        outputs = sorted(outputs, key=lambda x: str(x[0]["video_name"]))
+    if outputs[0][0].video_name is not None:
+        for output in outputs:
+            assert output[0].video_name is not None
+        outputs = sorted(outputs, key=lambda x: str(x[0].video_name))
+
     return outputs

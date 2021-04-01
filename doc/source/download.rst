@@ -140,4 +140,4 @@ Multi-object tracking aand segmentation training and validation labels released 
 MOTS 2020 Images
 ~~~~~~~~~~~~~~~~~
 
-Multi-object tracking aand segmentation videos in frames released in 2020
+Multi-object tracking and segmentation videos in frames released in 2020

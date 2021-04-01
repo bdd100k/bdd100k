@@ -18,6 +18,7 @@ def parse_bitmasks(
 
     The compression works like: [4, 2, 9] --> [2, 1, 3]
     """
+    bitmask = bitmask.astype(np.int32)
     category_map = bitmask[:, :, 0]
     attributes_map = bitmask[:, :, 1]
     instance_map = (bitmask[:, :, 2] << 8) + bitmask[:, :, 3]
@@ -98,8 +99,8 @@ def acc_single_video_mots(
         assert os.path.isfile(gt)
         assert os.path.isfile(result)
 
-        gt_masks = np.asarray(Image.open(gt)).astype(np.int32)
-        res_masks = np.asarray(Image.open(result)).astype(np.int32)
+        gt_masks = np.asarray(Image.open(gt))
+        res_masks = np.asarray(Image.open(result))
         gt_masks, gt_ids, gt_attrs, gt_cats = parse_bitmasks(gt_masks)
         pred_masks, pred_ids, pred_attrs, pred_cats = parse_bitmasks(res_masks)
         ious, iofs = mask_intersection_rate(gt_masks, pred_masks)

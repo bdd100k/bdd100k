@@ -579,8 +579,8 @@ class LabelViewer(object):
         # Draw and add one box to the figure
         return mpatches.Rectangle(
             (x1, y1),
-            x2 - x1,
-            y2 - y1,
+            x2 - x1 + 1,
+            y2 - y1 + 1,
             linewidth=3 * self.scale,
             edgecolor=box_color,
             facecolor="none",
@@ -1000,8 +1000,8 @@ class LabelViewer2(object):
         # Draw and add one box to the figure
         return mpatches.Rectangle(
             (x1, y1),
-            x2 - x1,
-            y2 - y1,
+            x2 - x1 + 1,
+            y2 - y1 + 1,
             linewidth=2 * self.scale,
             edgecolor=box_color + [0.75],
             facecolor=box_color + [0.25],

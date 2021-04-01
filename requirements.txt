@@ -16,5 +16,7 @@ pytest
 scikit-image
 sphinx
 sphinx-rtd-theme
-tqdm
 tabulate
+tqdm
+
+git+git://github.com/scalabel/scalabel.git
