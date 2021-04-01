@@ -23,6 +23,7 @@ def parse_res_bitmasks(
     ann2score: Dict[int, float], bitmask: np.ndarray
 ) -> List[np.ndarray]:
     """Parse information from result bitmasks and compress its value range."""
+    bitmask = bitmask.astype(np.int32)
     category_map = bitmask[:, :, 0]
     ann_map = (bitmask[:, :, 2] << 8) + bitmask[:, :, 3]
 
