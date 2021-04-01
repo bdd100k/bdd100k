@@ -126,12 +126,12 @@ def mask_to_polygon(
 
 
 def set_image_attributes(
-    image: DictAny, image_name: str, image_id: int
+    image: DictAny, image_name: str, image_id: int, video_name: str = ""
 ) -> None:
     """Set attributes for the image dict."""
     image.update(
         dict(
-            file_name=image_name,
+            file_name=os.path.join(video_name, image_name),
             height=720,
             width=1280,
             id=image_id,
@@ -301,7 +301,7 @@ def bdd100k2coco_box_track(
         for image_anns in video_anns:
             image = dict(video_id=video_id, frame_id=image_anns.index)
             image_name = os.path.join(video_name, image_anns.name)
-            set_image_attributes(image, image_name, image_id)
+            set_image_attributes(image, image_name, image_id, video_name)
             coco["images"].append(image)
 
             # annotations
@@ -502,7 +502,7 @@ def bdd100k2coco_seg_track(
         for image_anns in video_anns:
             image = dict(video_id=video_id, frame_id=image_anns.index)
             image_name = os.path.join(video_name, image_anns.name)
-            set_image_attributes(image, image_name, image_id)
+            set_image_attributes(image, image_name, image_id, video_name)
             coco["images"].append(image)
 
             mask_name = os.path.join(

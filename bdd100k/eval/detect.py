@@ -275,7 +275,10 @@ def convert_preds(
 def pred_to_coco(pred: List[PredType], ann_coco: GtType) -> List[PredType]:
     """Convert the predictions into a compatabile format with COCOAPIs."""
     # update the prediction results
-    imgs_maps = {item["file_name"]: item["id"] for item in ann_coco["images"]}
+    imgs_maps = {
+        os.path.split(item["file_name"])[-1]: item["id"]
+        for item in ann_coco["images"]
+    }
     cls_maps = {item["name"]: item["id"] for item in ann_coco["categories"]}
 
     # backward compatible replacement
