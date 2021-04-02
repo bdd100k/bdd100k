@@ -9,15 +9,19 @@ Submission format
 ^^^^^^^^^^^^^^^^^^^^^^
 
 To evaluate your algorithms on BDD100K detection benchmark, you may prepare 
-your prediction results as a list of bounding box predictions with the following format:
+your prediction results using the `Scalabel Format <https://doc.scalabel.ai/format.html>`_.
+Speicifically, these fields are required:
+::
 
-{
-    | "name": str, name of the input image, \\
-    | "category": str, name of the predicted category,
-    | "score": float, confidence score of the prediction, 
-    | "bbox": List[float], [x1, y1, x2, y2] in `Scalabel Format <https://doc.scalabel.ai/format.html>`_
-
-}
+    - name: str
+    - labels []:
+        - category: str
+        - score: float
+        - box2d:
+            - x1: float
+            - y1: float
+            - x2: float
+            - y2: float
 
 When you submit your results, save your results in a JSON file and then compress it into a zip file.
 
