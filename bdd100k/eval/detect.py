@@ -23,7 +23,7 @@ from tabulate import tabulate
 
 from ..common.typing import DictAny
 from ..common.utils import NAME_MAPPING, read
-from ..label.to_coco import bdd100k2coco_box_track, bdd100k2coco_det
+from ..label.to_coco import bdd100k2coco_det
 from .type import GtType, PredType
 
 
