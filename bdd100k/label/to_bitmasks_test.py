@@ -18,7 +18,7 @@ class TestToBitmasks(unittest.TestCase):
     def test_conversion(self) -> None:
         """Check conversion to and from bitmask."""
         cur_dir = os.path.dirname(os.path.abspath(__file__))
-        labels = read("{}/testcases/example_annotation.json".format(cur_dir))
+        labels = [read("{}/testcases/example_annotation.json".format(cur_dir))]
 
         example_bitmasks = [
             np.asarray(

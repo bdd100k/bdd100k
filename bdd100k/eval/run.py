@@ -12,7 +12,7 @@ from PIL import Image
 
 from ..common.logger import logger
 from ..common.typing import DictAny
-from ..common.utils import list_files, read
+from ..common.utils import group_and_sort, list_files, read
 from .detect import evaluate_det
 from .ins_seg import evaluate_ins_seg
 from .mot import acc_single_video_mot, evaluate_track
@@ -306,8 +306,8 @@ def run() -> None:
     elif args.task == "mot":
         evaluate_track(
             acc_single_video_mot,
-            gts=read(args.gt),
-            results=read(args.result),
+            gts=group_and_sort(read(args.gt)),
+            results=group_and_sort(read(args.result)),
             iou_thr=args.mot_iou_thr,
             ignore_iof_thr=args.mot_ignore_iof_thr,
             nproc=args.mot_nproc,
