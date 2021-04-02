@@ -55,7 +55,6 @@ def evaluate_det(
     pred_file: str,
     out_dir: str = "none",
     ann_format: str = "coco",
-    mode: str = "det",
 ) -> Dict[str, float]:
     """Load the ground truth and prediction results.
 
@@ -64,7 +63,6 @@ def evaluate_det(
         pred_file: path to the prediciton results in BDD format. "*.json"
         out_dir: output_directory
         ann_format: either in `scalabel` format or in `coco` format.
-        mode: `det` or `track` for label conversion.
 
     Returns:
         dict: detection metric scores
@@ -78,11 +76,7 @@ def evaluate_det(
     else:
         # Convert the annotation file to COCO format
         labels = read(ann_file)
-        convert_func = dict(
-            det=bdd100k2coco_det,
-            box_track=bdd100k2coco_box_track,
-        )[mode]
-        ann_coco = convert_func(labels)
+        ann_coco = bdd100k2coco_det(labels)
         coco_gt = COCOV2(None, ann_coco)
 
     # Load results and convert the predictions

@@ -31,7 +31,7 @@ from tqdm import tqdm
 
 from ..common.logger import logger
 from ..common.typing import DictAny
-from ..common.utils import IGNORE_MAP, NAME_MAPPING, init, read
+from ..common.utils import IGNORE_MAP, NAME_MAPPING, group_and_sort, init, read
 
 
 def parser_definition_coco() -> argparse.ArgumentParser:
@@ -235,18 +235,16 @@ def set_seg_object_geometry(
 
 
 def bdd100k2coco_det(
-    labels: List[List[Frame]],
+    labels: List[Frame],
     ignore_as_class: bool = False,
     remove_ignore: bool = False,
 ) -> DictAny:
     """Converting BDD100K Detection Set to COCO format."""
-    assert len(labels) == 1
-
     coco, cat_name2id = init(mode="det", ignore_as_class=ignore_as_class)
     coco["type"] = "instances"
     image_id, ann_id = 1, 1
 
-    for frame in tqdm(labels[0]):
+    for frame in tqdm(labels):
         image: DictAny = dict()
         set_image_attributes(image, frame.name, image_id)
         coco["images"].append(image)
@@ -391,7 +389,7 @@ def coco_parellel_conversion(
 
 
 def bdd100k2coco_ins_seg(
-    labels: List[List[Frame]],
+    labels: List[Frame],
     mask_base: str,
     ignore_as_class: bool = False,
     remove_ignore: bool = False,
@@ -399,8 +397,6 @@ def bdd100k2coco_ins_seg(
     nproc: int = 4,
 ) -> DictAny:
     """Converting BDD100K Instance Segmentation Set to COCO format."""
-    assert len(labels) == 1
-
     coco, cat_name2id = init(mode="track", ignore_as_class=ignore_as_class)
     coco["type"] = "instances"
     image_id, ann_id = 1, 1
@@ -412,7 +408,7 @@ def bdd100k2coco_ins_seg(
 
     logger.info("Collecting bitmasks...")
 
-    for frame in tqdm(labels[0]):
+    for frame in tqdm(labels):
         instance_id = 1
         image: DictAny = dict()
         set_image_attributes(image, frame.name, image_id)
@@ -569,7 +565,7 @@ def bdd100k2coco_seg_track(
 
 def start_converting(
     parser_def_func: Callable[[], argparse.ArgumentParser]
-) -> Tuple[argparse.Namespace, List[List[Frame]]]:
+) -> Tuple[argparse.Namespace, List[Frame]]:
     """Parses arguments, and logs settings."""
     parser = parser_def_func()
     args = parser.parse_args()
@@ -605,11 +601,11 @@ def main() -> None:
         )
     elif args.mode == "box_track":
         coco = bdd100k2coco_box_track(
-            labels, args.ignore_as_class, args.remove_ignore
+            group_and_sort(labels), args.ignore_as_class, args.remove_ignore
         )
     elif args.mode == "seg_track":
         coco = bdd100k2coco_seg_track(
-            labels,
+            group_and_sort(labels),
             args.mask_base,
             args.ignore_as_class,
             args.remove_ignore,

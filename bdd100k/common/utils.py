@@ -4,6 +4,7 @@ import glob
 import os
 import os.path as osp
 from collections import defaultdict
+from itertools import groupby
 from typing import Dict, List, Tuple, Union
 
 from scalabel.label.io import load as load_bdd100k
@@ -86,18 +87,34 @@ def list_files(inputs: str) -> List[List[str]]:
     return files_list
 
 
-def read(inputs: str) -> List[List[Frame]]:
+def read(inputs: str) -> List[Frame]:
     """Read annotations from file/files."""
+    outputs: List[Frame] = []
     if osp.isdir(inputs):
         files = glob.glob(osp.join(inputs, "*.json"))
-        outputs = [load_bdd100k(file_) for file_ in files]
+        for file_ in files:
+            outputs.extend(load_bdd100k(file_))
     elif osp.isfile(inputs) and inputs.endswith("json"):
-        outputs = [load_bdd100k(inputs)]
+        outputs.extend(load_bdd100k(inputs))
     else:
         raise TypeError("Inputs must be a folder or a JSON file.")
-    if outputs[0][0].video_name is not None:
-        for output in outputs:
-            assert output[0].video_name is not None
-        outputs = sorted(outputs, key=lambda x: str(x[0].video_name))
 
     return outputs
+
+
+def group_and_sort(inputs: List[Frame]) -> List[List[Frame]]:
+    """Group frames by video_name and sort."""
+    for frame in inputs:
+        assert frame.video_name is not None
+        assert frame.frame_index is not None
+    frames_list: List[List[Frame]] = []
+    for _, frame_iter in groupby(inputs, lambda frame: frame.video_name):
+        frames = sorted(
+            list(frame_iter),
+            key=lambda frame: frame.frame_index if frame.frame_index else 0,
+        )
+        frames_list.append(frames)
+    frames_list = sorted(
+        frames_list, key=lambda frames: str(frames[0].video_name)
+    )
+    return frames_list
