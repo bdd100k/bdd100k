@@ -70,13 +70,6 @@ def parse_args() -> argparse.Namespace:
         default="scalabel",
         help="ground truth annotation format",
     )
-    parser.add_argument(
-        "--mode",
-        type=str,
-        choices=["det", "track"],
-        default="det",
-        help="choose the detection set or the tracking set",
-    )
 
     args = parser.parse_args()
 
@@ -298,9 +291,7 @@ def run() -> None:
     elif args.task == "seg":
         evaluate_segmentation(args.gt, args.result, 19, 17)
     elif args.task == "det":
-        evaluate_det(
-            args.gt, args.result, args.out_dir, args.ann_format, args.mode
-        )
+        evaluate_det(args.gt, args.result, args.out_dir, args.ann_format)
     elif args.task == "ins_seg":
         evaluate_ins_seg(args.gt, args.result, args.score_file, args.out_dir)
     elif args.task == "mot":
