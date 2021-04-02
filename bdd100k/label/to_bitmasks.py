@@ -30,7 +30,7 @@ from scalabel.label.typing import Frame, Label, Poly2D
 from tqdm import tqdm
 
 from ..common.logger import logger
-from ..common.utils import init, list_files
+from ..common.utils import group_and_sort, init, list_files
 from .to_coco import (
     get_instance_id,
     parser_definition_coco,
@@ -172,14 +172,13 @@ def bitmask_conversion(
 
 
 def insseg2bitmasks(
-    labels: List[List[Frame]],
+    labels: List[Frame],
     out_base: str,
     ignore_as_class: bool = False,
     remove_ignore: bool = False,
     nproc: int = 4,
 ) -> None:
     """Converting seg_track poly2d to bitmasks."""
-    assert len(labels) == 1
     os.makedirs(out_base, exist_ok=True)
 
     _, cat_name2id = init(mode="track", ignore_as_class=ignore_as_class)
@@ -190,7 +189,7 @@ def insseg2bitmasks(
 
     logger.info("Preparing annotations for InsSeg to Bitmasks")
 
-    for image_anns in tqdm(labels[0]):
+    for image_anns in tqdm(labels):
         ann_id = 1
 
         image_name = image_anns.name.replace(".jpg", ".png")
@@ -362,16 +361,22 @@ def main() -> None:
     """Main function."""
     os.environ["QT_QPA_PLATFORM"] = "offscreen"  # matplotlib offscreen render
     args, labels = start_converting(parser_definition_bitmasks)
-    bitmask_func = dict(ins_seg=insseg2bitmasks, seg_track=segtrack2bitmasks)[
-        args.mode
-    ]
-    bitmask_func(
-        labels,
-        args.out_path,
-        args.ignore_as_class,
-        args.remove_ignore,
-        args.nproc,
-    )
+    if args.mode == "ins_seg":
+        insseg2bitmasks(
+            labels,
+            args.out_path,
+            args.ignore_as_class,
+            args.remove_ignore,
+            args.nproc,
+        )
+    elif args.mode == "seg_track":
+        segtrack2bitmasks(
+            group_and_sort(labels),
+            args.out_path,
+            args.ignore_as_class,
+            args.remove_ignore,
+            args.nproc,
+        )
 
     colormap_func = dict(ins_seg=insseg2colormap, seg_track=segtrack2colormap)[
         args.mode

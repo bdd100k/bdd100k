@@ -20,8 +20,8 @@ class TestBDD100KMotEval(unittest.TestCase):
     def test_mot(self) -> None:
         """Check mot evaluation correctness."""
         cur_dir = os.path.dirname(os.path.abspath(__file__))
-        gts = read("{}/testcases/track_sample_anns.json".format(cur_dir))
-        preds = read("{}/testcases/track_predictions.json".format(cur_dir))
+        gts = [read("{}/testcases/track_sample_anns.json".format(cur_dir))]
+        preds = [read("{}/testcases/track_predictions.json".format(cur_dir))]
         result = evaluate_track(acc_single_video_mot, gts, preds)
         overall_reference = {
             "IDF1": 0.7101073676416142,
@@ -52,7 +52,7 @@ class TestRenderResults(unittest.TestCase):
     preds = read("{}/testcases/track_predictions.json".format(cur_dir))
 
     metrics = list(METRIC_MAPS.keys())
-    accs = [acc_single_video_mot(gts[0], preds[0])]
+    accs = [acc_single_video_mot(gts, preds)]
     names, accs, items = aggregate_accs(accs)
     summaries = [
         evaluate_single_class(name, acc) for name, acc in zip(names, accs)
