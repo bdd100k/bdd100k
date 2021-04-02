@@ -1,13 +1,7 @@
 """Evaluation code for BDD100K detection.
 
-predictions format: List[PredType]
-Each predicted bounding box forms one dictionary in BDD100K foramt as follows.
-{
-    "name": string
-    "category": string
-    "score": float
-    "bbox": [x1, y1, x2, y2]
-}
+The prediction and ground truth are expected in scalabel format. The evaluation
+resuilts are from the COCO toolkit.
 """
 import datetime
 import json
@@ -51,10 +45,7 @@ class COCOV2(COCO):  # type: ignore
 
 
 def evaluate_det(
-    ann_file: str,
-    pred_file: str,
-    out_dir: str = "none",
-    ann_format: str = "coco",
+    ann_file: str, pred_file: str, out_dir: str = "none"
 ) -> Dict[str, float]:
     """Load the ground truth and prediction results.
 
@@ -62,22 +53,14 @@ def evaluate_det(
         ann_file: path to the ground truth annotations. "*.json"
         pred_file: path to the prediciton results in BDD format. "*.json"
         out_dir: output_directory
-        ann_format: either in `scalabel` format or in `coco` format.
 
     Returns:
         dict: detection metric scores
     """
-    # GT annotations can either in COCO format or in BDD100K format
-    # During evaluation, labels under `ignored` class will be ignored.
-    if ann_format == "coco":
-        coco_gt = COCOV2(ann_file)
-        with open(ann_file) as fp:
-            ann_coco = json.load(fp)
-    else:
-        # Convert the annotation file to COCO format
-        labels = read(ann_file)
-        ann_coco = bdd100k2coco_det(labels)
-        coco_gt = COCOV2(None, ann_coco)
+    # Convert the annotation file to COCO format
+    labels = read(ann_file)
+    ann_coco = bdd100k2coco_det(labels)
+    coco_gt = COCOV2(None, ann_coco)
 
     # Load results and convert the predictions
     pred_res = convert_preds(pred_file, ann_coco)
