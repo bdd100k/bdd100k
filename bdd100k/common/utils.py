@@ -11,7 +11,7 @@ from scalabel.label.typing import Frame
 
 from .typing import DictAny
 
-NAME_MAPPING = {
+NAME_MAPPING: Dict[str, str] = {
     "bike": "bicycle",
     "caravan": "car",
     "motor": "motorcycle",
