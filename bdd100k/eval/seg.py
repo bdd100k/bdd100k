@@ -2,7 +2,7 @@
 
 import os
 import os.path as osp
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 from PIL import Image
@@ -39,7 +39,7 @@ def find_all_png(folder: str) -> List[str]:
 
 def evaluate_segmentation(
     gt_dir: str, result_dir: str, num_classes: int, key_length: int
-) -> None:
+) -> Tuple[np.ndarray, float]:
     """Evaluate segmentation IoU from input folders."""
     gt_dict = {osp.split(p)[1][:key_length]: p for p in find_all_png(gt_dir)}
     result_dict = {
@@ -67,15 +67,15 @@ def evaluate_segmentation(
         i += 1
         if i % 100 == 0:
             logger.info("Finished %d %f", i, per_class_iu(hist) * 100)
-    gt_id_set.remove([255])
+    if 255 in gt_id_set:
+        gt_id_set.remove(255)
     logger.info("GT id set [%s]", ",".join(str(s) for s in gt_id_set))
     ious = per_class_iu(hist) * 100
     miou = np.mean(ious[list(gt_id_set)])
 
-    logger.info(
-        "{:.2f}".format(miou),
-        ", ".join(["{:.2f}".format(n) for n in list(ious)]),
-    )
+    logger.info("{:.2f}".format(miou))
+    logger.info(", ".join(["{:.2f}".format(n) for n in list(ious)]))
+    return ious, miou
 
 
 def evaluate_drivable(gt_dir: str, result_dir: str) -> None:

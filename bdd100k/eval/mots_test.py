@@ -34,8 +34,8 @@ class TestEvaluteMOTS(unittest.TestCase):
     def test_mota_motp_idf1(self) -> None:
         """Check MOTP for the MOTS evaluation."""
         cur_dir = os.path.dirname(os.path.abspath(__file__))
-        a_path = "{}/testcases/a.png".format(cur_dir)
-        b_path = "{}/testcases/b.png".format(cur_dir)
+        a_path = "{}/testcases/mots/a.png".format(cur_dir)
+        b_path = "{}/testcases/mots/b.png".format(cur_dir)
 
         gts = [[a_path]]
         results = [[b_path]]
@@ -53,11 +53,11 @@ class TestParseBitmasks(unittest.TestCase):
         """Check input parsing for the MOTS evaluation."""
         cur_dir = os.path.dirname(os.path.abspath(__file__))
         bitmask = np.asarray(
-            Image.open("{}/testcases/example_bitmask.png".format(cur_dir))
+            Image.open("{}/testcases/mots/example_bitmask.png".format(cur_dir))
         )
         cvt_maps = parse_bitmasks(bitmask)
         gt_maps = [
-            np.load("{}/testcases/gt_{}.npy".format(cur_dir, name))
+            np.load("{}/testcases/mots/gt_{}.npy".format(cur_dir, name))
             for name in ["masks", "ins_ids", "attrs", "cat_ids"]
         ]
 

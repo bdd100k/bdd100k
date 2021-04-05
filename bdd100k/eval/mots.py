@@ -62,25 +62,15 @@ def mask_intersection_rate(
     bin_num = (1 + m) * (1 + n)
     histogram = np.histogram(confusion, bins=bin_num, range=(0, bin_num))[0]
     conf_matrix = histogram.reshape(1 + m, 1 + n)
-    gt_areas = conf_matrix.sum(axis=1)[1:]
-    pred_areas = conf_matrix.sum(axis=0)[1:]
-    conf_matrix = conf_matrix[1:, 1:]
+    gt_areas = conf_matrix.sum(axis=1, keepdims=True)[1:, :]
+    pred_areas = conf_matrix.sum(axis=0, keepdims=True)[:, 1:]
 
-    ious = np.zeros((m, n))
-    iofs = np.zeros((m, n))
-    for i in range(m):
-        for j in range(n):
-            inter = conf_matrix[i, j]
-            union = gt_areas[i] + pred_areas[j] - conf_matrix[i, j]
-            if union > 0:
-                ious[i, j] = inter / union
-            else:
-                ious[i, j] = 0
-            if pred_areas[j] > 0:
-                iofs[i, j] = inter / pred_areas[j]
-            else:
-                iofs[i, j] = 0
-
+    inter = conf_matrix[1:, 1:]
+    union = gt_areas + pred_areas - inter
+    ious = inter / union
+    ious = np.where(union > 0, ious, 0.0)
+    iofs = inter / pred_areas
+    iofs = np.where(pred_areas > 0, iofs, 0.0)
     return ious, iofs
 
 
