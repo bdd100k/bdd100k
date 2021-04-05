@@ -6,7 +6,7 @@ resuilts are from the COCO toolkit.
 import datetime
 import json
 import os
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import numpy as np
 from pycocotools.coco import COCO
@@ -15,10 +15,9 @@ from scalabel.label.io import load as load_bdd100k
 from scalabel.label.typing import Frame
 from tabulate import tabulate
 
-from ..common.typing import DictAny
+from ..common.typing import DictAny, GtType, ListAny, PredType
 from ..common.utils import NAME_MAPPING, read
 from ..label.to_coco import bdd100k2coco_det
-from .type import GtType, PredType
 
 
 class COCOV2(COCO):  # type: ignore
@@ -256,7 +255,7 @@ def create_small_table(small_dict: Dict[str, float]) -> str:
     keys, values_t = tuple(zip(*small_dict.items()))
     values = ["{:.1f}".format(val * 100) for val in values_t]
     stride = 3
-    items: List[Any] = []  # type: ignore
+    items: ListAny = []
     for i in range(0, len(keys), stride):
         items.append(keys[i : min(i + stride, len(keys))])
         items.append(values[i : min(i + stride, len(keys))])

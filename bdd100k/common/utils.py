@@ -3,14 +3,13 @@
 import glob
 import os
 import os.path as osp
-from collections import defaultdict
 from itertools import groupby
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple
 
 from scalabel.label.io import load as load_bdd100k
 from scalabel.label.typing import Frame
 
-from .typing import DictAny
+from ..common.typing import CatType
 
 NAME_MAPPING: Dict[str, str] = {
     "bike": "bicycle",
@@ -26,26 +25,26 @@ IGNORE_MAP: Dict[str, str] = {
     "trailer": "truck",
 }
 
-CATEGORIES: List[Dict[str, Union[int, str]]] = [
-    {"supercategory": "human", "id": 1, "name": "pedestrian"},
-    {"supercategory": "human", "id": 2, "name": "rider"},
-    {"supercategory": "vehicle", "id": 3, "name": "car"},
-    {"supercategory": "vehicle", "id": 4, "name": "truck"},
-    {"supercategory": "vehicle", "id": 5, "name": "bus"},
-    {"supercategory": "vehicle", "id": 6, "name": "train"},
-    {"supercategory": "bike", "id": 7, "name": "motorcycle"},
-    {"supercategory": "bike", "id": 8, "name": "bicycle"},
+CATEGORIES: List[CatType] = [
+    CatType(supercategory="human", id=1, name="pedestrian"),
+    CatType(supercategory="human", id=2, name="rider"),
+    CatType(supercategory="vehicle", id=3, name="car"),
+    CatType(supercategory="vehicle", id=4, name="truck"),
+    CatType(supercategory="vehicle", id=5, name="bus"),
+    CatType(supercategory="vehicle", id=6, name="train"),
+    CatType(supercategory="bike", id=7, name="motorcycle"),
+    CatType(supercategory="bike", id=8, name="bicycle"),
 ]
 
 
 def init(
-    mode: str = "det", ignore_as_class: bool = False
-) -> Tuple[DictAny, Dict[str, int]]:
+    mode: str = "det",
+    ignore_as_class: bool = False,
+) -> Tuple[List[CatType], Dict[str, int]]:
     """Initialze the annotation dictionary."""
-    coco: DictAny = defaultdict(list)
-    coco["categories"] = CATEGORIES
+    categories = CATEGORIES.copy()
     if mode == "det":
-        coco["categories"] += [
+        categories += [
             {
                 "supercategory": "traffic light",
                 "id": 9,
@@ -59,18 +58,18 @@ def init(
         ]
 
     if ignore_as_class:
-        coco["categories"].append(
+        categories.append(
             {
                 "supercategory": "none",
-                "id": len(coco["categories"]) + 1,
+                "id": len(categories) + 1,
                 "name": "ignored",
             }
         )
     category_name2id: Dict[str, int] = {
-        category["name"]: category["id"] for category in coco["categories"]
+        str(category["name"]): int(category["id"]) for category in categories
     }
 
-    return coco, category_name2id
+    return categories, category_name2id
 
 
 def list_files(inputs: str) -> List[List[str]]:
