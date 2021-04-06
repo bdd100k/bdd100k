@@ -6,6 +6,7 @@ import os.path as osp
 from itertools import groupby
 from typing import Dict, List, Tuple
 
+import toml
 from scalabel.label.io import load as load_bdd100k
 from scalabel.label.typing import Frame
 
@@ -25,45 +26,22 @@ IGNORE_MAP: Dict[str, str] = {
     "trailer": "truck",
 }
 
-CATEGORIES: List[CatType] = [
-    CatType(supercategory="human", id=1, name="pedestrian"),
-    CatType(supercategory="human", id=2, name="rider"),
-    CatType(supercategory="vehicle", id=3, name="car"),
-    CatType(supercategory="vehicle", id=4, name="truck"),
-    CatType(supercategory="vehicle", id=5, name="bus"),
-    CatType(supercategory="vehicle", id=6, name="train"),
-    CatType(supercategory="bike", id=7, name="motorcycle"),
-    CatType(supercategory="bike", id=8, name="bicycle"),
-]
 
-
-def init(
+def load_categories(
     mode: str = "det",
     ignore_as_class: bool = False,
 ) -> Tuple[List[CatType], Dict[str, int]]:
-    """Initialze the annotation dictionary."""
-    categories = CATEGORIES.copy()
-    if mode == "det":
-        categories += [
-            {
-                "supercategory": "traffic light",
-                "id": 9,
-                "name": "traffic light",
-            },
-            {
-                "supercategory": "traffic sign",
-                "id": 10,
-                "name": "traffic sign",
-            },
-        ]
+    """Load the annotation dictionary."""
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    cfg_name = "det" if mode == "det" else "other"
+    cfg_file = "{}/{}.toml".format(cur_dir, cfg_name)
+    categories: List[CatType] = toml.load(cfg_file)["categories"]
 
     if ignore_as_class:
         categories.append(
-            {
-                "supercategory": "none",
-                "id": len(categories) + 1,
-                "name": "ignored",
-            }
+            CatType(
+                supercategory="none", id=len(categories) + 1, name="ignored"
+            )
         )
     category_name2id: Dict[str, int] = {
         str(category["name"]): int(category["id"]) for category in categories

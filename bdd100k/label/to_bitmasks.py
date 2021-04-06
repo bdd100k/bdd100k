@@ -30,7 +30,7 @@ from scalabel.label.typing import Frame, Label, Poly2D
 from tqdm import tqdm
 
 from ..common.logger import logger
-from ..common.utils import group_and_sort, init, list_files
+from ..common.utils import group_and_sort, list_files, load_categories
 from .to_coco import (
     get_instance_id,
     parser_definition_coco,
@@ -181,7 +181,9 @@ def insseg2bitmasks(
     """Converting seg_track poly2d to bitmasks."""
     os.makedirs(out_base, exist_ok=True)
 
-    _, cat_name2id = init(mode="track", ignore_as_class=ignore_as_class)
+    _, cat_name2id = load_categories(
+        mode="track", ignore_as_class=ignore_as_class
+    )
 
     out_paths: List[str] = []
     colors_list: List[List[np.ndarray]] = []
@@ -229,7 +231,9 @@ def segtrack2bitmasks(
     nproc: int = 4,
 ) -> None:
     """Converting seg_track poly2d to bitmasks."""
-    _, cat_name2id = init(mode="track", ignore_as_class=ignore_as_class)
+    _, cat_name2id = load_categories(
+        mode="track", ignore_as_class=ignore_as_class
+    )
 
     out_paths: List[str] = []
     colors_list: List[List[np.ndarray]] = []

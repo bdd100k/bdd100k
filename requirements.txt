@@ -17,6 +17,7 @@ scikit-image
 sphinx
 sphinx-rtd-theme
 tabulate
+toml
 tqdm
 
 git+git://github.com/scalabel/scalabel.git

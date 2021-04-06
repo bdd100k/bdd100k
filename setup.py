@@ -37,6 +37,7 @@ setuptools.setup(
         "pycocotools",
         "scalabel",
         "scikit-image",
+        "toml",
         "tqdm",
         "tabulate",
         "tqdm",

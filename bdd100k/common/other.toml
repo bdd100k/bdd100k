@@ -1,0 +1,39 @@
+[[categories]]
+supercategory = "human"
+id = 1
+name = "pedestrian"
+
+[[categories]]
+supercategory = "human"
+id = 2
+name = "rider"
+
+[[categories]]
+supercategory = "vehicle"
+id = 3
+name = "car"
+
+[[categories]]
+supercategory = "vehicle"
+id = 4
+name = "truck"
+
+[[categories]]
+supercategory = "vehicle"
+id = 5
+name = "bus"
+
+[[categories]]
+supercategory = "vehicle"
+id = 6
+name = "train"
+
+[[categories]]
+supercategory = "bike"
+id = 7
+name = "motorcycle"
+
+[[categories]]
+supercategory = "bike"
+id = 8
+name = "bicycle"

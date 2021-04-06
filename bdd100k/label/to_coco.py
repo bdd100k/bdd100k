@@ -31,7 +31,13 @@ from tqdm import tqdm
 
 from ..common.logger import logger
 from ..common.typing import AnnType, GtType, ImgType, VidType
-from ..common.utils import IGNORE_MAP, NAME_MAPPING, group_and_sort, init, read
+from ..common.utils import (
+    IGNORE_MAP,
+    NAME_MAPPING,
+    group_and_sort,
+    load_categories,
+    read,
+)
 
 
 def parser_definition_coco() -> argparse.ArgumentParser:
@@ -219,7 +225,9 @@ def bdd100k2coco_det(
     remove_ignore: bool = False,
 ) -> GtType:
     """Converting BDD100K Detection Set to COCO format."""
-    categories, cat_name2id = init(mode="det", ignore_as_class=ignore_as_class)
+    categories, cat_name2id = load_categories(
+        mode="det", ignore_as_class=ignore_as_class
+    )
     images, annotations = [], []
     image_id, ann_id = 1, 1
 
@@ -273,7 +281,7 @@ def bdd100k2coco_box_track(
     remove_ignore: bool = False,
 ) -> GtType:
     """Converting BDD100K Box Tracking Set to COCO format."""
-    categories, cat_name2id = init(
+    categories, cat_name2id = load_categories(
         mode="track", ignore_as_class=ignore_as_class
     )
     videos, images, annotations = [], [], []
@@ -405,7 +413,7 @@ def bdd100k2coco_ins_seg(
     nproc: int = 4,
 ) -> GtType:
     """Converting BDD100K Instance Segmentation Set to COCO format."""
-    categories, cat_name2id = init(
+    categories, cat_name2id = load_categories(
         mode="track", ignore_as_class=ignore_as_class
     )
     images = []
@@ -499,7 +507,7 @@ def bdd100k2coco_seg_track(
     nproc: int = 4,
 ) -> GtType:
     """Converting BDD100K Segmentation Tracking Set to COCO format."""
-    categories, cat_name2id = init(
+    categories, cat_name2id = load_categories(
         mode="track", ignore_as_class=ignore_as_class
     )
     videos, images = [], []
