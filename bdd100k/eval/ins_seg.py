@@ -14,7 +14,7 @@ from PIL import Image
 from pycocotools.cocoeval import COCOeval  # type: ignore
 
 from ..common.typing import DictAny
-from ..common.utils import CATEGORIES
+from ..common.utils import load_categories
 from .detect import evaluate_workflow
 from .mots import mask_intersection_rate, parse_bitmasks
 
@@ -233,6 +233,7 @@ def evaluate_ins_seg(
         dict: detection metric scores
     """
     bdd_eval = BDDInsSegEval(ann_base, pred_base, pred_score_file)
-    cat_ids = [int(category["id"]) for category in CATEGORIES]
-    cat_names = [str(category["name"]) for category in CATEGORIES]
+    categories, _ = load_categories("ins_seg")
+    cat_ids = [int(category["id"]) for category in categories]
+    cat_names = [str(category["name"]) for category in categories]
     return evaluate_workflow(bdd_eval, cat_ids, cat_names, out_dir)
