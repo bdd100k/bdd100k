@@ -19,29 +19,28 @@ the annotations in `ignored` class. To achieve this, add the flag
 import argparse
 import os
 from multiprocessing import Pool
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
-import matplotlib.patches as mpatches  # type: ignore
 import matplotlib.pyplot as plt  # type: ignore
 import numpy as np
-from matplotlib.path import Path  # type: ignore
 from PIL import Image
+from scalabel.label.to_coco import (
+    get_instance_id,
+    group_and_sort,
+    poly_to_patch,
+    process_category,
+)
 from scalabel.label.typing import Frame, Label, Poly2D
 from tqdm import tqdm
 
 from ..common.logger import logger
-from ..common.utils import group_and_sort, list_files, load_categories
-from .to_coco import (
-    get_instance_id,
-    parser_definition_coco,
-    process_category,
-    start_converting,
-)
+from ..common.utils import list_files, load_categories
+from .to_coco import start_converting
 
 
-def parser_definition_bitmasks() -> argparse.ArgumentParser:
+def parser_arguements_to_bitmasks() -> argparse.Namespace:
     """Definition of the parser."""
-    parser = parser_definition_coco()
+    parser = argparse.ArgumentParser(description="BDD100K to COCO format")
     parser.add_argument(
         "-cm",
         "--colormap",
@@ -54,34 +53,7 @@ def parser_definition_bitmasks() -> argparse.ArgumentParser:
         default="/output/path",
         help="Path to save colorized images.",
     )
-    return parser
-
-
-def poly2patch(
-    vertices: List[Tuple[float, float]],
-    types: str,
-    color: Tuple[float, float, float],
-    closed: bool,
-) -> mpatches.PathPatch:
-    """Draw polygons using the Bezier curve."""
-    moves = {"L": Path.LINETO, "C": Path.CURVE4}
-    points = list(vertices)
-    codes = [moves[t] for t in types]
-    codes[0] = Path.MOVETO
-
-    if closed:
-        points.append(points[0])
-        codes.append(Path.LINETO)
-
-    return mpatches.PathPatch(
-        Path(points, codes),
-        facecolor=color if closed else "none",
-        edgecolor=color,
-        lw=0 if closed else 1,
-        alpha=1,
-        antialiased=False,
-        snap=True,
-    )
+    return parser.parse_args()
 
 
 def poly2d2bitmasks_per_image(
@@ -105,7 +77,7 @@ def poly2d2bitmasks_per_image(
     for i, poly2d in enumerate(poly2ds):
         for poly in poly2d:
             ax.add_patch(
-                poly2patch(
+                poly_to_patch(
                     poly.vertices,
                     poly.types,
                     # 0 / 255.0 for the background
@@ -181,7 +153,7 @@ def insseg2bitmasks(
     """Converting seg_track poly2d to bitmasks."""
     os.makedirs(out_base, exist_ok=True)
 
-    _, cat_name2id = load_categories(
+    categories, name_mapping, ignore_mapping = load_categories(
         mode="track", ignore_as_class=ignore_as_class
     )
 
@@ -207,7 +179,11 @@ def insseg2bitmasks(
                 continue
 
             category_ignored, category_id = process_category(
-                label.category, ignore_as_class, cat_name2id
+                label.category,
+                categories,
+                name_mapping,
+                ignore_mapping,
+                ignore_as_class=ignore_as_class,
             )
             if remove_ignore and category_ignored:
                 continue
@@ -231,7 +207,7 @@ def segtrack2bitmasks(
     nproc: int = 4,
 ) -> None:
     """Converting seg_track poly2d to bitmasks."""
-    _, cat_name2id = load_categories(
+    categories, name_mapping, ignore_mapping = load_categories(
         mode="track", ignore_as_class=ignore_as_class
     )
 
@@ -264,7 +240,11 @@ def segtrack2bitmasks(
                     continue
 
                 category_ignored, category_id = process_category(
-                    label.category, ignore_as_class, cat_name2id
+                    label.category,
+                    categories,
+                    name_mapping,
+                    ignore_mapping,
+                    ignore_as_class=ignore_as_class,
                 )
                 if category_ignored and remove_ignore:
                     continue
@@ -364,7 +344,8 @@ def colormap_conversion(
 def main() -> None:
     """Main function."""
     os.environ["QT_QPA_PLATFORM"] = "offscreen"  # matplotlib offscreen render
-    args, labels = start_converting(parser_definition_bitmasks)
+    args, labels = start_converting()
+    args_to_bitmasks = parser_arguements_to_bitmasks()
     if args.mode == "ins_seg":
         insseg2bitmasks(
             labels,
@@ -385,8 +366,8 @@ def main() -> None:
     colormap_func = dict(ins_seg=insseg2colormap, seg_track=segtrack2colormap)[
         args.mode
     ]
-    if args.colormap:
-        colormap_func(args.out_path, args.color_path, args.nproc)
+    if args_to_bitmasks.colormap:
+        colormap_func(args.out_path, args_to_bitmasks.color_path, args.nproc)
 
     logger.info("Finished!")
 
