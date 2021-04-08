@@ -25,6 +25,13 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 from PIL import Image
+from scalabel.label.coco_typing import (
+    AnnType,
+    CatType,
+    GtType,
+    ImgType,
+    VidType,
+)
 from scalabel.label.to_coco import (
     get_instance_id,
     get_object_attributes,
@@ -39,7 +46,6 @@ from scalabel.label.typing import Frame
 from tqdm import tqdm
 
 from ..common.logger import logger
-from ..common.typing import AnnType, CatType, GtType, ImgType, VidType
 from ..common.utils import load_categories, read
 
 
@@ -71,7 +77,7 @@ def bitmask2coco(
         mask = np.logical_and(
             category_map == category_id, instance_map == instance_id
         )
-        set_seg_object_geometry(annotation, mask, mask_mode)
+        annotation = set_seg_object_geometry(annotation, mask, mask_mode)
     annotations = [
         ann for ann in annotations if "bbox" in ann and "segmentation" in ann
     ]
@@ -150,11 +156,9 @@ def bdd100k2coco_ins_seg(
         instance_ids: List[int] = []
         annotations: List[AnnType] = []
 
-        # annotations
         for label in frame.labels:
             if label.poly_2d is None:
                 continue
-
             category_ignored, category_id = process_category(
                 label.category,
                 categories,
@@ -170,7 +174,7 @@ def bdd100k2coco_ins_seg(
                 id=ann_id,
                 image_id=image_id,
                 category_id=category_id,
-                bdd100k_id=str(label.id),
+                scalabel_id=str(label.id),
                 iscrowd=iscrowd,
                 ignore=ignore,
             )
@@ -220,7 +224,8 @@ def bdd100k2coco_seg_track(
 ) -> GtType:
     """Converting BDD100K Segmentation Tracking Set to COCO format."""
     frames_list = group_and_sort(frames)
-    videos, images = [], []
+    videos: List[VidType] = []
+    images: List[ImgType] = []
     video_id, image_id, ann_id = 1, 1, 1
 
     mask_names: List[str] = []
@@ -232,12 +237,10 @@ def bdd100k2coco_seg_track(
         global_instance_id: int = 1
         instance_id_maps: Dict[str, int] = dict()
 
-        # videos
         video_name = video_anns[0].video_name
         video = VidType(id=video_id, name=video_name)
         videos.append(video)
 
-        # images
         for image_anns in video_anns:
             image = ImgType(
                 video_id=video_id,
@@ -260,11 +263,9 @@ def bdd100k2coco_seg_track(
             instance_ids: List[int] = []
             annotations: List[AnnType] = []
 
-            # annotations
             for label in image_anns.labels:
                 if label.poly_2d is None:
                     continue
-
                 category_ignored, category_id = process_category(
                     label.category,
                     categories,
@@ -272,12 +273,12 @@ def bdd100k2coco_seg_track(
                     ignore_mapping,
                     ignore_as_class=ignore_as_class,
                 )
-                if category_ignored and remove_ignore:
+                if remove_ignore and category_ignored:
                     continue
 
-                bdd100k_id = str(label.id)
+                scalabel_id = str(label.id)
                 instance_id, global_instance_id = get_instance_id(
-                    instance_id_maps, global_instance_id, bdd100k_id
+                    instance_id_maps, global_instance_id, scalabel_id
                 )
 
                 iscrowd, ignore = get_object_attributes(
@@ -288,7 +289,7 @@ def bdd100k2coco_seg_track(
                     image_id=image_id,
                     category_id=category_id,
                     instance_id=instance_id,
-                    bdd100k_id=bdd100k_id,
+                    scalabel_id=scalabel_id,
                     iscrowd=iscrowd,
                     ignore=ignore,
                 )

@@ -11,13 +11,16 @@ from typing import Dict, List, Optional
 import numpy as np
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval  # type: ignore
+from scalabel.label.coco_typing import GtType, PredType
 from scalabel.label.io import load as load_bdd100k
+from scalabel.label.to_coco import scalabel2coco_detection
 from scalabel.label.typing import Frame
 from tabulate import tabulate
 
-from ..common.typing import DictAny, GtType, ListAny, PredType
-from ..common.utils import NAME_MAPPING, read
-from ..label.to_coco import bdd100k2coco_det
+from ..common.typing import DictAny, ListAny
+from ..common.utils import load_categories, read
+
+SHAPE = (720, 1280)
 
 
 class COCOV2(COCO):  # type: ignore
@@ -57,12 +60,15 @@ def evaluate_det(
         dict: detection metric scores
     """
     # Convert the annotation file to COCO format
-    labels = read(ann_file)
-    ann_coco = bdd100k2coco_det(labels)
+    frames = read(ann_file)
+    categories, name_mapping, ignore_mapping = load_categories("det")
+    ann_coco = scalabel2coco_detection(
+        SHAPE, frames, categories, name_mapping, ignore_mapping
+    )
     coco_gt = COCOV2(None, ann_coco)
 
     # Load results and convert the predictions
-    pred_res = convert_preds(pred_file, ann_coco)
+    pred_res = convert_preds(pred_file, ann_coco, name_mapping)
     coco_dt = coco_gt.loadRes(pred_res)
 
     cat_ids = coco_dt.getCatIds()
@@ -195,7 +201,10 @@ def write_eval(
 
 
 def convert_preds(
-    res_file: str, ann_coco: GtType, max_det: int = 100
+    res_file: str,
+    ann_coco: GtType,
+    name_mapping: Optional[Dict[str, str]],
+    max_det: int = 100,
 ) -> List[PredType]:
     """Convert the prediction into the coco eval format."""
     imgs_maps = {
@@ -225,8 +234,8 @@ def convert_preds(
                 continue
 
             cls_name = str(label.category)
-            if cls_name in NAME_MAPPING.keys():
-                cls_name = NAME_MAPPING[cls_name]
+            if name_mapping is not None and cls_name in name_mapping:
+                cls_name = name_mapping[cls_name]
             box2d = label.box_2d
             x1, y1, x2, y2 = box2d.x1, box2d.y1, box2d.x2, box2d.y2
 

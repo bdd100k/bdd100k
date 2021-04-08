@@ -2,7 +2,9 @@
 
 import argparse
 
-from ..common.utils import group_and_sort, list_files, read
+from scalabel.label.to_coco import group_and_sort
+
+from ..common.utils import list_files, read
 from .detect import evaluate_det
 from .ins_seg import evaluate_ins_seg
 from .mot import acc_single_video_mot, evaluate_track

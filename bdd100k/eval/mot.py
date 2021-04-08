@@ -6,6 +6,7 @@ from typing import Callable, Dict, List, Tuple, Union, overload
 import motmetrics as mm
 import numpy as np
 import pandas as pd
+from scalabel.label.to_coco import box2d_to_bbox
 from scalabel.label.typing import Frame, Label
 
 from ..common.logger import logger
@@ -48,12 +49,7 @@ def parse_objects(objects: List[Label]) -> List[np.ndarray]:
         box_2d = obj.box_2d
         if box_2d is None:
             continue
-        bbox = [
-            box_2d.x1,
-            box_2d.y1,
-            box_2d.x2 - box_2d.x1 + 1,
-            box_2d.y2 - box_2d.y1 + 1,
-        ]
+        bbox = box2d_to_bbox(box_2d)
         category = obj.category
         if category in CLASSES:
             if obj.attributes is not None and bool(

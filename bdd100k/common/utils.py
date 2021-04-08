@@ -6,35 +6,26 @@ import os.path as osp
 from typing import Dict, List, Tuple
 
 import toml
+from scalabel.label.coco_typing import CatType
 from scalabel.label.io import load as load_bdd100k
 from scalabel.label.typing import Frame
-
-from ..common.typing import CatType
-
-NAME_MAPPING: Dict[str, str] = {
-    "bike": "bicycle",
-    "caravan": "car",
-    "motor": "motorcycle",
-    "person": "pedestrian",
-    "van": "car",
-}
-
-IGNORE_MAP: Dict[str, str] = {
-    "other person": "pedestrian",
-    "other vehicle": "car",
-    "trailer": "truck",
-}
 
 
 def load_categories(
     mode: str = "det",
+    cfg_name: str = "configs",
     ignore_as_class: bool = False,
 ) -> Tuple[List[CatType], Dict[str, str], Dict[str, str]]:
     """Load the annotation dictionary."""
     cur_dir = os.path.dirname(os.path.abspath(__file__))
-    cfg_name = "det" if mode == "det" else "other"
     cfg_file = "{}/{}.toml".format(cur_dir, cfg_name)
-    categories: List[CatType] = toml.load(cfg_file)["categories"]
+    cfgs = toml.load(cfg_file)
+    categories: List[CatType] = cfgs["categories"]
+    cat_extensions: List[CatType] = cfgs["cat_extensions"]
+    if mode == "det":
+        categories.extend(cat_extensions)
+    name_mapping: Dict[str, str] = cfgs["name_mapping"]
+    ignore_mapping: Dict[str, str] = cfgs["ignore_mapping"]
 
     if ignore_as_class:
         categories.append(
@@ -42,8 +33,6 @@ def load_categories(
                 supercategory="none", id=len(categories) + 1, name="ignored"
             )
         )
-    name_mapping = NAME_MAPPING.copy()
-    ignore_mapping = IGNORE_MAP.copy()
 
     return categories, name_mapping, ignore_mapping
 

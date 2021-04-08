@@ -232,8 +232,8 @@ def evaluate_ins_seg(
     Returns:
         dict: detection metric scores
     """
+    categories, _, _ = load_categories("ins_seg")
     bdd_eval = BDDInsSegEval(ann_base, pred_base, pred_score_file)
-    categories, _ = load_categories("ins_seg")
     cat_ids = [int(category["id"]) for category in categories]
     cat_names = [str(category["name"]) for category in categories]
     return evaluate_workflow(bdd_eval, cat_ids, cat_names, out_dir)
