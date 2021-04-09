@@ -35,8 +35,11 @@ setuptools.setup(
         "pandas",
         "pillow",
         "pycocotools",
+        "scalabel",
         "scikit-image",
+        "toml",
         "tqdm",
         "tabulate",
+        "tqdm",
     ],
 )

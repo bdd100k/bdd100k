@@ -1,29 +1,23 @@
 """Evaluation code for BDD100K detection.
 
-predictions format: List[PredType]
-Each predicted bounding box forms one dictionary in BDD100K foramt as follows.
-{
-    "name": string
-    "category": string
-    "score": float
-    "bbox": [x1, y1, x2, y2]
-}
+The prediction and ground truth are expected in scalabel format. The evaluation
+resuilts are from the COCO toolkit.
 """
 import datetime
 import json
 import os
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import numpy as np
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval  # type: ignore
+from scalabel.label.io import load as load_bdd100k
+from scalabel.label.typing import Frame
 from tabulate import tabulate
 
-from bdd100k.eval.type import GtType, PredType
-from bdd100k.label.to_coco import bdd100k2coco_box_track, bdd100k2coco_det
-
-from ..common.typing import DictAny
-from ..common.utils import read
+from ..common.typing import DictAny, GtType, ListAny, PredType
+from ..common.utils import NAME_MAPPING, read
+from ..label.to_coco import bdd100k2coco_det
 
 
 class COCOV2(COCO):  # type: ignore
@@ -50,39 +44,22 @@ class COCOV2(COCO):  # type: ignore
 
 
 def evaluate_det(
-    ann_file: str,
-    pred_file: str,
-    out_dir: str = "none",
-    ann_format: str = "coco",
-    mode: str = "det",
-) -> DictAny:
+    ann_file: str, pred_file: str, out_dir: str = "none"
+) -> Dict[str, float]:
     """Load the ground truth and prediction results.
 
     Args:
         ann_file: path to the ground truth annotations. "*.json"
         pred_file: path to the prediciton results in BDD format. "*.json"
         out_dir: output_directory
-        ann_format: either in `scalabel` format or in `coco` format.
-        mode: `det` or `track` for label conversion.
 
     Returns:
         dict: detection metric scores
     """
-    # GT annotations can either in COCO format or in BDD100K format
-    # During evaluation, labels under `ignored` class will be ignored.
-    if ann_format == "coco":
-        coco_gt = COCOV2(ann_file)
-        with open(ann_file) as fp:
-            ann_coco = json.load(fp)
-    else:
-        # Convert the annotation file to COCO format
-        labels = read(ann_file)
-        convert_func = dict(
-            det=bdd100k2coco_det,
-            box_track=bdd100k2coco_box_track,
-        )[mode]
-        ann_coco = convert_func(labels)
-        coco_gt = COCOV2(None, ann_coco)
+    # Convert the annotation file to COCO format
+    labels = read(ann_file)
+    ann_coco = bdd100k2coco_det(labels)
+    coco_gt = COCOV2(None, ann_coco)
 
     # Load results and convert the predictions
     pred_res = convert_preds(pred_file, ann_coco)
@@ -101,7 +78,7 @@ def evaluate_det(
 
 def evaluate_workflow(
     coco_eval: COCOeval, cat_ids: List[int], cat_names: List[str], out_dir: str
-) -> DictAny:
+) -> Dict[str, float]:
     """Execute evaluation."""
     n_tit = 12  # number of evaluation titles
     n_cls = len(cat_ids)  # 10/8 classes for BDD100K detection/tracking
@@ -189,7 +166,7 @@ def evaluate_workflow(
         "AR_medium",
         "AR_large",
     ]
-    scores = {}
+    scores: Dict[str, float] = {}
 
     for title, stat in zip(score_titles, stats):
         scores[title] = stat.item()
@@ -199,7 +176,9 @@ def evaluate_workflow(
     return scores
 
 
-def write_eval(out_dir: str, scores: DictAny, eval_param: DictAny) -> None:
+def write_eval(
+    out_dir: str, scores: Dict[str, float], eval_param: DictAny
+) -> None:
     """Write the evaluation results to file, print in tabulate format."""
     output_filename = os.path.join(out_dir, "scores.json")
     with open(output_filename, "w") as fp:
@@ -219,80 +198,49 @@ def convert_preds(
     res_file: str, ann_coco: GtType, max_det: int = 100
 ) -> List[PredType]:
     """Convert the prediction into the coco eval format."""
-    with open(res_file, "rb") as fp:
-        res = json.load(fp)
-
-    res = pred_to_coco(res, ann_coco)
-
-    # get the list of image_ids in res.
-    name = "image_id"
-    image_idss = set()
-    for item in res:
-        if item[name] not in image_idss:
-            image_idss.add(item[name])
-    image_ids = sorted(list(image_idss))
-
-    # sort res by 'image_id'.
-    res = sorted(res, key=lambda k: int(k["image_id"]))
-
-    # get the start and end index in res for each image.
-    image_id = image_ids[0]
-    idx = 0
-    start_end = {}
-    for i, res_i in enumerate(res):
-        if i == len(res) - 1:
-            start_end[image_id] = (idx, i + 1)
-        if res_i[name] != image_id:
-            start_end[image_id] = (idx, i)
-            idx = i
-            image_id = res_i[name]
-
-    # cut number of detections to max_det for each image.
-    res_max_det = []
-    more_than_max_det = 0
-    for image_id in image_ids:
-        r_img = res[start_end[image_id][0] : start_end[image_id][1]]
-        if len(r_img) > max_det:
-            more_than_max_det += 1
-            r_img = sorted(
-                r_img, key=lambda k: float(k["score"]), reverse=True
-            )[:max_det]
-        res_max_det.extend(r_img)
-
-    if more_than_max_det > 0:
-        print(
-            "Some images have more than {0} detections. Results were "
-            "cut to {0} detections per images on {1} images.".format(
-                max_det, more_than_max_det
-            )
-        )
-
-    return res_max_det
-
-
-def pred_to_coco(pred: List[PredType], ann_coco: GtType) -> List[PredType]:
-    """Convert the predictions into a compatabile format with COCOAPIs."""
-    # update the prediction results
-    imgs_maps = {item["file_name"]: item["id"] for item in ann_coco["images"]}
+    imgs_maps = {
+        os.path.split(item["file_name"])[-1]: item["id"]
+        for item in ann_coco["images"]
+    }
     cls_maps = {item["name"]: item["id"] for item in ann_coco["categories"]}
 
-    # backward compatible replacement
-    naming_replacement_dict = {
-        "person": "pedestrian",
-        "motor": "motorcycle",
-        "bike": "bicycle",
-    }
-    for p in pred:
-        # add image_id and category_id
-        cls_name: str = p["category"]
-        if cls_name in naming_replacement_dict.keys():
-            cls_name = naming_replacement_dict[cls_name]
-        p["category_id"] = cls_maps[cls_name]
-        p["image_id"] = imgs_maps[p["name"]]
-        x1, y1, x2, y2 = p["bbox"]  # x1, y1, x2, y2
-        p["bbox"] = [x1, y1, x2 - x1, y2 - y1]
+    images: List[Frame] = load_bdd100k(res_file)
+    images = sorted(images, key=lambda image: image.name)
 
-    return pred
+    preds: List[PredType] = []
+    for image in images:
+        image_name = str(image.name)
+        labels = sorted(
+            image.labels,
+            key=lambda label: label.score if label.score else 0.0,
+            reverse=True,
+        )[:max_det]
+
+        for label in labels:
+            if label.category is None:
+                continue
+            if label.box_2d is None:
+                continue
+            if label.score is None:
+                continue
+
+            cls_name = str(label.category)
+            if cls_name in NAME_MAPPING.keys():
+                cls_name = NAME_MAPPING[cls_name]
+            box2d = label.box_2d
+            x1, y1, x2, y2 = box2d.x1, box2d.y1, box2d.x2, box2d.y2
+
+            pred = PredType(
+                category=cls_name,
+                score=float(label.score),
+                name=image_name,
+                image_id=imgs_maps[image_name],
+                category_id=cls_maps[cls_name],
+                bbox=[x1, y1, x2 - x1 + 1, y2 - y1 + 1],
+            )
+            preds.append(pred)
+
+    return preds
 
 
 def create_small_table(small_dict: Dict[str, float]) -> str:
@@ -307,7 +255,7 @@ def create_small_table(small_dict: Dict[str, float]) -> str:
     keys, values_t = tuple(zip(*small_dict.items()))
     values = ["{:.1f}".format(val * 100) for val in values_t]
     stride = 3
-    items: List[Any] = []  # type: ignore
+    items: ListAny = []
     for i in range(0, len(keys), stride):
         items.append(keys[i : min(i + stride, len(keys))])
         items.append(values[i : min(i + stride, len(keys))])

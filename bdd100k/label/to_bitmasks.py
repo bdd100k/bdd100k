@@ -26,11 +26,11 @@ import matplotlib.pyplot as plt  # type: ignore
 import numpy as np
 from matplotlib.path import Path  # type: ignore
 from PIL import Image
+from scalabel.label.typing import Frame, Label, Poly2D
 from tqdm import tqdm
 
 from ..common.logger import logger
-from ..common.typing import DictAny, ListAny
-from ..common.utils import init, list_files
+from ..common.utils import group_and_sort, list_files, load_categories
 from .to_coco import (
     get_instance_id,
     parser_definition_coco,
@@ -58,7 +58,7 @@ def parser_definition_bitmasks() -> argparse.ArgumentParser:
 
 
 def poly2patch(
-    vertices: List[List[float]],
+    vertices: List[Tuple[float, float]],
     types: str,
     color: Tuple[float, float, float],
     closed: bool,
@@ -87,7 +87,7 @@ def poly2patch(
 def poly2d2bitmasks_per_image(
     out_path: str,
     colors: List[np.ndarray],
-    poly2ds: ListAny,
+    poly2ds: List[List[Poly2D]],
 ) -> None:
     """Converting seg_track poly2d to bitmasks for a video."""
     assert len(colors) == len(poly2ds)
@@ -106,8 +106,8 @@ def poly2d2bitmasks_per_image(
         for poly in poly2d:
             ax.add_patch(
                 poly2patch(
-                    poly["vertices"],
-                    poly["types"],
+                    poly.vertices,
+                    poly.types,
                     # 0 / 255.0 for the background
                     color=((i + 1) / 255.0, (i + 1) / 255.0, (i + 1) / 255.0),
                     closed=True,
@@ -128,14 +128,17 @@ def poly2d2bitmasks_per_image(
 
 
 def set_color(
-    label: DictAny, category_id: int, ann_id: int, category_ignored: bool
+    label: Label, category_id: int, ann_id: int, category_ignored: bool
 ) -> np.ndarray:
     """Set the color for an instance given its attributes and ID."""
-    attributes = label["attributes"]
-    truncated = int(attributes.get("Truncated", False))
-    occluded = int(attributes.get("Occluded", False))
-    crowd = int(attributes.get("Crowd", False))
-    ignore = int(category_ignored)
+    attributes = label.attributes
+    if attributes is None:
+        truncated, occluded, crowd, ignore = 0, 0, 0, 0
+    else:
+        truncated = int(attributes.get("truncated", False))
+        occluded = int(attributes.get("occluded", False))
+        crowd = int(attributes.get("crowd", False))
+        ignore = int(category_ignored)
     color = np.array(
         [
             category_id & 255,
@@ -151,8 +154,8 @@ def set_color(
 def bitmask_conversion(
     nproc: int,
     out_paths: List[str],
-    colors_list: List[ListAny],
-    poly2ds_list: List[ListAny],
+    colors_list: List[List[np.ndarray]],
+    poly2ds_list: List[List[List[Poly2D]]],
 ) -> None:
     """Execute the bitmask conversion in parallel."""
     logger.info("Converting annotations...")
@@ -169,49 +172,49 @@ def bitmask_conversion(
 
 
 def insseg2bitmasks(
-    labels: List[List[DictAny]],
+    labels: List[Frame],
     out_base: str,
     ignore_as_class: bool = False,
     remove_ignore: bool = False,
     nproc: int = 4,
 ) -> None:
     """Converting seg_track poly2d to bitmasks."""
-    assert len(labels) == 1
     os.makedirs(out_base, exist_ok=True)
 
-    _, cat_name2id = init(mode="track", ignore_as_class=ignore_as_class)
+    _, cat_name2id = load_categories(
+        mode="track", ignore_as_class=ignore_as_class
+    )
 
     out_paths: List[str] = []
-    colors_list: List[ListAny] = []
-    poly2ds_list: List[ListAny] = []
+    colors_list: List[List[np.ndarray]] = []
+    poly2ds_list: List[List[List[Poly2D]]] = []
 
     logger.info("Preparing annotations for InsSeg to Bitmasks")
 
-    for image_anns in tqdm(labels[0]):
+    for image_anns in tqdm(labels):
         ann_id = 1
 
-        image_name = image_anns["name"].replace(".jpg", ".png")
+        image_name = image_anns.name.replace(".jpg", ".png")
         image_name = os.path.split(image_name)[-1]
         out_path = os.path.join(out_base, image_name)
         out_paths.append(out_path)
 
         colors: List[np.ndarray] = []
-        poly2ds: ListAny = []
+        poly2ds: List[List[Poly2D]] = []
 
-        for label in image_anns["labels"]:
-            if "poly2d" not in label:
+        for label in image_anns.labels:
+            if label.poly_2d is None:
                 continue
 
             category_ignored, category_id = process_category(
-                label["category"], ignore_as_class, cat_name2id
+                label.category, ignore_as_class, cat_name2id
             )
             if remove_ignore and category_ignored:
                 continue
-            label["category_ignored"] = category_ignored
 
             color = set_color(label, category_id, ann_id, category_ignored)
             colors.append(color)
-            poly2ds.append(label["poly2d"])
+            poly2ds.append(label.poly_2d)
             ann_id += 1
 
         colors_list.append(colors)
@@ -221,18 +224,20 @@ def insseg2bitmasks(
 
 
 def segtrack2bitmasks(
-    labels: List[List[DictAny]],
+    labels: List[List[Frame]],
     out_base: str,
     ignore_as_class: bool = False,
     remove_ignore: bool = False,
     nproc: int = 4,
 ) -> None:
     """Converting seg_track poly2d to bitmasks."""
-    _, cat_name2id = init(mode="track", ignore_as_class=ignore_as_class)
+    _, cat_name2id = load_categories(
+        mode="track", ignore_as_class=ignore_as_class
+    )
 
     out_paths: List[str] = []
-    colors_list: List[ListAny] = []
-    poly2ds_list: List[ListAny] = []
+    colors_list: List[List[np.ndarray]] = []
+    poly2ds_list: List[List[List[Poly2D]]] = []
 
     logger.info("Preparing annotations for SegTrack to Bitmasks")
 
@@ -240,41 +245,39 @@ def segtrack2bitmasks(
         global_instance_id: int = 1
         instance_id_maps: Dict[str, int] = dict()
 
-        video_name = video_anns[0]["video_name"]
+        video_name = video_anns[0].video_name
         out_dir = os.path.join(out_base, video_name)
         if not os.path.isdir(out_dir):
             os.makedirs(out_dir)
 
         for image_anns in video_anns:
-            image_name = image_anns["name"].replace(".jpg", ".png")
+            image_name = image_anns.name.replace(".jpg", ".png")
             image_name = os.path.split(image_name)[-1]
             out_path = os.path.join(out_dir, image_name)
             out_paths.append(out_path)
 
             colors: List[np.ndarray] = []
-            poly2ds: ListAny = []
+            poly2ds: List[List[Poly2D]] = []
 
-            for label in image_anns["labels"]:
-                if "poly2d" not in label:
+            for label in image_anns.labels:
+                if label.poly_2d is None:
                     continue
 
                 category_ignored, category_id = process_category(
-                    label["category"], ignore_as_class, cat_name2id
+                    label.category, ignore_as_class, cat_name2id
                 )
                 if category_ignored and remove_ignore:
                     continue
-                label["category_ignored"] = category_ignored
 
-                bdd100k_id = str(label["id"])
                 instance_id, global_instance_id = get_instance_id(
-                    instance_id_maps, global_instance_id, bdd100k_id
+                    instance_id_maps, global_instance_id, str(label.id)
                 )
 
                 color = set_color(
                     label, category_id, instance_id, category_ignored
                 )
                 colors.append(color)
-                poly2ds.append(label["poly2d"])
+                poly2ds.append(label.poly_2d)
 
             colors_list.append(colors)
             poly2ds_list.append(poly2ds)
@@ -362,16 +365,22 @@ def main() -> None:
     """Main function."""
     os.environ["QT_QPA_PLATFORM"] = "offscreen"  # matplotlib offscreen render
     args, labels = start_converting(parser_definition_bitmasks)
-    bitmask_func = dict(ins_seg=insseg2bitmasks, seg_track=segtrack2bitmasks)[
-        args.mode
-    ]
-    bitmask_func(
-        labels,
-        args.out_path,
-        args.ignore_as_class,
-        args.remove_ignore,
-        args.nproc,
-    )
+    if args.mode == "ins_seg":
+        insseg2bitmasks(
+            labels,
+            args.out_path,
+            args.ignore_as_class,
+            args.remove_ignore,
+            args.nproc,
+        )
+    elif args.mode == "seg_track":
+        segtrack2bitmasks(
+            group_and_sort(labels),
+            args.out_path,
+            args.ignore_as_class,
+            args.remove_ignore,
+            args.nproc,
+        )
 
     colormap_func = dict(ins_seg=insseg2colormap, seg_track=segtrack2colormap)[
         args.mode

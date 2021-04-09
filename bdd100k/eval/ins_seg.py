@@ -14,7 +14,7 @@ from PIL import Image
 from pycocotools.cocoeval import COCOeval  # type: ignore
 
 from ..common.typing import DictAny
-from ..common.utils import CATEGORIES
+from ..common.utils import load_categories
 from .detect import evaluate_workflow
 from .mots import mask_intersection_rate, parse_bitmasks
 
@@ -23,6 +23,7 @@ def parse_res_bitmasks(
     ann2score: Dict[int, float], bitmask: np.ndarray
 ) -> List[np.ndarray]:
     """Parse information from result bitmasks and compress its value range."""
+    bitmask = bitmask.astype(np.int32)
     category_map = bitmask[:, :, 0]
     ann_map = (bitmask[:, :, 2] << 8) + bitmask[:, :, 3]
 
@@ -156,7 +157,6 @@ class BDDInsSegEval(COCOeval):  # type: ignore
             dt_scores_c = dt_scores[dt_inds_c]
 
             ious_c = ious[dt_inds_c, :][:, gt_inds_c]
-            print(ious_c)
             gt_num_c = np.count_nonzero(gt_inds_c)
             dt_num_c = np.count_nonzero(dt_inds_c)
 
@@ -219,7 +219,7 @@ def evaluate_ins_seg(
     pred_base: str,
     pred_score_file: str,
     out_dir: str = "none",
-) -> DictAny:
+) -> Dict[str, float]:
     """Load the ground truth and prediction results.
 
     Args:
@@ -232,6 +232,7 @@ def evaluate_ins_seg(
         dict: detection metric scores
     """
     bdd_eval = BDDInsSegEval(ann_base, pred_base, pred_score_file)
-    cat_ids: List[int] = [category["id"] for category in CATEGORIES]
-    cat_names: List[str] = [category["name"] for category in CATEGORIES]
+    categories, _ = load_categories("ins_seg")
+    cat_ids = [int(category["id"]) for category in categories]
+    cat_names = [str(category["name"]) for category in categories]
     return evaluate_workflow(bdd_eval, cat_ids, cat_names, out_dir)

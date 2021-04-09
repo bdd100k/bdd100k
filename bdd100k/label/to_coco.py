@@ -25,12 +25,19 @@ from typing import Callable, Dict, List, Tuple
 import numpy as np
 from PIL import Image
 from pycocotools import mask as mask_util  # type: ignore
+from scalabel.label.typing import Frame, Label
 from skimage import measure
 from tqdm import tqdm
 
 from ..common.logger import logger
-from ..common.typing import DictAny, ListAny
-from ..common.utils import IGNORE_MAP, NAME_MAPPING, init, read
+from ..common.typing import AnnType, GtType, ImgType, VidType
+from ..common.utils import (
+    IGNORE_MAP,
+    NAME_MAPPING,
+    group_and_sort,
+    load_categories,
+    read,
+)
 
 
 def parser_definition_coco() -> argparse.ArgumentParser:
@@ -97,7 +104,7 @@ def close_contour(contour: np.ndarray) -> np.ndarray:
 
 def mask_to_polygon(
     binary_mask: np.ndarray, x_1: int, y_1: int, tolerance: int = 2
-) -> List[ListAny]:
+) -> List[List[float]]:
     """Convert BitMask to polygon."""
     polygons = []
     padded_binary_mask = np.pad(
@@ -124,30 +131,13 @@ def mask_to_polygon(
     return polygons
 
 
-def set_image_attributes(
-    image: DictAny, image_name: str, image_id: int
-) -> None:
-    """Set attributes for the image dict."""
-    image.update(
-        dict(
-            file_name=image_name,
-            height=720,
-            width=1280,
-            id=image_id,
-        )
-    )
-
-
-def set_object_attributes(annotation: DictAny, label: DictAny) -> None:
+def get_object_attributes(label: Label, ignore: bool) -> Tuple[int, int]:
     """Set attributes for the ann dict."""
-    iscrowd = bool(label["attributes"].get("Crowd", False))
-    ignore = bool(label["category_ignored"])
-    annotation.update(
-        dict(
-            iscrowd=int(iscrowd or ignore),
-            ignore=int(ignore),
-        )
-    )
+    attributes = label.attributes
+    if attributes is None:
+        return False, int(ignore)
+    iscrowd = int(bool(attributes.get("crowd", False)) or ignore)
+    return iscrowd, int(ignore)
 
 
 def process_category(
@@ -181,24 +171,27 @@ def get_instance_id(
     return instance_id, global_instance_id
 
 
-def set_box_object_geometry(annotation: DictAny, label: DictAny) -> None:
+def set_box_object_geometry(annotation: AnnType, label: Label) -> None:
     """Parsing bbox, area, polygon for bbox ann."""
-    x1 = label["box2d"]["x1"]
-    y1 = label["box2d"]["y1"]
-    x2 = label["box2d"]["x2"]
-    y2 = label["box2d"]["y2"]
+    box_2d = label.box_2d
+    if box_2d is None:
+        return
+    x1 = box_2d.x1
+    y1 = box_2d.y1
+    x2 = box_2d.x2
+    y2 = box_2d.y2
 
     annotation.update(
         dict(
-            bbox=[x1, y1, x2 - x1, y2 - y1],
-            area=float((x2 - x1) * (y2 - y1)),
+            bbox=[x1, y1, x2 - x1 + 1, y2 - y1 + 1],
+            area=float((x2 - x1 + 1) * (y2 - y1 + 1)),
             segmentation=[[x1, y1, x1, y2, x2, y2, x2, y1]],
         )
     )
 
 
 def set_seg_object_geometry(
-    ann: DictAny, mask: np.ndarray, mask_mode: str = "rle"
+    ann: AnnType, mask: np.ndarray, mask_mode: str = "rle"
 ) -> None:
     """Parsing bbox, area, polygon from seg ann."""
     if not mask.sum():
@@ -207,11 +200,11 @@ def set_seg_object_geometry(
     if mask_mode == "polygon":
         x_inds = np.nonzero(np.sum(mask, axis=0))[0]
         y_inds = np.nonzero(np.sum(mask, axis=1))[0]
-        x1, x2 = np.min(x_inds), np.max(x_inds) + 1
-        y1, y2 = np.min(y_inds), np.max(y_inds) + 1
-        mask = mask[y1:y2, x1:x2]
+        x1, x2 = np.min(x_inds), np.max(x_inds)
+        y1, y2 = np.min(y_inds), np.max(y_inds)
+        mask = mask[y1 : y2 + 1, x1 : x2 + 1]
         segmentation = mask_to_polygon(mask, x1, y1)
-        bbox = np.array([x1, y1, x2 - x1, y2 - y1]).tolist()
+        bbox = np.array([x1, y1, x2 - x1 + 1, y2 - y1 + 1]).tolist()
         area = np.sum(mask).tolist()
     elif mask_mode == "rle":
         segmentation = mask_util.encode(
@@ -227,58 +220,71 @@ def set_seg_object_geometry(
 
 
 def bdd100k2coco_det(
-    labels: List[List[DictAny]],
+    labels: List[Frame],
     ignore_as_class: bool = False,
     remove_ignore: bool = False,
-) -> DictAny:
+) -> GtType:
     """Converting BDD100K Detection Set to COCO format."""
-    assert len(labels) == 1
-
-    coco, cat_name2id = init(mode="det", ignore_as_class=ignore_as_class)
-    coco["type"] = "instances"
+    categories, cat_name2id = load_categories(
+        mode="det", ignore_as_class=ignore_as_class
+    )
+    images, annotations = [], []
     image_id, ann_id = 1, 1
 
-    for frame in tqdm(labels[0]):
-        image: DictAny = dict()
-        set_image_attributes(image, frame["name"], image_id)
-        coco["images"].append(image)
+    for frame in tqdm(labels):
+        image = ImgType(
+            file_name=frame.name,
+            height=720,
+            width=1280,
+            id=image_id,
+        )
+        images.append(image)
 
-        if not frame["labels"]:
+        if frame.labels is None:
             continue
-        for label in frame["labels"]:
-            if "box2d" not in label:
+        for label in frame.labels:
+            if label.box_2d is None:
                 continue
 
             category_ignored, category_id = process_category(
-                label["category"], ignore_as_class, cat_name2id
+                label.category, ignore_as_class, cat_name2id
             )
             if remove_ignore and category_ignored:
                 continue
-            label["category_ignored"] = category_ignored
 
-            annotation = dict(
+            iscrowd, ignore = get_object_attributes(label, category_ignored)
+            annotation = AnnType(
                 id=ann_id,
                 image_id=image_id,
                 category_id=category_id,
-                bdd100k_id=str(label["id"]),
+                bdd100k_id=str(label.id),
+                iscrowd=iscrowd,
+                ignore=ignore,
             )
-            set_object_attributes(annotation, label)
             set_box_object_geometry(annotation, label)
-            coco["annotations"].append(annotation)
+            annotations.append(annotation)
 
             ann_id += 1
         image_id += 1
 
-    return coco
+    return GtType(
+        type="instance",
+        categories=categories,
+        images=images,
+        annotations=annotations,
+    )
 
 
 def bdd100k2coco_box_track(
-    labels: List[List[DictAny]],
+    labels: List[List[Frame]],
     ignore_as_class: bool = False,
     remove_ignore: bool = False,
-) -> DictAny:
+) -> GtType:
     """Converting BDD100K Box Tracking Set to COCO format."""
-    coco, cat_name2id = init(mode="track", ignore_as_class=ignore_as_class)
+    categories, cat_name2id = load_categories(
+        mode="track", ignore_as_class=ignore_as_class
+    )
+    videos, images, annotations = [], [], []
     video_id, image_id, ann_id = 1, 1, 1
 
     for video_anns in tqdm(labels):
@@ -286,58 +292,72 @@ def bdd100k2coco_box_track(
         instance_id_maps: Dict[str, int] = dict()
 
         # videos
-        video_name = video_anns[0]["video_name"]
-        video = dict(id=video_id, name=video_name)
-        coco["videos"].append(video)
+        video_name = video_anns[0].video_name
+        video = VidType(id=video_id, name=video_name)
+        videos.append(video)
 
         # images
         for image_anns in video_anns:
-            image = dict(video_id=video_id, frame_id=image_anns["index"])
-            image_name = os.path.join(video_name, image_anns["name"])
-            set_image_attributes(image, image_name, image_id)
-            coco["images"].append(image)
+            image = ImgType(
+                video_id=video_id,
+                frame_id=image_anns.frame_index,
+                file_name=os.path.join(video_name, image_anns.name),
+                height=720,
+                width=1280,
+                id=image_id,
+            )
+            images.append(image)
 
             # annotations
-            for label in image_anns["labels"]:
-                if "box2d" not in label:
+            for label in image_anns.labels:
+                if label.box_2d is None:
                     continue
 
                 category_ignored, category_id = process_category(
-                    label["category"], ignore_as_class, cat_name2id
+                    label.category, ignore_as_class, cat_name2id
                 )
                 if remove_ignore and category_ignored:
                     continue
-                label["category_ignored"] = category_ignored
 
-                bdd100k_id = str(label["id"])
+                bdd100k_id = str(label.id)
                 instance_id, global_instance_id = get_instance_id(
                     instance_id_maps, global_instance_id, bdd100k_id
                 )
-                ann = dict(
+
+                iscrowd, ignore = get_object_attributes(
+                    label, category_ignored
+                )
+                ann = AnnType(
                     id=ann_id,
                     image_id=image_id,
                     category_id=category_id,
                     instance_id=instance_id,
                     bdd100k_id=bdd100k_id,
+                    iscrowd=iscrowd,
+                    ignore=ignore,
                 )
-                set_object_attributes(ann, label)
                 set_box_object_geometry(ann, label)
-                coco["annotations"].append(ann)
+                annotations.append(ann)
 
                 ann_id += 1
             image_id += 1
         video_id += 1
 
-    return coco
+    return GtType(
+        categories=categories,
+        videos=videos,
+        images=images,
+        annotations=annotations,
+    )
 
 
 def bitmask2coco(
-    annotations: List[DictAny],
+    annotations: List[AnnType],
     mask_name: str,
     category_ids: List[int],
     instance_ids: List[int],
     mask_mode: str = "rle",
-) -> List[DictAny]:
+) -> List[AnnType]:
     """Convert bitmasks annotations of an image to RLEs or polygons."""
     bitmask = np.asarray(Image.open(mask_name)).astype(np.int32)
     category_map = bitmask[..., 0]
@@ -356,13 +376,13 @@ def bitmask2coco(
 
 
 def coco_parellel_conversion(
-    annotations_list: List[List[DictAny]],
+    annotations_list: List[List[AnnType]],
     mask_names: List[str],
     category_ids_list: List[List[int]],
     instance_ids_list: List[List[int]],
     mask_mode: str = "rle",
     nproc: int = 4,
-) -> List[List[DictAny]]:
+) -> List[List[AnnType]]:
     """Execute the bitmask conversion in parallel."""
     logger.info("Converting annotations...")
 
@@ -380,37 +400,41 @@ def coco_parellel_conversion(
             total=len(annotations_list),
         ),
     )
-    pool.close()
+
     return annotations_list
 
 
 def bdd100k2coco_ins_seg(
-    labels: List[List[DictAny]],
+    labels: List[Frame],
     mask_base: str,
     ignore_as_class: bool = False,
     remove_ignore: bool = False,
     mask_mode: str = "rle",
     nproc: int = 4,
-) -> DictAny:
+) -> GtType:
     """Converting BDD100K Instance Segmentation Set to COCO format."""
-    assert len(labels) == 1
-
-    coco, cat_name2id = init(mode="track", ignore_as_class=ignore_as_class)
-    coco["type"] = "instances"
+    categories, cat_name2id = load_categories(
+        mode="track", ignore_as_class=ignore_as_class
+    )
+    images = []
     image_id, ann_id = 1, 1
 
     mask_names: List[str] = []
     category_ids_list: List[List[int]] = []
     instance_ids_list: List[List[int]] = []
-    annotations_list: List[List[DictAny]] = []
+    annotations_list: List[List[AnnType]] = []
 
     logger.info("Collecting bitmasks...")
 
-    for frame in tqdm(labels[0]):
+    for frame in tqdm(labels):
+        image = ImgType(
+            id=image_id,
+            file_name=frame.name,
+            height=720,
+            width=1280,
+        )
+        images.append(image)
         instance_id = 1
-        image: DictAny = dict()
-        set_image_attributes(image, frame["name"], image_id)
-        coco["images"].append(image)
 
         mask_name = os.path.join(
             mask_base,
@@ -420,27 +444,28 @@ def bdd100k2coco_ins_seg(
 
         category_ids: List[int] = []
         instance_ids: List[int] = []
-        annotations: List[DictAny] = []
+        annotations: List[AnnType] = []
 
         # annotations
-        for label in frame["labels"]:
-            if "poly2d" not in label:
+        for label in frame.labels:
+            if label.poly_2d is None:
                 continue
 
             category_ignored, category_id = process_category(
-                label["category"], ignore_as_class, cat_name2id
+                label.category, ignore_as_class, cat_name2id
             )
-            label["category_ignored"] = category_ignored
             if category_ignored and remove_ignore:
                 continue
 
-            annotation: DictAny = dict(
+            iscrowd, ignore = get_object_attributes(label, category_ignored)
+            annotation = AnnType(
                 id=ann_id,
                 image_id=image_id,
                 category_id=category_id,
-                bdd100k_id=str(label["id"]),
+                bdd100k_id=str(label.id),
+                iscrowd=iscrowd,
+                ignore=ignore,
             )
-            set_object_attributes(annotation, label)
 
             category_ids.append(category_id)
             instance_ids.append(instance_id)
@@ -461,81 +486,98 @@ def bdd100k2coco_ins_seg(
         mask_mode,
         nproc,
     )
+    final_annotations: List[AnnType] = []
     for annotations in annotations_list:
-        coco["annotations"].extend(annotations)
+        final_annotations.extend(annotations)
 
-    return coco
+    return GtType(
+        type="instances",
+        categories=categories,
+        images=images,
+        annotations=final_annotations,
+    )
 
 
 def bdd100k2coco_seg_track(
-    labels: List[List[DictAny]],
+    labels: List[List[Frame]],
     mask_base: str,
     ignore_as_class: bool = False,
     remove_ignore: bool = False,
     mask_mode: str = "rle",
     nproc: int = 4,
-) -> DictAny:
+) -> GtType:
     """Converting BDD100K Segmentation Tracking Set to COCO format."""
-    coco, cat_name2id = init(mode="track", ignore_as_class=ignore_as_class)
+    categories, cat_name2id = load_categories(
+        mode="track", ignore_as_class=ignore_as_class
+    )
+    videos, images = [], []
     video_id, image_id, ann_id = 1, 1, 1
 
     mask_names: List[str] = []
     category_ids_list: List[List[int]] = []
     instance_ids_list: List[List[int]] = []
-    annotations_list: List[List[DictAny]] = []
+    annotations_list: List[List[AnnType]] = []
 
     for video_anns in tqdm(labels):
         global_instance_id: int = 1
         instance_id_maps: Dict[str, int] = dict()
 
         # videos
-        video_name = video_anns[0]["video_name"]
-        video = dict(id=video_id, name=video_name)
-        coco["videos"].append(video)
+        video_name = video_anns[0].video_name
+        video = VidType(id=video_id, name=video_name)
+        videos.append(video)
 
         # images
         for image_anns in video_anns:
-            image = dict(video_id=video_id, frame_id=image_anns["index"])
-            image_name = os.path.join(video_name, image_anns["name"])
-            set_image_attributes(image, image_name, image_id)
-            coco["images"].append(image)
+            image = ImgType(
+                video_id=video_id,
+                frame_id=image_anns.frame_index,
+                id=image_id,
+                file_name=os.path.join(video_name, image_anns.name),
+                height=720,
+                width=1280,
+            )
+            images.append(image)
 
             mask_name = os.path.join(
                 mask_base,
                 video_name,
-                image_anns["name"].replace(".jpg", ".png"),
+                image_anns.name.replace(".jpg", ".png"),
             )
             mask_names.append(mask_name)
 
             category_ids: List[int] = []
             instance_ids: List[int] = []
-            annotations: List[DictAny] = []
+            annotations: List[AnnType] = []
 
             # annotations
-            for label in image_anns["labels"]:
-                if "poly2d" not in label:
+            for label in image_anns.labels:
+                if label.poly_2d is None:
                     continue
 
                 category_ignored, category_id = process_category(
-                    label["category"], ignore_as_class, cat_name2id
+                    label.category, ignore_as_class, cat_name2id
                 )
-                label["category_ignored"] = category_ignored
                 if category_ignored and remove_ignore:
                     continue
 
-                bdd100k_id = str(label["id"])
+                bdd100k_id = str(label.id)
                 instance_id, global_instance_id = get_instance_id(
                     instance_id_maps, global_instance_id, bdd100k_id
                 )
 
-                annotation = dict(
+                iscrowd, ignore = get_object_attributes(
+                    label, category_ignored
+                )
+                annotation = AnnType(
                     id=ann_id,
                     image_id=image_id,
                     category_id=category_id,
                     instance_id=instance_id,
                     bdd100k_id=bdd100k_id,
+                    iscrowd=iscrowd,
+                    ignore=ignore,
                 )
-                set_object_attributes(annotation, label)
 
                 category_ids.append(category_id)
                 instance_ids.append(instance_id)
@@ -557,15 +599,22 @@ def bdd100k2coco_seg_track(
         mask_mode,
         nproc,
     )
+    final_annotations: List[AnnType] = []
     for annotations in annotations_list:
-        coco["annotations"].extend(annotations)
+        final_annotations.extend(annotations)
 
-    return coco
+    return GtType(
+        type="instances",
+        categories=categories,
+        videos=videos,
+        images=images,
+        annotations=final_annotations,
+    )
 
 
 def start_converting(
     parser_def_func: Callable[[], argparse.ArgumentParser]
-) -> Tuple[argparse.Namespace, List[List[DictAny]]]:
+) -> Tuple[argparse.Namespace, List[Frame]]:
     """Parses arguments, and logs settings."""
     parser = parser_def_func()
     args = parser.parse_args()
@@ -601,11 +650,11 @@ def main() -> None:
         )
     elif args.mode == "box_track":
         coco = bdd100k2coco_box_track(
-            labels, args.ignore_as_class, args.remove_ignore
+            group_and_sort(labels), args.ignore_as_class, args.remove_ignore
         )
     elif args.mode == "seg_track":
         coco = bdd100k2coco_seg_track(
-            labels,
+            group_and_sort(labels),
             args.mask_base,
             args.ignore_as_class,
             args.remove_ignore,

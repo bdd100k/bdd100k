@@ -1,14 +1,23 @@
 """BDD100K tracking evaluation with CLEAR MOT metrics."""
 import time
 from multiprocessing import Pool
-from typing import Callable, List, Tuple, Union
+from typing import Callable, Dict, List, Tuple, Union, overload
 
 import motmetrics as mm
 import numpy as np
 import pandas as pd
+from scalabel.label.typing import Frame, Label
 
 from ..common.logger import logger
-from ..common.typing import DictAny, ListAny
+
+EvalResults = Dict[str, Dict[str, float]]
+Frames = List[Frame]
+Files = List[str]
+FramesList = List[Frames]
+FilesList = List[Files]
+FramesFunc = Callable[[Frames, Frames, float, float], List[mm.MOTAccumulator]]
+FilesFunc = Callable[[Files, Files, float, float], List[mm.MOTAccumulator]]
+
 
 METRIC_MAPS = {
     "idf1": "IDF1",
@@ -32,24 +41,30 @@ CLASSES = [c for cs in SUPER_CLASSES.values() for c in cs]
 IGNORE_CLASSES = ["trailer", "other person", "other vehicle"]
 
 
-def parse_objects(objects: List[DictAny]) -> List[np.ndarray]:
+def parse_objects(objects: List[Label]) -> List[np.ndarray]:
     """Parse objects under Scalable formats."""
     bboxes, labels, ids, ignore_bboxes = [], [], [], []
     for obj in objects:
+        box_2d = obj.box_2d
+        if box_2d is None:
+            continue
         bbox = [
-            obj["box2d"]["x1"],
-            obj["box2d"]["y1"],
-            obj["box2d"]["x2"] - obj["box2d"]["x1"],
-            obj["box2d"]["y2"] - obj["box2d"]["y1"],
+            box_2d.x1,
+            box_2d.y1,
+            box_2d.x2 - box_2d.x1 + 1,
+            box_2d.y2 - box_2d.y1 + 1,
         ]
-        if obj["category"] in CLASSES:
-            if "attributes" in obj and obj["attributes"].get("Crowd", False):
+        category = obj.category
+        if category in CLASSES:
+            if obj.attributes is not None and bool(
+                obj.attributes.get("crowd", False)
+            ):
                 ignore_bboxes.append(bbox)
             else:
                 bboxes.append(bbox)
-                labels.append(CLASSES.index(obj["category"]))
-                ids.append(obj["id"])
-        elif obj["category"] in IGNORE_CLASSES:
+                labels.append(CLASSES.index(category))
+                ids.append(obj.id)
+        elif category in IGNORE_CLASSES:
             ignore_bboxes.append(bbox)
         else:
             raise KeyError("Unknown category.")
@@ -61,28 +76,31 @@ def intersection_over_area(preds: np.ndarray, gts: np.ndarray) -> np.ndarray:
     out = np.zeros((len(preds), len(gts)))
     for i, p in enumerate(preds):
         for j, g in enumerate(gts):
-            x1, x2 = max(p[0], g[0]), min(p[0] + p[2], g[0] + g[2])
-            y1, y2 = max(p[1], g[1]), min(p[1] + p[3], g[1] + g[3])
-            out[i][j] = max(x2 - x1, 0) * max(y2 - y1, 0) / float(p[2] * p[3])
+            w = min(p[0] + p[2], g[0] + g[2]) - max(p[0], g[0])
+            h = min(p[1] + p[3], g[1] + g[3]) - max(p[1], g[1])
+            out[i][j] = max(w, 0) * max(h, 0) / float(p[2] * p[3])
     return out
 
 
 def acc_single_video_mot(
-    gts: List[DictAny],
-    results: List[DictAny],
+    gts: List[Frame],
+    results: List[Frame],
     iou_thr: float = 0.5,
     ignore_iof_thr: float = 0.5,
 ) -> List[mm.MOTAccumulator]:
     """Accumulate results for one video."""
     num_classes = len(CLASSES)
     assert len(gts) == len(results)
-    gts = sorted(gts, key=lambda x: int(x["index"]))
-    results = sorted(results, key=lambda x: int(x["index"]))
+    get_frame_index = (
+        lambda x: x.frame_index if x.frame_index is not None else 0
+    )
+    gts = sorted(gts, key=get_frame_index)
+    results = sorted(results, key=get_frame_index)
     accs = [mm.MOTAccumulator(auto_id=True) for i in range(num_classes)]
     for gt, result in zip(gts, results):
-        assert gt["index"] == result["index"]
-        gt_bboxes, gt_labels, gt_ids, gt_ignores = parse_objects(gt["labels"])
-        pred_bboxes, pred_labels, pred_ids, _ = parse_objects(result["labels"])
+        assert gt.frame_index == result.frame_index
+        gt_bboxes, gt_labels, gt_ids, gt_ignores = parse_objects(gt.labels)
+        pred_bboxes, pred_labels, pred_ids, _ = parse_objects(result.labels)
         for i in range(num_classes):
             gt_inds, pred_inds = gt_labels == i, pred_labels == i
             gt_bboxes_c, gt_ids_c = gt_bboxes[gt_inds], gt_ids[gt_inds]
@@ -152,7 +170,7 @@ def aggregate_accs(
 
 def evaluate_single_class(
     names: List[str], accs: List[mm.MOTAccumulator]
-) -> List[Union[float, int]]:
+) -> List[float]:
     """Evaluate results for one class."""
     mh = mm.metrics.create()
     summary = mh.compute_many(
@@ -178,10 +196,10 @@ def evaluate_single_class(
 
 
 def render_results(
-    summaries: List[List[Union[float, int]]],
+    summaries: List[List[float]],
     items: List[str],
     metrics: List[str],
-) -> DictAny:
+) -> EvalResults:
     """Render the evaluation results."""
     eval_results = pd.DataFrame(columns=metrics)
     # category, super-category and overall results
@@ -219,7 +237,7 @@ def render_results(
     strsummary = "\n" + strsummary
     logger.info(strsummary)
 
-    outputs: DictAny = dict()
+    outputs: EvalResults = dict()
     for i, item in enumerate(items):
         outputs[item] = dict()
         for j, metric in enumerate(METRIC_MAPS.values()):
@@ -231,16 +249,38 @@ def render_results(
     return outputs
 
 
+@overload
 def evaluate_track(
-    acc_single_video: Callable[
-        [ListAny, ListAny, float, float], List[mm.MOTAccumulator]
-    ],
-    gts: List[ListAny],
-    results: List[ListAny],
+    acc_single_video: FramesFunc,
+    gts: FramesList,
+    results: FramesList,
     iou_thr: float = 0.5,
     ignore_iof_thr: float = 0.5,
     nproc: int = 4,
-) -> DictAny:
+) -> EvalResults:
+    ...
+
+
+@overload
+def evaluate_track(
+    acc_single_video: FilesFunc,
+    gts: FilesList,
+    results: FilesList,
+    iou_thr: float = 0.5,
+    ignore_iof_thr: float = 0.5,
+    nproc: int = 4,
+) -> EvalResults:
+    ...
+
+
+def evaluate_track(
+    acc_single_video: Union[FramesFunc, FilesFunc],
+    gts: Union[FramesList, FilesList],
+    results: Union[FramesList, FilesList],
+    iou_thr: float = 0.5,
+    ignore_iof_thr: float = 0.5,
+    nproc: int = 4,
+) -> EvalResults:
     """Evaluate CLEAR MOT metrics for BDD100K."""
     logger.info("BDD100K tracking evaluation with CLEAR MOT metrics.")
     t = time.time()

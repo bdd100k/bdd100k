@@ -18,6 +18,7 @@ def parse_bitmasks(
 
     The compression works like: [4, 2, 9] --> [2, 1, 3]
     """
+    bitmask = bitmask.astype(np.int32)
     category_map = bitmask[:, :, 0]
     attributes_map = bitmask[:, :, 1]
     instance_map = (bitmask[:, :, 2] << 8) + bitmask[:, :, 3]
@@ -61,25 +62,15 @@ def mask_intersection_rate(
     bin_num = (1 + m) * (1 + n)
     histogram = np.histogram(confusion, bins=bin_num, range=(0, bin_num))[0]
     conf_matrix = histogram.reshape(1 + m, 1 + n)
-    gt_areas = conf_matrix.sum(axis=1)[1:]
-    pred_areas = conf_matrix.sum(axis=0)[1:]
-    conf_matrix = conf_matrix[1:, 1:]
+    gt_areas = conf_matrix.sum(axis=1, keepdims=True)[1:, :]
+    pred_areas = conf_matrix.sum(axis=0, keepdims=True)[:, 1:]
 
-    ious = np.zeros((m, n))
-    iofs = np.zeros((m, n))
-    for i in range(m):
-        for j in range(n):
-            inter = conf_matrix[i, j]
-            union = gt_areas[i] + pred_areas[j] - conf_matrix[i, j]
-            if union > 0:
-                ious[i, j] = inter / union
-            else:
-                ious[i, j] = 0
-            if pred_areas[j] > 0:
-                iofs[i, j] = inter / pred_areas[j]
-            else:
-                iofs[i, j] = 0
-
+    inter = conf_matrix[1:, 1:]
+    union = gt_areas + pred_areas - inter
+    ious = inter / union
+    ious = np.where(union > 0, ious, 0.0)
+    iofs = inter / pred_areas
+    iofs = np.where(pred_areas > 0, iofs, 0.0)
     return ious, iofs
 
 
@@ -98,8 +89,8 @@ def acc_single_video_mots(
         assert os.path.isfile(gt)
         assert os.path.isfile(result)
 
-        gt_masks = np.asarray(Image.open(gt)).astype(np.int32)
-        res_masks = np.asarray(Image.open(result)).astype(np.int32)
+        gt_masks = np.asarray(Image.open(gt))
+        res_masks = np.asarray(Image.open(result))
         gt_masks, gt_ids, gt_attrs, gt_cats = parse_bitmasks(gt_masks)
         pred_masks, pred_ids, pred_attrs, pred_cats = parse_bitmasks(res_masks)
         ious, iofs = mask_intersection_rate(gt_masks, pred_masks)

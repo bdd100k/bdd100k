@@ -20,23 +20,23 @@ class TestBDD100KMotEval(unittest.TestCase):
     def test_mot(self) -> None:
         """Check mot evaluation correctness."""
         cur_dir = os.path.dirname(os.path.abspath(__file__))
-        gts = read("{}/testcases/track_sample_anns/".format(cur_dir))
-        preds = read("{}/testcases/track_predictions.json".format(cur_dir))
+        gts = [read("{}/testcases/track_sample_anns.json".format(cur_dir))]
+        preds = [read("{}/testcases/track_predictions.json".format(cur_dir))]
         result = evaluate_track(acc_single_video_mot, gts, preds)
         overall_reference = {
-            "IDF1": 0.7089966679007775,
-            "MOTA": 0.6400771952396269,
-            "MOTP": 0.8682947680631947,
-            "FP": 129,
-            "FN": 945,
+            "IDF1": 0.7101073676416142,
+            "MOTA": 0.6420070762302992,
+            "MOTP": 0.871614396957838,
+            "FP": 126,
+            "FN": 942,
             "IDSw": 45,
             "MT": 62,
             "PT": 47,
             "ML": 33,
-            "FM": 68,
-            "mIDF1": 0.3223152925410833,
-            "mMOTA": 0.242952917616693,
-            "mMOTP": 0.49618985480723526,
+            "FM": 66,
+            "mIDF1": 0.32247819436558384,
+            "mMOTA": 0.24324204637536687,
+            "mMOTP": 0.5001285135514636,
         }
         for key in result["OVERALL"]:
             self.assertAlmostEqual(
@@ -48,11 +48,11 @@ class TestRenderResults(unittest.TestCase):
     """Test cases for mot render results."""
 
     cur_dir = os.path.dirname(os.path.abspath(__file__))
-    gts = read("{}/testcases/track_sample_anns/".format(cur_dir))
+    gts = read("{}/testcases/track_sample_anns.json".format(cur_dir))
     preds = read("{}/testcases/track_predictions.json".format(cur_dir))
 
     metrics = list(METRIC_MAPS.keys())
-    accs = [acc_single_video_mot(gts[0], preds[0])]
+    accs = [acc_single_video_mot(gts, preds)]
     names, accs, items = aggregate_accs(accs)
     summaries = [
         evaluate_single_class(name, acc) for name, acc in zip(names, accs)

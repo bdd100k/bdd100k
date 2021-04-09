@@ -10,10 +10,8 @@ class TestBDD100K2COCO(unittest.TestCase):
     """Test cases for converting BDD100K labels to COCO format."""
 
     cur_dir = os.path.dirname(os.path.abspath(__file__))
-    bdd_list = read("{}/testcases/unitest_val_bdd.json".format(cur_dir))
-
-    val_coco = bdd100k2coco_det(bdd_list)
-    val_bdd = bdd_list[0]
+    val_bdd = read("{}/testcases/unitest_val_bdd.json".format(cur_dir))
+    val_coco = bdd100k2coco_det(val_bdd)
 
     def test_type(self) -> None:
         """Check coco format type."""
@@ -26,7 +24,7 @@ class TestBDD100K2COCO(unittest.TestCase):
 
     def test_num_anns(self) -> None:
         """Check the number of annotations is unchanged."""
-        len_bdd = sum([len(item["labels"]) for item in self.val_bdd])
+        len_bdd = sum([len(item.labels) for item in self.val_bdd])
         len_coco = len(self.val_coco["annotations"])
         self.assertEqual(len_coco, len_bdd)
 
