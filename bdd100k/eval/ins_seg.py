@@ -157,7 +157,6 @@ class BDDInsSegEval(COCOeval):  # type: ignore
             dt_scores_c = dt_scores[dt_inds_c]
 
             ious_c = ious[dt_inds_c, :][:, gt_inds_c]
-            print(ious_c)
             gt_num_c = np.count_nonzero(gt_inds_c)
             dt_num_c = np.count_nonzero(dt_inds_c)
 
