@@ -12,9 +12,10 @@ from typing import Dict, List
 import numpy as np
 from PIL import Image
 from pycocotools.cocoeval import COCOeval  # type: ignore
+from scalabel.label.to_coco import load_coco_config
 
 from ..common.typing import DictAny
-from ..common.utils import load_categories
+from ..common.utils import DEFAULT_COCO_CONFIG
 from .detect import evaluate_workflow
 from .mots import mask_intersection_rate, parse_bitmasks
 
@@ -157,7 +158,6 @@ class BDDInsSegEval(COCOeval):  # type: ignore
             dt_scores_c = dt_scores[dt_inds_c]
 
             ious_c = ious[dt_inds_c, :][:, gt_inds_c]
-            print(ious_c)
             gt_num_c = np.count_nonzero(gt_inds_c)
             dt_num_c = np.count_nonzero(dt_inds_c)
 
@@ -232,7 +232,7 @@ def evaluate_ins_seg(
     Returns:
         dict: detection metric scores
     """
-    categories, _, _ = load_categories("ins_seg")
+    categories, _, _ = load_coco_config("ins_seg", DEFAULT_COCO_CONFIG)
     bdd_eval = BDDInsSegEval(ann_base, pred_base, pred_score_file)
     cat_ids = [int(category["id"]) for category in categories]
     cat_names = [str(category["name"]) for category in categories]

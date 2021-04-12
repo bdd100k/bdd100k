@@ -95,6 +95,7 @@ def acc_single_video_mot(
     accs = [mm.MOTAccumulator(auto_id=True) for i in range(num_classes)]
     for gt, result in zip(gts, results):
         assert gt.frame_index == result.frame_index
+        assert gt.labels is not None and result.labels is not None
         gt_bboxes, gt_labels, gt_ids, gt_ignores = parse_objects(gt.labels)
         pred_bboxes, pred_labels, pred_ids, _ = parse_objects(result.labels)
         for i in range(num_classes):

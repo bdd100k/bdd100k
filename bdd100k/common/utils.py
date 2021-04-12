@@ -3,38 +3,14 @@
 import glob
 import os
 import os.path as osp
-from typing import Dict, List, Tuple
+from typing import List
 
-import toml
-from scalabel.label.coco_typing import CatType
 from scalabel.label.io import load as load_bdd100k
 from scalabel.label.typing import Frame
 
-
-def load_categories(
-    mode: str = "det",
-    cfg_name: str = "configs",
-    ignore_as_class: bool = False,
-) -> Tuple[List[CatType], Dict[str, str], Dict[str, str]]:
-    """Load the annotation dictionary."""
-    cur_dir = os.path.dirname(os.path.abspath(__file__))
-    cfg_file = "{}/{}.toml".format(cur_dir, cfg_name)
-    cfgs = toml.load(cfg_file)
-    categories: List[CatType] = cfgs["categories"]
-    cat_extensions: List[CatType] = cfgs["cat_extensions"]
-    if mode == "det":
-        categories.extend(cat_extensions)
-    name_mapping: Dict[str, str] = cfgs["name_mapping"]
-    ignore_mapping: Dict[str, str] = cfgs["ignore_mapping"]
-
-    if ignore_as_class:
-        categories.append(
-            CatType(
-                supercategory="none", id=len(categories) + 1, name="ignored"
-            )
-        )
-
-    return categories, name_mapping, ignore_mapping
+DEFAULT_COCO_CONFIG = osp.join(
+    osp.dirname(osp.abspath(__file__)), "configs.toml"
+)
 
 
 def list_files(inputs: str) -> List[List[str]]:

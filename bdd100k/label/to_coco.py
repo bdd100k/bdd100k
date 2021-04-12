@@ -21,7 +21,7 @@ import json
 import os
 from functools import partial
 from multiprocessing import Pool
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 from PIL import Image
@@ -36,7 +36,7 @@ from scalabel.label.to_coco import (
     get_instance_id,
     get_object_attributes,
     group_and_sort,
-    parse_arguments,
+    load_coco_config,
     process_category,
     scalabel2coco_box_track,
     scalabel2coco_detection,
@@ -46,18 +46,81 @@ from scalabel.label.typing import Frame
 from tqdm import tqdm
 
 from ..common.logger import logger
-from ..common.utils import load_categories, read
+from ..common.utils import DEFAULT_COCO_CONFIG, read
 
 
-def parser_arguments_to_coco() -> argparse.Namespace:
-    """Definition of the parser."""
-    parser = argparse.ArgumentParser(description="BDD100K to COCO format")
+def parser_definition() -> argparse.ArgumentParser:
+    """Parse arguments."""
+    parser = argparse.ArgumentParser(description="bdd100k to coco format")
+    parser.add_argument(
+        "-l",
+        "--label",
+        help=(
+            "root directory of bdd100k label Json files or path to a label "
+            "json file"
+        ),
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        help="path to save coco formatted label file",
+    )
+    parser.add_argument(
+        "--height",
+        type=int,
+        default=720,
+        help="Height of images",
+    )
+    parser.add_argument(
+        "--width",
+        type=int,
+        default=1280,
+        help="Height of images",
+    )
+    parser.add_argument(
+        "-m",
+        "--mode",
+        default="det",
+        choices=["det", "ins_seg", "box_track", "seg_track"],
+        help="conversion mode: detection or tracking.",
+    )
+    parser.add_argument(
+        "-ri",
+        "--remove-ignore",
+        action="store_true",
+        help="Remove the ignored annotations from the label file.",
+    )
+    parser.add_argument(
+        "-ic",
+        "--ignore-as-class",
+        action="store_true",
+        help="Put the ignored annotations to the `ignored` category.",
+    )
+    parser.add_argument(
+        "-mm",
+        "--mask-mode",
+        default="rle",
+        choices=["rle", "polygon"],
+        help="conversion mode: rle or polygon.",
+    )
+    parser.add_argument(
+        "--nproc",
+        type=int,
+        default=4,
+        help="number of processes for mot evaluation",
+    )
+    parser.add_argument(
+        "--config",
+        type=str,
+        default=DEFAULT_COCO_CONFIG,
+        help="Configuration for COCO categories",
+    )
     parser.add_argument(
         "-mb",
         "--mask-base",
         help="Path to the BitMasks base folder.",
     )
-    return parser.parse_args()
+    return parser
 
 
 def bitmask2coco(
@@ -126,8 +189,8 @@ def bdd100k2coco_ins_seg(
     nproc: int = 4,
 ) -> GtType:
     """Converting BDD100K Instance Segmentation Set to COCO format."""
-    images = []
-    image_id, ann_id = 1, 1
+    image_id, ann_id = 0, 0
+    images: List[ImgType] = []
 
     mask_names: List[str] = []
     category_ids_list: List[List[int]] = []
@@ -136,19 +199,20 @@ def bdd100k2coco_ins_seg(
 
     logger.info("Collecting bitmasks...")
 
-    for frame in tqdm(frames):
+    for image_anns in tqdm(frames):
+        instance_id = 0
+        image_id += 1
         image = ImgType(
             id=image_id,
-            file_name=frame.name,
+            file_name=image_anns.name,
             height=shape[0],
             width=shape[1],
         )
         images.append(image)
-        instance_id = 1
 
         mask_name = os.path.join(
             mask_base,
-            frame["name"].replace(".jpg", ".png"),
+            image_anns.name.replace(".jpg", ".png"),
         )
         mask_names.append(mask_name)
 
@@ -156,7 +220,7 @@ def bdd100k2coco_ins_seg(
         instance_ids: List[int] = []
         annotations: List[AnnType] = []
 
-        for label in frame.labels:
+        for label in image_anns.labels:
             if label.poly_2d is None:
                 continue
             category_ignored, category_id = process_category(
@@ -169,6 +233,8 @@ def bdd100k2coco_ins_seg(
             if category_ignored and remove_ignore:
                 continue
 
+            ann_id += 1
+            instance_id += 1
             iscrowd, ignore = get_object_attributes(label, category_ignored)
             annotation = AnnType(
                 id=ann_id,
@@ -182,13 +248,10 @@ def bdd100k2coco_ins_seg(
             category_ids.append(category_id)
             instance_ids.append(instance_id)
             annotations.append(annotation)
-            ann_id += 1
-            instance_id += 1
 
         category_ids_list.append(category_ids)
         instance_ids_list.append(instance_ids)
         annotations_list.append(annotations)
-        image_id += 2
 
     annotations_list = coco_parellel_conversion(
         annotations_list,
@@ -327,9 +390,11 @@ def bdd100k2coco_seg_track(
     )
 
 
-def start_converting() -> Tuple[argparse.Namespace, List[Frame]]:
+def start_converting(
+    args_definition: Callable[[], argparse.ArgumentParser]
+) -> Tuple[argparse.Namespace, List[Frame]]:
     """Parses arguments, and logs settings."""
-    args = parse_arguments()
+    args = args_definition().parse_args()
     logger.info(
         "Mode: %s\nremove-ignore: %s\nignore-as-class: %s",
         args.mode,
@@ -345,10 +410,11 @@ def start_converting() -> Tuple[argparse.Namespace, List[Frame]]:
 
 def main() -> None:
     """Main function."""
-    args, frames = start_converting()
-    args_to_coco = parser_arguments_to_coco()
-    categories, name_mapping, ignore_mapping = load_categories(
-        mode=args.mode, ignore_as_class=args.ignore_as_class
+    args, frames = start_converting(parser_definition)
+    categories, name_mapping, ignore_mapping = load_coco_config(
+        mode=args.mode,
+        filepath=args.config,
+        ignore_as_class=args.ignore_as_class,
     )
 
     if args.mode in ["det", "box_track"]:
@@ -362,19 +428,19 @@ def main() -> None:
                 ins_seg=bdd100k2coco_ins_seg,
                 seg_track=bdd100k2coco_seg_track,
             )[args.mode],
-            mask_base=args_to_coco.mask_base,
+            mask_base=args.mask_base,
             mask_mode=args.mask_mode,
             nproc=args.nproc,
         )
     shape = (args.height, args.width)
     coco = convert_func(
-        shape,
-        frames,
-        categories,
-        name_mapping,
-        ignore_mapping,
-        args.ignore_as_class,
-        args.remove_ignore,
+        shape=shape,
+        frames=frames,
+        categories=categories,
+        name_mapping=name_mapping,
+        ignore_mapping=ignore_mapping,
+        ignore_as_class=args.ignore_as_class,
+        remove_ignore=args.remove_ignore,
     )
 
     logger.info("Saving converted annotations to disk...")

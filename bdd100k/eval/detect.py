@@ -13,12 +13,12 @@ from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval  # type: ignore
 from scalabel.label.coco_typing import GtType, PredType
 from scalabel.label.io import load as load_bdd100k
-from scalabel.label.to_coco import scalabel2coco_detection
+from scalabel.label.to_coco import load_coco_config, scalabel2coco_detection
 from scalabel.label.typing import Frame
 from tabulate import tabulate
 
 from ..common.typing import DictAny, ListAny
-from ..common.utils import load_categories, read
+from ..common.utils import DEFAULT_COCO_CONFIG, read
 
 SHAPE = (720, 1280)
 
@@ -61,7 +61,10 @@ def evaluate_det(
     """
     # Convert the annotation file to COCO format
     frames = read(ann_file)
-    categories, name_mapping, ignore_mapping = load_categories("det")
+    categories, name_mapping, ignore_mapping = load_coco_config(
+        mode="det",
+        filepath=DEFAULT_COCO_CONFIG,
+    )
     ann_coco = scalabel2coco_detection(
         SHAPE, frames, categories, name_mapping, ignore_mapping
     )
@@ -218,6 +221,9 @@ def convert_preds(
 
     preds: List[PredType] = []
     for image in images:
+        if image.labels is None:
+            continue
+
         image_name = str(image.name)
         labels = sorted(
             image.labels,
