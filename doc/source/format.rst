@@ -98,7 +98,7 @@ Segmentation Label Formats
 ~~~~~~~~~
 
 We provide labels in both json and bitmask formats.
-Note that polygons stored in jsons is not the same format with COCO.
+Note that `poly2d` used in jsons is not of the same format with COCO.
 Instead, the "poly2d" entry in jsons stores vertices and control points of Bezeir Curves. 
 
 For segmentation labels, besides jsons files contain "poly2d" field, we also provide bitmasks labels.
@@ -114,10 +114,47 @@ which can be computed as ``B * 256 + A``. You can also refer to the below image 
 .. figure:: ../images/bitmask.png
    :alt: Downloading buttons
 
+
+Laberl conversion
+~~~~~~~~~
+
+from_coco
+-----------------
+
+``from_coco`` converts coco-format json files into bdd100k format.
+Currently, for conversion of segmentation, only ``polygon`` format is supported.
+
+Available arguments:
+::
+    
+    python3 -m bdd100k.label.from_coco -l ${input_file} -o ${out_path}  
+
+
+to_bitmasks
+-----------------
+ 
 You can run the conversion from poly2d to bitmasks by this command:
 ::
     
-    python3 -m bdd100k.label.to_bitmasks -m box_track|seg_track -i ${in_path} -o ${iout_path}  
+    python3 -m bdd100k.label.to_bitmasks -m box_track|seg_track -l ${in_path} -o ${out_path} --nproc ${process_num}
+- `process_num`: the number of processes used for the conversion. Default as 4.
 
 However, as the conversion process is not determinitic, we don't recommend converting it by yourself.
 The evaluation scripts uses bitmasks as ground-truth, so we suggest using bitmasks as input all the way.
+
+
+to_coco
+-----------------
+
+``to_coco`` converts bdd100k json files into coco format.
+
+Available arguments:
+
+::
+   
+    python3 -m bdd100k.label.to_coco -m det|box_track -l ${in_path} -o ${out_path}  
+
+::
+   
+    python3 -m bdd100k.label.to_coco -m ins_seg|seg_track -l ${in_path} -o ${out_path} -mb ${mask_path}
+- `mask_path`: the path to the bitmasks
