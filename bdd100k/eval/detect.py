@@ -18,7 +18,7 @@ from scalabel.label.typing import Frame
 from tabulate import tabulate
 
 from ..common.typing import DictAny, ListAny
-from ..common.utils import DEFAULT_COCO_CONFIG, read
+from ..common.utils import read
 
 SHAPE = (720, 1280)
 
@@ -47,23 +47,28 @@ class COCOV2(COCO):  # type: ignore
 
 
 def evaluate_det(
-    ann_file: str, pred_file: str, out_dir: str = "none"
+    ann_file: str,
+    pred_file: str,
+    cfg_path: str,
+    out_dir: str = "none",
 ) -> Dict[str, float]:
     """Load the ground truth and prediction results.
 
     Args:
         ann_file: path to the ground truth annotations. "*.json"
         pred_file: path to the prediciton results in BDD format. "*.json"
+        cfg_path: path to the config file
         out_dir: output_directory
 
     Returns:
         dict: detection metric scores
+
     """
     # Convert the annotation file to COCO format
     frames = read(ann_file)
     categories, name_mapping, ignore_mapping = load_coco_config(
         mode="det",
-        filepath=DEFAULT_COCO_CONFIG,
+        filepath=cfg_path,
     )
     ann_coco = scalabel2coco_detection(
         SHAPE, frames, categories, name_mapping, ignore_mapping
