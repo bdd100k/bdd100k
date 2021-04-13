@@ -65,18 +65,21 @@ def evaluate_det(
 
     """
     # Convert the annotation file to COCO format
-    frames = read(ann_file)
+    ann_frames = read(ann_file)
     categories, name_mapping, ignore_mapping = load_coco_config(
         mode="det",
         filepath=cfg_path,
     )
     ann_coco = scalabel2coco_detection(
-        SHAPE, frames, categories, name_mapping, ignore_mapping
+        SHAPE, ann_frames, categories, name_mapping, ignore_mapping
     )
     coco_gt = COCOV2(None, ann_coco)
 
     # Load results and convert the predictions
-    pred_res = convert_preds(pred_file, ann_coco, name_mapping)
+    pred_frames = read(pred_file)
+    pred_res = scalabel2coco_detection(
+        SHAPE, pred_frames, categories, name_mapping, ignore_mapping
+    )["annotations"]
     coco_dt = coco_gt.loadRes(pred_res)
 
     cat_ids = coco_dt.getCatIds()
@@ -206,61 +209,6 @@ def write_eval(
 
     with open(os.path.join(out_dir, "eval.json"), "w") as fp:
         json.dump(eval_param, fp)
-
-
-def convert_preds(
-    res_file: str,
-    ann_coco: GtType,
-    name_mapping: Optional[Dict[str, str]],
-    max_det: int = 100,
-) -> List[PredType]:
-    """Convert the prediction into the coco eval format."""
-    imgs_maps = {
-        os.path.split(item["file_name"])[-1]: item["id"]
-        for item in ann_coco["images"]
-    }
-    cls_maps = {item["name"]: item["id"] for item in ann_coco["categories"]}
-
-    images: List[Frame] = load_bdd100k(res_file)
-    images = sorted(images, key=lambda image: image.name)
-
-    preds: List[PredType] = []
-    for image in images:
-        if image.labels is None:
-            continue
-
-        image_name = str(image.name)
-        labels = sorted(
-            image.labels,
-            key=lambda label: label.score if label.score else 0.0,
-            reverse=True,
-        )[:max_det]
-
-        for label in labels:
-            if label.category is None:
-                continue
-            if label.box_2d is None:
-                continue
-            if label.score is None:
-                continue
-
-            cls_name = str(label.category)
-            if name_mapping is not None and cls_name in name_mapping:
-                cls_name = name_mapping[cls_name]
-            box2d = label.box_2d
-            x1, y1, x2, y2 = box2d.x1, box2d.y1, box2d.x2, box2d.y2
-
-            pred = PredType(
-                category=cls_name,
-                score=float(label.score),
-                name=image_name,
-                image_id=imgs_maps[image_name],
-                category_id=cls_maps[cls_name],
-                bbox=[x1, y1, x2 - x1 + 1, y2 - y1 + 1],
-            )
-            preds.append(pred)
-
-    return preds
 
 
 def create_small_table(small_dict: Dict[str, float]) -> str:
