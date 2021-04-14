@@ -8,9 +8,9 @@ Detection
 Submission format
 ^^^^^^^^^^^^^^^^^^^^^^
 
-To evaluate your algorithms on BDD100K detection benchmark, you may prepare 
+To evaluate your algorithms on the BDD100K detection benchmark, you may prepare
 your prediction results using the `Scalabel Format <https://doc.scalabel.ai/format.html>`_.
-Speicifically, these fields are required:
+Specifically, these fields are required:
 ::
 
     - name: str
@@ -33,8 +33,8 @@ You can evaluate your algorithm with public annotations by running
     
     python3 -m bdd100k.eval.run -t det -g ${gt_file} -r ${res_file} 
 
-- `gt_file`: ground truth file in JSON, either in Scalabel format or COCO format. If using COCO format, add a flag `--ann-format coco`
-- `res_file`: prediction results file in JSON, format as described above.
+- ``gt_file``: ground truth file in JSON, either in Scalabel format or COCO format. If using COCO format, add a flag `--ann-format coco`
+- ``res_file``: prediction results file in JSON, format as described above.
 
 Other options.
 - If you want to evaluate the detection performance on the BDD100K MOT set, 
@@ -52,13 +52,13 @@ Similar to COCO evaluation, we report 12 scores as
 Instance Segmentation
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-We use the same metrics set as DET above. The only difference lies in the computation of distance matrixs.
+We use the same metrics set as DET above. The only difference lies in the computation of distance matrixes.
 Concretely, in DET, it is computed using box IoU. While for InsSeg, the mask IoU is used.
 
 Submission format
 ^^^^^^^^^^^^^^^^^^^^^^
 
-To evaluate your algorithms on BDD100K detection benchmark, you may prepare predictions in bitmask format,
+To evaluate your algorithms on the BDD100K detection benchmark, you may prepare predictions in bitmask format,
 which is illustrated in `Label Format <https://doc.bdd100k.com/format.html>`_.
 Moreover, a score file is needed, with the following format:
 ::
@@ -75,7 +75,7 @@ Moreover, a score file is needed, with the following format:
 
 - `index`: the value correspondence to the "ann_id" stored in B and A channels.
 
-To evaluate on the Codalab server, the submission file should be a zipped nested folder with the following structure:
+To be evaluated on the Codalab server, the submission file needs to be a zipped nested folder with the following structure:
 ::
 
     - score.json
@@ -104,11 +104,11 @@ Multiple Object Tracking
 Submission format
 ^^^^^^^^^^^^^^^^^^^^^^
 
-To evaluate your algorithms on BDD100K multiple object tracking benchmark, there are two save/submit options:
+To evaluate your algorithms on BDD100K multiple object tracking benchmark, the submission must be in one of these formats:
 
-- A zip file or a folder that contains JSON files of each video.
+- A zip file of a folder that contains JSON files of each video.
 
-- A zip file or a file that contains a JSON file of the entire evaluation set.
+- A zip file of a file that contains a JSON file of the entire evaluation set.
 
 The JSON file for each video should contain a list of per-frame result dictionaries with the following structure:
 ::
@@ -154,7 +154,7 @@ as our primary evaluation metric for ranking.
 We also employ mean ID F1 score (mIDF1) to highlight the performance 
 of tracking consistency that is crucial for object tracking.
 All metrics are detailed below.
-Note that the overall performance are measured for all objects without considering the category if not mentioned.
+Note that the overall performance is measured for all objects without considering the category if not mentioned.
 
 - mMOTA (%): mean Multiple Object Tracking Accuracy across all 8 categories.
 
@@ -204,7 +204,7 @@ The super-category evaluation results are provided only for the purpose of refer
 
 Ignore regions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-After the bounding box matching proccess in evaluation, we ignore all detected false-positive boxes that have >50% overlap with the crowd region (ground-truth boxes with the "Crowd" attribute).
+After the bounding box matching process in evaluation, we ignore all detected false-positive boxes that have >50% overlap with the crowd region (ground-truth boxes with the "Crowd" attribute).
 
 We also ignore object regions that are annotated as 3 distracting classes ("other person", "trailer", and "other vehicle") by the same strategy of crowd regions for simplicity. 
 
@@ -222,14 +222,16 @@ We will rank the methods without using external datasets except **ImageNet**.
 Multi Object Tracking and Segmentation (Segmentation Tracking)
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-We use the same metrics set as MOT above. The only difference lies in the computation of distance matrixs.
+We use the same metrics set as MOT above. The only difference lies in the computation of distance matrixes.
 Concretely, in MOT, it is computed using box IoU. While for MOTS, the mask IoU is used.
 
 Submission format
 ^^^^^^^^^^^^^^^^^
 
 The submission should be a zipped nested folder for bitmask images.
-Moreover, images belonging to the same video should be places in the same folder, named by ${video_name}.
+Moreover, images belonging to the same video should be placed in the same folder, named by ${video_name}.
+
+You can find an example bitmask file in `bbd100k.eval.testcases.mots <https://github.com/bdd100k/bdd100k/blob/master/bdd100k/eval/testcases/mots/example_bitmask.png>`_
 
 Run Evaluation on Your Own
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -239,5 +241,5 @@ You can evaluate your algorithms with public annotations by running
 
     python -m bdd100k.eval.run -t mots -g ${gt_path} -r ${res_path} 
 
-- `gt_path`: the path to ground-truch bitmask images folder.
+- `gt_path`: the path to the ground-truch bitmask images folder.
 - `res_path`: the path to the results bitmask images folder.

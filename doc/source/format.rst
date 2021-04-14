@@ -97,19 +97,22 @@ e.g. car should be 13.
 Segmentation Label Formats
 ~~~~~~~~~
 
-We provide labels in both json and bitmask formats.
-Note that `poly2d` used in jsons is not of the same format with COCO.
-Instead, the "poly2d" entry in jsons stores vertices and control points of Bezeir Curves. 
 
-For segmentation labels, besides jsons files contain "poly2d" field, we also provide bitmasks labels.
-In this format, labels for each image is stored in an **RGBA** png file.
+We provide labels in both JSON and bitmask formats.
 
-For the RGBA image, The first byte, R, is used for the category id range from 1 (0 is used for background).
-And G is for the instance attributes. Currently, four attributes are used, they are "truncated", "occluded", "crowd" and "ignore".
+Note that ``poly2d`` used in JSONs is not of the same format as COCO. Instead, the ``poly2d`` field stores a Bezier Curve with vertices and control points.
+
+For segmentation labels, besides JSON files contain the ``poly2d`` field, we also provide bitmasks labels.
+In this format, labels for each image are stored in an **RGBA** png file.
+
+**The evaluation scripts use bitmasks as ground-truth, so we suggest using bitmasks as input all the way.**
+We expect each pixel only corresponds to one predicted class, ``poly2d`` cannot guarantee that, while bitmasks can assure that.
+
+For the RGBA image, The first byte, R, is used for the category id range from 1 (0 is used for the background).
+Moreover, G is for the instance attributes. Currently, four attributes are used, they are "truncated", "occluded", "crowd" and "ignore".
 Note that boxes with "crowd" or "ignore" labels will not be considered during testing.
-The above four attributes are stored in lowest important bits of G. Given this, ``G = 8 & truncated + 4 & occluded + 2 & crowd + ignore``
-. Finally, the B channel and A channel together store the "ann_id" for instance segmentation and "ann_id" for segmentation tracking, respectively.
-which can be computed as ``B * 256 + A``. You can also refer to the below image for reference.
+The above four attributes are stored in least significant bits of G. Given this, ``G = 8 & truncated + 4 & occluded + 2 & crowd + ignore``
+. Finally, the B channel and A channel store the "ann_id" for instance segmentation and "ann_id" for segmentation tracking, respectively, which can be computed as ``B * 256 + A``. The below image is for reference.
 
 .. figure:: ../images/bitmask.png
    :alt: Downloading buttons
@@ -122,7 +125,7 @@ from_coco
 -----------------
 
 ``from_coco`` converts coco-format json files into bdd100k format.
-Currently, for conversion of segmentation, only ``polygon`` format is supported.
+Currently, for conversion of segmentation, only the ``polygon`` format is supported.
 
 Available arguments:
 ::
@@ -139,8 +142,7 @@ You can run the conversion from poly2d to bitmasks by this command:
     python3 -m bdd100k.label.to_bitmasks -m box_track|seg_track -l ${in_path} -o ${out_path} --nproc ${process_num}
 - `process_num`: the number of processes used for the conversion. Default as 4.
 
-However, as the conversion process is not determinitic, we don't recommend converting it by yourself.
-The evaluation scripts uses bitmasks as ground-truth, so we suggest using bitmasks as input all the way.
+However, as the conversion process is not deterministic, we don't recommend converting it by yourself.
 
 
 to_coco
