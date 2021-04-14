@@ -2,6 +2,7 @@
 import os
 import unittest
 
+from ..common.utils import DEFAULT_COCO_CONFIG
 from .detect import evaluate_det
 
 
@@ -13,7 +14,7 @@ class TestBDD100KDetectEval(unittest.TestCase):
         cur_dir = os.path.dirname(os.path.abspath(__file__))
         gts = "{}/testcases/track_sample_anns.json".format(cur_dir)
         preds = "{}/testcases/bbox_predictions.json".format(cur_dir)
-        result = evaluate_det(gts, preds)
+        result = evaluate_det(gts, preds, DEFAULT_COCO_CONFIG)
         overall_reference = {
             "AP": 0.3402939266840102,
             "AP_50": 0.553239004090397,
