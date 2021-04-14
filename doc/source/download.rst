@@ -94,6 +94,18 @@ folder.
 | md5  | 0baeaf8bed8f1a7feb1e8755bcce7169 |
 +------+----------------------------------+
 
+Instance Segmentation
+~~~~~~~~~~~~~~~~~~~~~~
+
+Full-frame instance segmentation in bitmasks. The corresponding images are in 
+the `<Segmentation>`_ download. The instance segmentation label format is explained in :ref:`Label Format <ins-seg-label>`.
+
++------+----------------------------------+
+| Size | 95MB                             |
++------+----------------------------------+
+| md5  | 414f0a0c255e7c7157c1042a7378a7d1 |
++------+----------------------------------+
+
 MOT 2020 Labels
 ~~~~~~~~~~~~~~~~
 
