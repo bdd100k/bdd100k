@@ -12,9 +12,9 @@ from typing import Dict, List
 import numpy as np
 from PIL import Image
 from pycocotools.cocoeval import COCOeval  # type: ignore
+from scalabel.label.to_coco import load_coco_config
 
 from ..common.typing import DictAny
-from ..common.utils import load_categories
 from .detect import evaluate_workflow
 from .mots import mask_intersection_rate, parse_bitmasks
 
@@ -218,6 +218,7 @@ def evaluate_ins_seg(
     ann_base: str,
     pred_base: str,
     pred_score_file: str,
+    cfg_path: str,
     out_dir: str = "none",
 ) -> Dict[str, float]:
     """Load the ground truth and prediction results.
@@ -226,13 +227,14 @@ def evaluate_ins_seg(
         ann_base: path to the ground truth bitmasks folder.
         pred_base: path to the prediciton bitmasks folder.
         pred_score_file: path tothe prediction scores.
+        cfg_path: path to the config file.
         out_dir: output_directory.
 
     Returns:
         dict: detection metric scores
     """
+    categories, _, _ = load_coco_config("ins_seg", cfg_path)
     bdd_eval = BDDInsSegEval(ann_base, pred_base, pred_score_file)
-    categories, _ = load_categories("ins_seg")
     cat_ids = [int(category["id"]) for category in categories]
     cat_names = [str(category["name"]) for category in categories]
     return evaluate_workflow(bdd_eval, cat_ids, cat_names, out_dir)

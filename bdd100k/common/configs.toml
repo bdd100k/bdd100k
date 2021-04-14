@@ -1,3 +1,15 @@
+[name_mapping]
+bike = "bicycle"
+caravan = "car"
+motor = "motorcycle"
+person = "pedestrian"
+van = "car"
+
+[ignore_mapping]
+"other person" = "pedestrian"
+"other vehicle" = "car"
+"trailer" = "truck"
+
 [[categories]]
 supercategory = "human"
 id = 1
@@ -38,12 +50,12 @@ supercategory = "bike"
 id = 8
 name = "bicycle"
 
-[[categories]]
+[[cat_extensions]]
 supercategory = "traffic light"
 id = 9
 name = "traffic light"
 
-[[categories]]
+[[cat_extensions]]
 supercategory = "traffic sign"
 id = 10
 name = "traffic sign"

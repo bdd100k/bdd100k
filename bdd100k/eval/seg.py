@@ -55,18 +55,16 @@ def evaluate_segmentation(
     logger.info("Found %d results", len(result_dict))
     logger.info("Evaluating %d results", len(gt_dict))
     hist = np.zeros((num_classes, num_classes))
-    i = 0
     gt_id_set = set()
-    for key in sorted(gt_dict.keys()):
+    for i, key in enumerate(sorted(gt_dict.keys())):
         gt_path = gt_dict[key]
         result_path = result_dict[key]
         gt = np.asarray(Image.open(gt_path, "r"))
         gt_id_set.update(np.unique(gt).tolist())
         prediction = np.asanyarray(Image.open(result_path, "r"))
         hist += fast_hist(gt.flatten(), prediction.flatten(), num_classes)
-        i += 1
-        if i % 100 == 0:
-            logger.info("Finished %d %f", i, per_class_iu(hist) * 100)
+        if (i + 1) % 100 == 0:
+            logger.info("Finished %d %f", (i + 1), per_class_iu(hist) * 100)
     if 255 in gt_id_set:
         gt_id_set.remove(255)
     logger.info("GT id set [%s]", ",".join(str(s) for s in gt_id_set))
