@@ -3,51 +3,14 @@
 import glob
 import os
 import os.path as osp
-from itertools import groupby
-from typing import Dict, List, Tuple
+from typing import List
 
-import toml
 from scalabel.label.io import load as load_bdd100k
 from scalabel.label.typing import Frame
 
-from ..common.typing import CatType
-
-NAME_MAPPING: Dict[str, str] = {
-    "bike": "bicycle",
-    "caravan": "car",
-    "motor": "motorcycle",
-    "person": "pedestrian",
-    "van": "car",
-}
-
-IGNORE_MAP: Dict[str, str] = {
-    "other person": "pedestrian",
-    "other vehicle": "car",
-    "trailer": "truck",
-}
-
-
-def load_categories(
-    mode: str = "det",
-    ignore_as_class: bool = False,
-) -> Tuple[List[CatType], Dict[str, int]]:
-    """Load the annotation dictionary."""
-    cur_dir = os.path.dirname(os.path.abspath(__file__))
-    cfg_name = "det" if mode == "det" else "other"
-    cfg_file = "{}/{}.toml".format(cur_dir, cfg_name)
-    categories: List[CatType] = toml.load(cfg_file)["categories"]
-
-    if ignore_as_class:
-        categories.append(
-            CatType(
-                supercategory="none", id=len(categories) + 1, name="ignored"
-            )
-        )
-    category_name2id: Dict[str, int] = {
-        str(category["name"]): int(category["id"]) for category in categories
-    }
-
-    return categories, category_name2id
+DEFAULT_COCO_CONFIG = osp.join(
+    osp.dirname(osp.abspath(__file__)), "configs.toml"
+)
 
 
 def list_files(inputs: str) -> List[List[str]]:
@@ -77,21 +40,3 @@ def read(inputs: str) -> List[Frame]:
         raise TypeError("Inputs must be a folder or a JSON file.")
 
     return outputs
-
-
-def group_and_sort(inputs: List[Frame]) -> List[List[Frame]]:
-    """Group frames by video_name and sort."""
-    for frame in inputs:
-        assert frame.video_name is not None
-        assert frame.frame_index is not None
-    frames_list: List[List[Frame]] = []
-    for _, frame_iter in groupby(inputs, lambda frame: frame.video_name):
-        frames = sorted(
-            list(frame_iter),
-            key=lambda frame: frame.frame_index if frame.frame_index else 0,
-        )
-        frames_list.append(frames)
-    frames_list = sorted(
-        frames_list, key=lambda frames: str(frames[0].video_name)
-    )
-    return frames_list

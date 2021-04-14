@@ -2,7 +2,9 @@
 
 import argparse
 
-from ..common.utils import group_and_sort, list_files, read
+from scalabel.label.to_coco import group_and_sort
+
+from ..common.utils import DEFAULT_COCO_CONFIG, list_files, read
 from .detect import evaluate_det
 from .ins_seg import evaluate_ins_seg
 from .mot import acc_single_video_mot, evaluate_track
@@ -24,6 +26,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--result", "-r", required=True, help="path to results to be evaluated"
+    )
+    parser.add_argument(
+        "--config",
+        "-c",
+        default=DEFAULT_COCO_CONFIG,
+        help="path to the config file",
     )
     parser.add_argument(
         "--mot-iou-thr",
@@ -69,7 +77,7 @@ def run() -> None:
     elif args.task == "seg":
         evaluate_segmentation(args.gt, args.result, 19, 17)
     elif args.task == "det":
-        evaluate_det(args.gt, args.result, args.out_dir)
+        evaluate_det(args.gt, args.result, args.config, args.out_dir)
     elif args.task == "ins_seg":
         evaluate_ins_seg(args.gt, args.result, args.score_file, args.out_dir)
     elif args.task == "mot":
