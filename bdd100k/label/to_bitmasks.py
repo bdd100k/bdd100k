@@ -39,8 +39,6 @@ from ..common.logger import logger
 from ..common.utils import DEFAULT_COCO_CONFIG, list_files
 from .to_coco import parser_definition, start_converting
 
-matplotlib.use("Agg")
-
 
 def parser_definition_bitmasks() -> argparse.ArgumentParser:
     """Parse arguments."""
@@ -70,6 +68,7 @@ def poly2d2bitmasks_per_image(
     assert len(colors) == len(poly2ds)
     shape = np.array([720, 1280])
 
+    matplotlib.use("Agg")
     fig = plt.figure(facecolor="0")
     fig.set_size_inches(shape[::-1] / fig.get_dpi())
     ax = fig.add_axes([0, 0, 1, 1])
