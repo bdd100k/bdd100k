@@ -1,13 +1,16 @@
 """Evaluation procedures for semantic segmentation."""
 
-import os
 import os.path as osp
-from typing import List, Tuple
+from functools import partial
+from typing import Tuple
 
 import numpy as np
 from PIL import Image
 
 from ..common.logger import logger
+from ..common.utils import list_files
+
+find_all_png = partial(list_files, suffix=".png")
 
 
 def fast_hist(
@@ -25,16 +28,6 @@ def per_class_iu(hist: np.ndarray) -> np.ndarray:
     ious = np.diag(hist) / (hist.sum(1) + hist.sum(0) - np.diag(hist))
     ious[np.isnan(ious)] = 0
     return ious
-
-
-def find_all_png(folder: str) -> List[str]:
-    """List png files."""
-    paths = []
-    for root, _, files in os.walk(folder, topdown=True):
-        paths.extend(
-            [osp.join(root, f) for f in files if osp.splitext(f)[1] == ".png"]
-        )
-    return paths
 
 
 def evaluate_segmentation(
@@ -57,8 +50,8 @@ def evaluate_segmentation(
     hist = np.zeros((num_classes, num_classes))
     gt_id_set = set()
     for i, key in enumerate(sorted(gt_dict.keys())):
-        gt_path = gt_dict[key]
-        result_path = result_dict[key]
+        gt_path = osp.join(gt_dir, gt_dict[key])
+        result_path = osp.join(result_dir, result_dict[key])
         gt = np.asarray(Image.open(gt_path, "r"))
         gt_id_set.update(np.unique(gt).tolist())
         prediction = np.asanyarray(Image.open(result_path, "r"))
