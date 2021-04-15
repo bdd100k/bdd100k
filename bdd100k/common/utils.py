@@ -6,12 +6,8 @@ import os.path as osp
 from itertools import groupby
 from typing import List
 
-import numpy as np
-from PIL import Image
 from scalabel.label.io import load as load_bdd100k
 from scalabel.label.typing import Frame
-
-from ..common.typing import InstanceType
 
 DEFAULT_COCO_CONFIG = osp.join(
     osp.dirname(osp.abspath(__file__)), "configs.toml"
@@ -56,38 +52,3 @@ def read(inputs: str) -> List[Frame]:
 
     outputs = sorted(outputs, key=lambda output: output.name)
     return outputs
-
-
-def bitmasks_loader(mask_name: str) -> List[InstanceType]:
-    """Parse instances from the bitmask."""
-    bitmask = np.asarray(Image.open(mask_name)).astype(np.int32)
-    category_map = bitmask[:, :, 0]
-    attributes_map = bitmask[:, :, 1]
-    instance_map = (bitmask[:, :, 2] << 8) + bitmask[:, :, 3]
-
-    instances: List[InstanceType] = []
-
-    # 0 is for the background
-    instance_ids = np.sort(np.unique(instance_map[instance_map >= 1]))
-    for instance_id in instance_ids:
-        mask_inds_i = instance_map == instance_id
-        attributes_i = np.unique(attributes_map[mask_inds_i])
-        category_ids_i = np.unique(category_map[mask_inds_i])
-
-        assert attributes_i.shape[0] == 1
-        assert category_ids_i.shape[0] == 1
-        attribute = attributes_i[0]
-        category_id = category_ids_i[0]
-
-        instance = InstanceType(
-            instance_id=instance_id,
-            category_id=category_id,
-            truncated=bool(attribute & (1 << 3)),
-            occluded=bool(attribute & (1 << 2)),
-            crowd=bool(attribute & (1 << 1)),
-            ignore=bool(attribute & (1 << 1)),
-            mask=mask_inds_i.astype(np.int32),
-        )
-        instances.append(instance)
-
-    return instances

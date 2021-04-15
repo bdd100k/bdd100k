@@ -49,7 +49,6 @@ from ..common.logger import logger
 from ..common.typing import InstanceType
 from ..common.utils import (
     DEFAULT_COCO_CONFIG,
-    bitmasks_loader,
     group_and_sort_files,
     list_files,
     read,
@@ -136,6 +135,41 @@ def parser_definition() -> argparse.ArgumentParser:
     return parser
 
 
+def bitmasks_loader(mask_name: str) -> List[InstanceType]:
+    """Parse instances from the bitmask."""
+    bitmask = np.asarray(Image.open(mask_name)).astype(np.int32)
+    category_map = bitmask[:, :, 0]
+    attributes_map = bitmask[:, :, 1]
+    instance_map = (bitmask[:, :, 2] << 8) + bitmask[:, :, 3]
+
+    instances: List[InstanceType] = []
+
+    # 0 is for the background
+    instance_ids = np.sort(np.unique(instance_map[instance_map >= 1]))
+    for instance_id in instance_ids:
+        mask_inds_i = instance_map == instance_id
+        attributes_i = np.unique(attributes_map[mask_inds_i])
+        category_ids_i = np.unique(category_map[mask_inds_i])
+
+        assert attributes_i.shape[0] == 1
+        assert category_ids_i.shape[0] == 1
+        attribute = attributes_i[0]
+        category_id = category_ids_i[0]
+
+        instance = InstanceType(
+            instance_id=int(instance_id),
+            category_id=int(category_id),
+            truncated=bool(attribute & (1 << 3)),
+            occluded=bool(attribute & (1 << 2)),
+            crowd=bool(attribute & (1 << 1)),
+            ignore=bool(attribute & (1 << 1)),
+            mask=mask_inds_i.astype(np.int32),
+        )
+        instances.append(instance)
+
+    return instances
+
+
 def bitmask2coco_wo_ids(
     image_id: int, mask_name: str, mask_mode: str = "rle"
 ) -> List[AnnType]:
@@ -179,11 +213,15 @@ def bitmask2coco_wo_ids_parallel(
             total=len(image_ids),
         ),
     )
-    final_annotations: List[AnnType] = []
-    for annotations in annotations_list:
-        final_annotations.extend(annotations)
+    annotations: List[AnnType] = []
+    for anns in annotations_list:
+        annotations.extend(anns)
 
-    return final_annotations
+    annotations = sorted(annotations, key=lambda ann: ann["image_id"])
+    for i, annotation in enumerate(annotations):
+        ann_id = i + 1
+        annotation["id"] = ann_id
+    return annotations
 
 
 def bitmask2coco_with_ids(
@@ -235,11 +273,11 @@ def bitmask2coco_with_ids_parallel(
             total=len(annotations_list),
         ),
     )
-    final_annotations: List[AnnType] = []
-    for annotations in annotations_list:
-        final_annotations.extend(annotations)
+    annotations: List[AnnType] = []
+    for anns in annotations_list:
+        annotations.extend(anns)
 
-    return final_annotations
+    return annotations
 
 
 def bitmask2coco_ins_seg(
@@ -275,12 +313,6 @@ def bitmask2coco_ins_seg(
     annotations = bitmask2coco_wo_ids_parallel(
         image_ids, mask_names, mask_mode, nproc
     )
-
-    annotations = sorted(annotations, key=lambda ann: ann["image_id"])
-    for i, annotation in enumerate(annotations):
-        ann_id = i + 1
-        annotation["id"] = ann_id
-
     return GtType(
         type="instances",
         categories=categories,
@@ -330,12 +362,6 @@ def bitmask2coco_seg_track(
     annotations = bitmask2coco_wo_ids_parallel(
         image_ids, mask_names, mask_mode, nproc
     )
-
-    annotations = sorted(annotations, key=lambda ann: ann["image_id"])
-    for i, annotation in enumerate(annotations):
-        ann_id = i + 1
-        annotation["id"] = ann_id
-
     return GtType(
         type="instances",
         categories=categories,
@@ -587,9 +613,9 @@ def main() -> None:
             seg_track=bitmask2coco_seg_track,
         )[args.mode]
         coco = convert_function(
-            args.mask_base,
+            args.label,
             shape,
-            list_files(args.mask_base, suffix=".json"),
+            list_files(args.label, suffix=".json"),
             categories,
             args.mask_mode,
             args.nproc,
