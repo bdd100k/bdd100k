@@ -57,8 +57,8 @@ def evaluate_segmentation(
     hist = np.zeros((num_classes, num_classes))
     gt_id_set = set()
     for i, key in enumerate(sorted(gt_dict.keys())):
-        gt_path = gt_dict[key]
-        result_path = result_dict[key]
+        gt_path = osp.join(gt_dir, gt_dict[key])
+        result_path = osp.join(result_dir, result_dict[key])
         gt = np.asarray(Image.open(gt_path, "r"))
         gt_id_set.update(np.unique(gt).tolist())
         prediction = np.asanyarray(Image.open(result_path, "r"))

@@ -25,13 +25,13 @@ import matplotlib  # type: ignore
 import matplotlib.pyplot as plt  # type: ignore
 import numpy as np
 from PIL import Image
+from scalabel.label.io import group_and_sort
 from scalabel.label.to_coco import (
     get_instance_id,
-    group_and_sort,
     load_coco_config,
-    poly_to_patch,
     process_category,
 )
+from scalabel.label.transforms import poly_to_patch
 from scalabel.label.typing import Frame, Label, Poly2D
 from tqdm import tqdm
 
@@ -315,7 +315,7 @@ def segtrack2colormap(out_base: str, color_base: str, nproc: int) -> None:
     """Convert segmentation tracking bitmasks to labelmap."""
     if not os.path.isdir(color_base):
         os.makedirs(color_base)
-    files_list = list_files(out_base)
+    files_list = list_files(out_base, ".png")
     bitmasks_files: List[str] = []
     colormap_files: List[str] = []
 

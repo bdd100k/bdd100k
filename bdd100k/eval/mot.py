@@ -6,7 +6,7 @@ from typing import Callable, Dict, List, Tuple, Union, overload
 import motmetrics as mm
 import numpy as np
 import pandas as pd
-from scalabel.label.to_coco import box2d_to_bbox
+from scalabel.label.transforms import box2d_to_bbox
 from scalabel.label.typing import Frame, Label
 
 from ..common.logger import logger

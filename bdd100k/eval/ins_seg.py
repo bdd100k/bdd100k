@@ -15,6 +15,7 @@ from pycocotools.cocoeval import COCOeval  # type: ignore
 from scalabel.label.to_coco import load_coco_config
 
 from ..common.typing import DictAny
+from ..common.utils import list_files
 from .detect import evaluate_workflow
 from .mots import mask_intersection_rate, parse_bitmasks
 
@@ -81,8 +82,8 @@ class BDDInsSegEval(COCOeval):  # type: ignore
 
     def _prepare(self) -> None:
         """Prepare file list for evaluation."""
-        gt_imgs = sorted(os.listdir(self.gt_base))
-        dt_imgs = sorted(os.listdir(self.dt_base))
+        gt_imgs = list_files(self.gt_base, ".png")
+        dt_imgs = list_files(self.dt_base, ".png")
         for gt_img, dt_img in zip(gt_imgs, dt_imgs):
             assert gt_img == dt_img
         self.img_names = gt_imgs

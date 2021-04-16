@@ -136,11 +136,12 @@ Available arguments:
 to_bitmasks
 -----------------
  
-You can run the conversion from poly2d to bitmasks by this command:
+You can run the conversion from poly2d to bitmasks (and colormaps) by this command:
 ::
     
-    python3 -m bdd100k.label.to_bitmasks -m box_track|seg_track -l ${in_path} -o ${out_path} --nproc ${process_num}
+    python3 -m bdd100k.label.to_bitmasks -m box_track|seg_track -l ${in_path} -o ${out_path} --nproc ${process_num} [-cm -cp ${color_path}]
 - `process_num`: the number of processes used for the conversion. Default as 4.
+- `color_path`: the path to the output colormaps
 
 However, as the conversion process is not deterministic, we don't recommend converting it by yourself.
 
@@ -156,7 +157,16 @@ Available arguments:
    
     python3 -m bdd100k.label.to_coco -m det|box_track -l ${in_path} -o ${out_path}  
 
+For instance segmentation and segmentation tracking, converting from "JOSN + Bitmasks" and from "Bitmask" are both supported.
+For the first choice, use this command:
+
 ::
    
     python3 -m bdd100k.label.to_coco -m ins_seg|seg_track -l ${in_path} -o ${out_path} -mb ${mask_path}
 - `mask_path`: the path to the bitmasks
+
+If you only have Bitmasks in hand and don't use the `scalabel_id` field, you can use this comman:
+
+::
+   
+    python3 -m bdd100k.label.to_coco -m ins_seg|seg_track -l ${mask_path} -o ${out_path}
