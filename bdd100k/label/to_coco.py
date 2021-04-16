@@ -346,7 +346,7 @@ def bitmask2coco_seg_track(
 
     video_id, image_id = 0, 0
     for files in files_list:
-        video_name = files[0].split("/")[0]
+        video_name = os.path.split(files[0])[0]
         video_id += 1
         video = VidType(id=video_id, name=video_name)
         videos.append(video)
