@@ -62,7 +62,8 @@ class TestBitmasks2COCO(unittest.TestCase):
         self.assertEqual(len(coco["images"]), 1)
         self.assertEqual(coco["images"][0]["id"], 1)
         self.assertEqual(
-            coco["images"][0]["file_name"], "testcases/example_bitmask.png"
+            coco["images"][0]["file_name"],
+            os.path.join("testcases", "example_bitmask.png"),
         )
 
         videos = coco["videos"] if coco["videos"] is not None else []
