@@ -5,8 +5,8 @@ import unittest
 
 import numpy as np
 from PIL import Image
+from scalabel.label.io import read
 
-from ..common.utils import read
 from .to_bitmasks import segtrack2bitmasks
 
 

@@ -2,13 +2,12 @@
 
 import argparse
 
-from scalabel.label.to_coco import group_and_sort
+from scalabel.label.io import group_and_sort, read
 
 from ..common.utils import (
     DEFAULT_COCO_CONFIG,
     group_and_sort_files,
     list_files,
-    read,
 )
 from .detect import evaluate_det
 from .ins_seg import evaluate_ins_seg
@@ -97,8 +96,8 @@ def run() -> None:
     elif args.task == "mots":
         evaluate_track(
             acc_single_video_mots,
-            gts=group_and_sort_files(list_files(args.gt)),
-            results=group_and_sort_files(list_files(args.result)),
+            gts=group_and_sort_files(list_files(args.gt, ".png")),
+            results=group_and_sort_files(list_files(args.result, ".png")),
             iou_thr=args.mot_iou_thr,
             ignore_iof_thr=args.mot_ignore_iof_thr,
             nproc=args.mot_nproc,

@@ -2,7 +2,8 @@
 import os
 import unittest
 
-from ..common.utils import read
+from scalabel.label.io import read
+
 from .mot import (
     METRIC_MAPS,
     SUPER_CLASSES,

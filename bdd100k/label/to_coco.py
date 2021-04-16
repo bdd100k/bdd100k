@@ -32,10 +32,10 @@ from scalabel.label.coco_typing import (
     ImgType,
     VidType,
 )
+from scalabel.label.io import group_and_sort, read
 from scalabel.label.to_coco import (
     get_instance_id,
     get_object_attributes,
-    group_and_sort,
     load_coco_config,
     process_category,
     scalabel2coco_box_track,
@@ -51,7 +51,6 @@ from ..common.utils import (
     DEFAULT_COCO_CONFIG,
     group_and_sort_files,
     list_files,
-    read,
 )
 
 
@@ -307,7 +306,7 @@ def bitmask2coco_ins_seg(
         images.append(image)
 
         image_ids.append(image_id)
-        mask_name = os.path.join(mask_base, file_.replace(".jpg", ".png"))
+        mask_name = os.path.join(mask_base, file_)
         mask_names.append(mask_name)
 
     annotations = bitmask2coco_wo_ids_parallel(
@@ -615,7 +614,7 @@ def main() -> None:
         coco = convert_function(
             args.label,
             shape,
-            list_files(args.label, suffix=".json"),
+            list_files(args.label, suffix=".png"),
             categories,
             args.mask_mode,
             args.nproc,

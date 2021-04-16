@@ -82,8 +82,8 @@ class BDDInsSegEval(COCOeval):  # type: ignore
 
     def _prepare(self) -> None:
         """Prepare file list for evaluation."""
-        gt_imgs = list_files(self.gt_base)
-        dt_imgs = list_files(self.dt_base)
+        gt_imgs = list_files(self.gt_base, ".png")
+        dt_imgs = list_files(self.dt_base, ".png")
         for gt_img, dt_img in zip(gt_imgs, dt_imgs):
             assert gt_img == dt_img
         self.img_names = gt_imgs
