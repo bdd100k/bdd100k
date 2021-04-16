@@ -42,6 +42,7 @@ from scalabel.label.to_coco import (
     scalabel2coco_detection,
     set_seg_object_geometry,
 )
+from scalabel.label.transforms import mask_to_bbox
 from scalabel.label.typing import Frame
 from tqdm import tqdm
 
@@ -155,6 +156,10 @@ def bitmasks_loader(mask_name: str) -> List[InstanceType]:
         attribute = attributes_i[0]
         category_id = category_ids_i[0]
 
+        mask = mask_inds_i.astype(np.int32)
+        bbox = mask_to_bbox(mask)
+        area = np.sum(mask).tolist()
+
         instance = InstanceType(
             instance_id=int(instance_id),
             category_id=int(category_id),
@@ -162,7 +167,9 @@ def bitmasks_loader(mask_name: str) -> List[InstanceType]:
             occluded=bool(attribute & (1 << 2)),
             crowd=bool(attribute & (1 << 1)),
             ignore=bool(attribute & (1 << 1)),
-            mask=mask_inds_i.astype(np.int32),
+            mask=mask,
+            bbox=bbox,
+            area=area,
         )
         instances.append(instance)
 

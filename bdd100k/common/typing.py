@@ -25,3 +25,5 @@ class InstanceType(TypedDict, total=False):
     crowd: bool
     ignore: bool
     mask: np.ndarray
+    bbox: List[float]
+    area: float
