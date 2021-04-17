@@ -7,7 +7,7 @@ import json
 import os
 import time
 from multiprocessing import Pool
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import numpy as np
 from PIL import Image
@@ -22,7 +22,7 @@ from .mots import mask_intersection_rate, parse_bitmasks
 
 
 def parse_res_bitmasks(
-    ann2score: Dict[int, float], bitmask: np.ndarray
+    ann_score: List[Tuple[int, float]], bitmask: np.ndarray
 ) -> List[np.ndarray]:
     """Parse information from result bitmasks and compress its value range."""
     bitmask = bitmask.astype(np.int32)
@@ -35,21 +35,21 @@ def parse_res_bitmasks(
 
     masks = np.zeros(bitmask.shape[:2], dtype=np.int32)
     i = 0
-    for ann_id in ann2score:
+    ann_score = sorted(ann_score, key=lambda pair: pair[1], reverse=True)
+    for ann_id, score in ann_score:
         mask_inds_i = ann_map == ann_id
         if np.count_nonzero(mask_inds_i) == 0:
             continue
 
         # 0 is for the background
-        masks[mask_inds_i] = i + 1
-        ann_ids.append(i + 1)
-        scores.append(ann2score[ann_id])
+        i += 1
+        masks[mask_inds_i] = i
+        ann_ids.append(i)
+        scores.append(score)
 
         category_ids_i = np.unique(category_map[mask_inds_i])
         assert category_ids_i.shape[0] == 1
         category_ids.append(category_ids_i[0])
-
-        i += 1
 
     ann_ids = np.array(ann_ids)
     scores = np.array(scores)
@@ -81,7 +81,7 @@ class BDDInsSegEval(COCOeval):  # type: ignore
         self.dt_json = dt_json
         self.nproc = nproc
         self.img_names: List[str] = list()
-        self.img2score: Dict[str, Dict[int, float]] = dict()
+        self.img2score: Dict[str, List[Tuple[int, float]]] = dict()
         self.evalImgs: List[DictAny] = []
         self.iou_res: List[DictAny] = []
 
@@ -104,10 +104,11 @@ class BDDInsSegEval(COCOeval):  # type: ignore
         with open(self.dt_json) as fp:
             dt_pred = json.load(fp)
         for image in dt_pred:
-            self.img2score[image["name"]] = dict()
+            self.img2score[image["name"]] = []
             for label in image["labels"]:
-                self.img2score[image["name"]][label["index"]] = label["score"]
-
+                self.img2score[image["name"]].append(
+                    (label["index"], label["score"])
+                )
         self.iou_res = [dict() for i in range(len(self))]
         pool = Pool(self.nproc)
         to_updates: List[DictAny] = pool.map(
@@ -148,7 +149,7 @@ class BDDInsSegEval(COCOeval):  # type: ignore
     def compute_iou(self, img_ind: int) -> DictAny:
         """Compute IoU per image."""
         img_name = self.img_names[img_ind]
-        ann2score = self.img2score[img_name]
+        ann_score = self.img2score[img_name]
 
         gt_path = os.path.join(self.gt_base, img_name)
         gt_bitmask = np.asarray(Image.open(gt_path))
@@ -160,7 +161,7 @@ class BDDInsSegEval(COCOeval):  # type: ignore
         dt_path = os.path.join(self.dt_base, img_name)
         dt_bitmask = np.asarray(Image.open(dt_path))
         dt_masks, _, dt_scores, dt_cat_ids = parse_res_bitmasks(
-            ann2score, dt_bitmask
+            ann_score, dt_bitmask
         )
         dt_areas = get_mask_areas(dt_masks)
 
