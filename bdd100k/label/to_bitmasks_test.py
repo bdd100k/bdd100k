@@ -7,7 +7,7 @@ import numpy as np
 from PIL import Image
 from scalabel.label.io import read
 
-from .to_bitmasks import segtrack2bitmasks
+from .to_bitmasks import segtrack_to_bitmasks
 
 
 class TestToBitmasks(unittest.TestCase):
@@ -26,7 +26,7 @@ class TestToBitmasks(unittest.TestCase):
             )
         ]
 
-        segtrack2bitmasks(labels, self.test_out, nproc=1)
+        segtrack_to_bitmasks(labels, self.test_out, nproc=1)
 
         # load bitmasks from file
         seq_path = os.path.join(self.test_out, os.listdir(self.test_out)[0])

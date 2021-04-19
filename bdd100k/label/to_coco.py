@@ -87,7 +87,7 @@ def parser_definition() -> argparse.ArgumentParser:
         "-m",
         "--mode",
         default="det",
-        choices=["det", "ins_seg", "box_track", "seg_track"],
+        choices=["det", "sem_seg", "ins_seg", "box_track", "seg_track"],
         help="conversion mode: detection or tracking.",
     )
     parser.add_argument(
