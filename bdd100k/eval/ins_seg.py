@@ -6,13 +6,14 @@ import copy
 import json
 import os
 import time
-from collections import defaultdict
-from typing import Dict, List
+from multiprocessing import Pool
+from typing import Dict, List, Tuple
 
 import numpy as np
 from PIL import Image
 from pycocotools.cocoeval import COCOeval  # type: ignore
 from scalabel.label.to_coco import load_coco_config
+from tqdm import tqdm
 
 from ..common.typing import DictAny
 from ..common.utils import list_files
@@ -21,7 +22,7 @@ from .mots import mask_intersection_rate, parse_bitmasks
 
 
 def parse_res_bitmasks(
-    ann2score: Dict[int, float], bitmask: np.ndarray
+    ann_score: List[Tuple[int, float]], bitmask: np.ndarray
 ) -> List[np.ndarray]:
     """Parse information from result bitmasks and compress its value range."""
     bitmask = bitmask.astype(np.int32)
@@ -34,21 +35,21 @@ def parse_res_bitmasks(
 
     masks = np.zeros(bitmask.shape[:2], dtype=np.int32)
     i = 0
-    for ann_id in ann2score:
+    ann_score = sorted(ann_score, key=lambda pair: pair[1], reverse=True)
+    for ann_id, score in ann_score:
         mask_inds_i = ann_map == ann_id
         if np.count_nonzero(mask_inds_i) == 0:
             continue
 
         # 0 is for the background
-        masks[mask_inds_i] = i + 1
-        ann_ids.append(i + 1)
-        scores.append(ann2score[ann_id])
+        i += 1
+        masks[mask_inds_i] = i
+        ann_ids.append(i)
+        scores.append(score)
 
         category_ids_i = np.unique(category_map[mask_inds_i])
         assert category_ids_i.shape[0] == 1
         category_ids.append(category_ids_i[0])
-
-        i += 1
 
     ann_ids = np.array(ann_ids)
     scores = np.array(scores)
@@ -70,15 +71,26 @@ def get_mask_areas(masks: np.ndarray) -> np.ndarray:
 class BDDInsSegEval(COCOeval):  # type: ignore
     """Modify the COCO API to support bitmasks as input."""
 
-    def __init__(self, gt_base: str, dt_base: str, dt_json: str) -> None:
+    def __init__(
+        self, gt_base: str, dt_base: str, dt_json: str, nproc: int = 4
+    ) -> None:
         """Initialize InsSeg eval."""
         super().__init__(iouType="segm")
         self.gt_base = gt_base
         self.dt_base = dt_base
         self.dt_json = dt_json
+        self.nproc = nproc
         self.img_names: List[str] = list()
-        self.img2score: Dict[str, Dict[int, float]] = defaultdict(dict)
+        self.img2score: Dict[str, List[Tuple[int, float]]] = dict()
         self.evalImgs: List[DictAny] = []
+        self.iou_res: List[DictAny] = []
+
+        print("Precompute per image IoUs...")
+        self._prepare()
+
+    def __len__(self) -> int:
+        """Get image number."""
+        return len(self.img_names)
 
     def _prepare(self) -> None:
         """Prepare file list for evaluation."""
@@ -92,39 +104,52 @@ class BDDInsSegEval(COCOeval):  # type: ignore
         with open(self.dt_json) as fp:
             dt_pred = json.load(fp)
         for image in dt_pred:
+            self.img2score[image["name"]] = []
             for label in image["labels"]:
-                self.img2score[image["name"]][label["index"]] = label["score"]
-        img_set_1 = set(self.img_names)
-        img_set_2 = set(self.img2score.keys())
-        assert len(img_set_1 & img_set_2) == len(img_set_1) == len(img_set_2)
-
-        p = self.params  # type: ignore
-        eval_num = len(p.catIds) * len(p.areaRng) * len(self.img_names)
-        self.evalImgs = [dict() for i in range(eval_num)]
+                self.img2score[image["name"]].append(
+                    (label["index"], label["score"])
+                )
+        self.iou_res = [dict() for i in range(len(self))]
+        pool = Pool(self.nproc)
+        to_updates: List[DictAny] = pool.map(
+            self.compute_iou, tqdm(range(len(self)))
+        )
+        for res in to_updates:
+            self.iou_res[res["ind"]].update(res)
+        pool.close()
 
     def evaluate(self) -> None:
         """Run per image evaluation."""
         tic = time.time()
+
         print("Running per image evaluation...")
         p = self.params  # type: ignore
+        eval_num = len(p.catIds) * len(p.areaRng) * len(self)
+        self.evalImgs = [dict() for i in range(eval_num)]
+
         print("Evaluate annotation type *{}*".format(p.iouType))
         p.maxDets = sorted(p.maxDets)
 
-        self._prepare()
         self.params = p
 
         # loop through images, area range, max detection number
-        for img_ind in range(len(self.img_names)):
-            self.compute_iou(img_ind)
+        pool = Pool(self.nproc)
+        to_updates: List[Dict[int, DictAny]] = pool.map(
+            self.compute_match, range(len(self))
+        )
+        for to_update in to_updates:
+            for ind, item in to_update.items():
+                self.evalImgs[ind].update(item)
+        pool.close()
 
         self._paramsEval = copy.deepcopy(self.params)
         toc = time.time()
         print("DONE (t={:0.2f}s).".format(toc - tic))
 
-    def compute_iou(self, img_ind: int) -> None:
+    def compute_iou(self, img_ind: int) -> DictAny:
         """Compute IoU per image."""
         img_name = self.img_names[img_ind]
-        ann2score = self.img2score[img_name]
+        ann_score = self.img2score[img_name]
 
         gt_path = os.path.join(self.gt_base, img_name)
         gt_bitmask = np.asarray(Image.open(gt_path))
@@ -136,28 +161,44 @@ class BDDInsSegEval(COCOeval):  # type: ignore
         dt_path = os.path.join(self.dt_base, img_name)
         dt_bitmask = np.asarray(Image.open(dt_path))
         dt_masks, _, dt_scores, dt_cat_ids = parse_res_bitmasks(
-            ann2score, dt_bitmask
+            ann_score, dt_bitmask
         )
         dt_areas = get_mask_areas(dt_masks)
 
-        ious, _ = mask_intersection_rate(gt_masks, dt_masks)
+        ious, _ = mask_intersection_rate(dt_masks, gt_masks)
+        return dict(
+            ind=img_ind,
+            ious=ious,
+            gt_areas=gt_areas,
+            gt_cat_ids=gt_cat_ids,
+            gt_crowds=gt_crowds,
+            gt_ignores=gt_ignores,
+            dt_areas=dt_areas,
+            dt_scores=dt_scores,
+            dt_cat_ids=dt_cat_ids,
+        )
+
+    def compute_match(self, img_ind: int) -> Dict[int, DictAny]:
+        """Compute matching results for each image."""
+        res = self.iou_res[img_ind]
 
         p = self.params
         area_num = len(p.areaRng)
         thr_num = len(p.iouThrs)
-        img_num = len(self.img_names)
+        img_num = len(self)
 
+        to_updates = dict()
         for cat_ind, cat_id in enumerate(p.catIds):
-            gt_inds_c = gt_cat_ids == cat_id
-            gt_areas_c = gt_areas[gt_inds_c]
-            gt_crowds_c = gt_crowds[gt_inds_c]
-            gt_ignores_c = gt_ignores[gt_inds_c]
+            gt_inds_c = res["gt_cat_ids"] == cat_id
+            gt_areas_c = res["gt_areas"][gt_inds_c]
+            gt_crowds_c = res["gt_crowds"][gt_inds_c]
+            gt_ignores_c = res["gt_ignores"][gt_inds_c]
 
-            dt_inds_c = dt_cat_ids == cat_id
-            dt_areas_c = dt_areas[dt_inds_c]
-            dt_scores_c = dt_scores[dt_inds_c]
+            dt_inds_c = res["dt_cat_ids"] == cat_id
+            dt_areas_c = res["dt_areas"][dt_inds_c]
+            dt_scores_c = res["dt_scores"][dt_inds_c]
 
-            ious_c = ious[dt_inds_c, :][:, gt_inds_c]
+            ious_c = res["ious"][dt_inds_c, :][:, gt_inds_c]
             gt_num_c = np.count_nonzero(gt_inds_c)
             dt_num_c = np.count_nonzero(dt_inds_c)
 
@@ -201,18 +242,18 @@ class BDDInsSegEval(COCOeval):  # type: ignore
                 eval_ind: int = (
                     cat_ind * area_num * img_num + area_ind * img_num + img_ind
                 )
-                self.evalImgs[eval_ind].update(
-                    dict(
-                        category_id=cat_id,
-                        aRng=p.areaRng[area_ind],
-                        maxDet=p.maxDets[-1],
-                        dtMatches=dt_matches_a,
-                        gtMatches=gt_matches_a,
-                        dtScores=dt_scores_c,
-                        gtIgnore=gt_ignores_a,
-                        dtIgnore=dt_ignores_a,
-                    )
+                to_updates[eval_ind] = dict(
+                    category_id=cat_id,
+                    aRng=p.areaRng[area_ind],
+                    maxDet=p.maxDets[-1],
+                    dtMatches=dt_matches_a,
+                    gtMatches=gt_matches_a,
+                    dtScores=dt_scores_c,
+                    gtIgnore=gt_ignores_a,
+                    dtIgnore=dt_ignores_a,
                 )
+
+        return to_updates
 
 
 def evaluate_ins_seg(
