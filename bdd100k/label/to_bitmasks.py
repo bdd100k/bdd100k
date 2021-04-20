@@ -36,7 +36,11 @@ from scalabel.label.typing import Frame, Label, Poly2D
 from tqdm import tqdm
 
 from ..common.logger import logger
-from ..common.utils import DEFAULT_COCO_CONFIG, list_files
+from ..common.utils import (
+    DEFAULT_COCO_CONFIG,
+    group_and_sort_files,
+    list_files,
+)
 from .label import labels as SEMSEG_LABELS
 from .to_coco import parser_definition, start_converting
 
@@ -372,15 +376,13 @@ def image_dataset_to_colormap(
     """Convert instance segmentation bitmasks to labelmap."""
     if not os.path.isdir(color_base):
         os.makedirs(color_base)
-    files_list = os.listdir(out_base)
+    files = list_files(out_base, ".png")
     bitmasks_files: List[str] = []
     colormap_files: List[str] = []
 
     logger.info("Preparing annotations for image dataset to Colormap")
 
-    for file_name in tqdm(files_list):
-        if not file_name.endswith(".png"):
-            continue
+    for file_name in tqdm(files):
         label_path = os.path.join(out_base, file_name)
         color_path = os.path.join(color_base, file_name)
         bitmasks_files.append(label_path)
@@ -397,7 +399,9 @@ def video_dataset_to_colormap(
     """Convert segmentation tracking bitmasks to labelmap."""
     if not os.path.isdir(color_base):
         os.makedirs(color_base)
-    files_list = list_files(out_base, ".png")
+    files = list_files(out_base, ".png")
+    files_list = group_and_sort_files(files)
+
     bitmasks_files: List[str] = []
     colormap_files: List[str] = []
 
@@ -405,15 +409,16 @@ def video_dataset_to_colormap(
 
     for files in tqdm(files_list):
         assert len(files) > 0
-        video_name = files[0].rsplit("/", 3)[-2]
+        video_name = os.path.split(files[0])[0]
         video_path = os.path.join(color_base, video_name)
         if not os.path.isdir(video_path):
             os.makedirs(video_path)
+
         for file_name in files:
-            image_name = os.path.split(file_name)[-1]
-            save_path = os.path.join(color_base, video_name, image_name)
-            bitmasks_files.append(file_name)
-            colormap_files.append(save_path)
+            label_path = os.path.join(out_base, file_name)
+            color_path = os.path.join(color_base, file_name)
+            bitmasks_files.append(label_path)
+            colormap_files.append(color_path)
     colormap_conversion(nproc, to_color_func, bitmasks_files, colormap_files)
 
 
