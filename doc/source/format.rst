@@ -95,7 +95,8 @@ e.g. car should be 13.
 
 .. _ins-seg-label:
 
-Instance Segmentation
+
+Segmentation Format
 ~~~~~~~~~
 
 
@@ -119,7 +120,7 @@ The above four attributes are stored in least significant bits of G. Given this,
    :alt: Downloading buttons
 
 
-Label conversion
+Format Conversion
 ~~~~~~~~~
 
 from_coco

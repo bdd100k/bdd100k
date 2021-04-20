@@ -56,13 +56,26 @@ videos at 10th second 2) 10K key frames for full-frame semantic segmentation.
 | md5  | b538e3731a132e28dae37f18c442c51e |
 +------+----------------------------------+
 
+:: 
+
+    - bdd100k
+        - images
+            - 100k
+                - train
+                - val
+                - test
+            - 10k
+                - train
+                - val
+                - test
+
 Labels
 ~~~~~~~
 
 Annotations of road objects, lanes, and drivable areas in JSON format released
 in 2018. Details at Github repo. We revised the detection annotations in 2020
 and released them as Detection 2020 Labels in the list. You are recommended to
-use the new labels. This detection anntoation set is kept for comparison with
+use the new labels. This detection annotation set is kept for comparison with
 legacy results.
 
 +------+----------------------------------+
@@ -82,29 +95,60 @@ Segmentation maps of Drivable areas.
 | md5  | 1bd70019468a81572c70d374751eb9e2 |
 +------+----------------------------------+
 
-Segmentation
+Semantic Segmentation
 ~~~~~~~~~~~~~
 
-Full-frame semantic segmentation maps. The corresponding images are in the same
-folder.
+Bitmasks, colormaps and original json files for semantic segmentation.
 
 +------+----------------------------------+
-| Size | 1.2GB                            |
+| Size | 387.3MB                          |
 +------+----------------------------------+
-| md5  | 0baeaf8bed8f1a7feb1e8755bcce7169 |
+| md5  | cb9b2ececcdb56f1ca3ae54d4ed883bd |
 +------+----------------------------------+
+
+:: 
+
+    - bdd100k
+        - labels
+            - sem_seg 
+                - bitmasks
+                    - train
+                    - val
+                - colormaps
+                    - train
+                    - val
+                - polygons
+                    - sem_seg_train.json
+                    - sem_seg_val.json
+
 
 Instance Segmentation
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Full-frame instance segmentation in bitmasks. The corresponding images are in 
-the `<Segmentation>`_ download. The instance segmentation label format is explained in :ref:`Label Format <ins-seg-label>`.
+Bitmasks, colormaps and original json files for instance segmentation.
 
 +------+----------------------------------+
-| Size | 95MB                             |
+| Size | 99.9MB                           |
 +------+----------------------------------+
-| md5  | 414f0a0c255e7c7157c1042a7378a7d1 |
+| md5  | e29d82458a6c487b444c40ab82426d03 |
 +------+----------------------------------+
+
+
+:: 
+
+    - bdd100k
+        - labels
+            - ins_seg
+                - bitmasks
+                    - train
+                    - val
+                - colormaps
+                    - train
+                    - val
+                - polygons
+                    - ins_seg_train.json
+                    - ins_seg_val.json
+
 
 MOT 2020 Labels
 ~~~~~~~~~~~~~~~~
@@ -113,15 +157,34 @@ Multi-object bounding box tracking training and validation labels released in
 2020
 
 +------+----------------------------------+
-| Size | 103MB                            |
+| Size | 108.2MB                          |
 +------+----------------------------------+
-| md5  | 00398674e62d05206b0847be3f638d74 |
+| md5  | 931813bcec4e0483f57b443c4cbd6c5c |
 +------+----------------------------------+
+
+:: 
+
+    - bdd100k
+        - labels
+            - box_track_20
+                - train
+                - val
+
 
 MOT 2020 Images
 ~~~~~~~~~~~~~~~~
 
 Multi-object bounding box tracking videos in frames released in 2020
+
+:: 
+
+    - bdd100k
+        - images
+            - box_track_20
+                - train
+                - val
+                - test
+
 
 Detection 2020 Labels
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -132,10 +195,18 @@ annotation went through the additional quality check. The original detection set
 is deprecated.
 
 +------+----------------------------------+
-| Size | 51MB                             |
+| Size | 55.4MB                           |
 +------+----------------------------------+
-| md5  | 6e761be56b6c2f6cf6a0c3a38eb5da0e |
+| md5  | b86a3e1b7edbcad421b7dad2b3987c94 |
 +------+----------------------------------+
+
+:: 
+
+    - bdd100k
+        - labels
+            - det_20
+                - det_train.json
+                - det_val.json
 
 MOTS 2020 Labels
 ~~~~~~~~~~~~~~~~~
@@ -144,12 +215,42 @@ Multi-object tracking aand segmentation training and validation labels released 
 
 
 +------+----------------------------------+
-| Size | 465.5MB                          |
+| Size | 399.0MB                          |
 +------+----------------------------------+
-| md5  | c6968ad8b86c31f49dd66efde97f53f0 |
+| md5  | 13e15f1f3728a9a3f27a3f4e5e2a5885 |
 +------+----------------------------------+
+
+:: 
+
+    - bdd100k
+        - labels
+            - seg_track_20
+                - bitmasks
+                    - train
+                    - val
+                - colormaps
+                    - train
+                    - val
+                - polygons
+                    - train
+                    - val
 
 MOTS 2020 Images
 ~~~~~~~~~~~~~~~~~
 
 Multi-object tracking and segmentation videos in frames released in 2020
+
++------+----------------------------------+
+| Size | 465.5MB                          |
++------+----------------------------------+
+| md5  | 7c52a52f3c9cc880c91b264870a1d4bb |
++------+----------------------------------+
+
+:: 
+
+    - bdd100k
+        - images
+            - seg_track_20
+                - train
+                - val
+                - test
