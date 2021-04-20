@@ -20,7 +20,7 @@ class TestBitmasks2COCO(unittest.TestCase):
 
     def test_bitmask_loader(self) -> None:
         """Check the correctness of the bitmask loader."""
-        mask_path = "testcases/example_bitmask.png"
+        mask_path = "testcases/insseg_bitmask.png"
         instances = bitmasks_loader(mask_path)
 
         self.assertEqual(len(instances), 4)
@@ -45,9 +45,9 @@ class TestBitmasks2COCO(unittest.TestCase):
             [],
         )
         self.assertEqual(len(coco), 4)
-        self.assertEqual(len(coco["images"]), 1)
+        self.assertEqual(len(coco["images"]), 3)
         self.assertEqual(coco["images"][0]["id"], 1)
-        self.assertEqual(coco["images"][0]["file_name"], "example_bitmask.png")
+        self.assertEqual(coco["images"][0]["file_name"], "insseg_bitmask.png")
 
     def test_bitmask2coco_seg_track(self) -> None:
         """Check the correctness of bitmask2coco_seg_track."""
@@ -59,11 +59,11 @@ class TestBitmasks2COCO(unittest.TestCase):
             [],
         )
         self.assertEqual(len(coco), 5)
-        self.assertEqual(len(coco["images"]), 1)
+        self.assertEqual(len(coco["images"]), 3)
         self.assertEqual(coco["images"][0]["id"], 1)
         self.assertEqual(
             coco["images"][0]["file_name"],
-            os.path.join("testcases", "example_bitmask.png"),
+            os.path.join("testcases", "insseg_bitmask.png"),
         )
 
         videos = coco["videos"] if coco["videos"] is not None else []

@@ -2,6 +2,53 @@ Evaluation
 ===========
 
 
+Categories
+~~~~~~~~~
+
+For object detection, 10 classes are evalued, they are:
+::
+
+    1: pedestrian
+    2: rider
+    3: car
+    4: truck
+    5: bus
+    6: train
+    7: motorcycle
+    8: bicycle
+    9: traffic light
+    10: traffic sign
+
+Note that, the field `category_id` range from **1** instead of 0.
+Moreover, for instance segmentation, multi object tracking and multi object tracking and segmentation (segmentation tracking),
+only the first **8** classes are evaluated.
+
+Meanwhile, for the semantic segmentation task, 19 classes are evaluated, they are:
+::
+
+    0: road 
+    1: sidewalk
+    2: building
+    3: wall
+    4: fence
+    5: pole
+    6: traffic light
+    7: traffic sign
+    8: vegetation
+    9: terrain
+    10: sky
+    11: person
+    12: rider
+    13: car
+    14: truck
+    15: bus
+    16: train
+    17: motorcycle
+    18: bicycle
+
+`category_id` ranges from **0** for the semantic segmentation task.
+
+
 Detection
 ~~~~~~~~~
 
@@ -41,12 +88,13 @@ Other options.
 you can add a flag `--mode track`. 
 - You can also specify the output directory to save the evaluation results by updating `--out-dir ${out_dir}`.
 
-
 Evaluation Metrics
 ^^^^^^^^^^^^^^^^^^^^^^
+
 Similar to COCO evaluation, we report 12 scores as 
 "AP", "AP_50", "AP_75", "AP_small", "AP_medium", "AP_large", "AR_max_1", "AR_max_10",
 "AR_max_100", "AR_small", "AR_medium", "AR_large" across all the classes. 
+
 
 
 Instance Segmentation
@@ -59,7 +107,7 @@ Submission format
 ^^^^^^^^^^^^^^^^^^^^^^
 
 To evaluate your algorithms on the BDD100K detection benchmark, you may prepare predictions in bitmask format,
-which is illustrated in `Label Format <https://doc.bdd100k.com/format.html>`_.
+which is illustrated in `Label Format <https://doc.bdd100k.com/format.html#segmentation-label-formats>`_.
 Moreover, a score file is needed, with the following format:
 ::
 
@@ -95,6 +143,32 @@ You can evaluate your algorithm with public annotations by running
 - `gt_path`: the path to ground-truch bitmask images folder.
 - `res_path`: the path to the results bitmask images folder.
 - `res_score_file`: the json file with the confidence scores.
+
+
+
+Semantic Segmentation
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+We asess the performance using the standaard Jaccard Index, commonly known as mean-IoU.
+Moreover, IoU for each class are also displayed for reference.
+
+Submission format
+^^^^^^^^^^^^^^^^^^^^^^
+
+To evaluate your algorithms on the BDD100K detection benchmark, you may prepare predictions in bitmask format,
+which is illustrated in `Label Format <https://doc.bdd100k.com/format.html#segmentation-label-formats>`_.
+For the semantic segmentation task, only the `R` channel is important, as it contains the `category_id`.
+
+Run Evaluation on Your Own
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can evaluate your algorithm with public annotations by running 
+::
+    
+    python3 -m bdd100k.eval.run -t sem_seg -g ${gt_path} -r ${res_path}
+
+- `gt_path`: the path to ground-truch bitmask images folder.
+- `res_path`: the path to the results bitmask images folder.
 
 
 
@@ -143,7 +217,7 @@ Run Evaluation on Your Own
 You can evaluate your algorithms with public annotations by running
 ::
 
-    python -m bdd100k.eval.run -t mot -g ${gt_file} -r ${res_file} 
+    python -m bdd100k.eval.run -t box_track -g ${gt_file} -r ${res_file} 
 
 
 Evaluation Metrics
@@ -239,7 +313,7 @@ Run Evaluation on Your Own
 You can evaluate your algorithms with public annotations by running
 ::
 
-    python -m bdd100k.eval.run -t mots -g ${gt_path} -r ${res_path} 
+    python -m bdd100k.eval.run -t seg_track -g ${gt_path} -r ${res_path} 
 
 - `gt_path`: the path to the ground-truch bitmask images folder.
 - `res_path`: the path to the results bitmask images folder.

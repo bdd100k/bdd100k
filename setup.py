@@ -42,6 +42,6 @@ setuptools.setup(
         "tabulate",
         "tqdm",
     ],
-    package_data={"bdd100k/common": ["configs.toml"], "bdd100k": ["py.typed"]},
+    package_data={"bdd100k": ["common/configs.toml", "py.typed"]},
     include_package_data=True,
 )

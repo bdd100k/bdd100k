@@ -139,7 +139,7 @@ to_bitmasks
 You can run the conversion from poly2d to bitmasks (and colormaps) by this command:
 ::
     
-    python3 -m bdd100k.label.to_bitmasks -m box_track|seg_track -l ${in_path} -o ${out_path} --nproc ${process_num} [-cm -cp ${color_path}]
+    python3 -m bdd100k.label.to_bitmasks -m sem_seg|ins_seg|seg_track -l ${in_path} -o ${out_path} --nproc ${process_num} [-cm -cp ${color_path}]
 - `process_num`: the number of processes used for the conversion. Default as 4.
 - `color_path`: the path to the output colormaps
 
