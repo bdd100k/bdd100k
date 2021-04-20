@@ -41,12 +41,13 @@ Other options.
 you can add a flag `--mode track`. 
 - You can also specify the output directory to save the evaluation results by updating `--out-dir ${out_dir}`.
 
-
 Evaluation Metrics
 ^^^^^^^^^^^^^^^^^^^^^^
+
 Similar to COCO evaluation, we report 12 scores as 
 "AP", "AP_50", "AP_75", "AP_small", "AP_medium", "AP_large", "AR_max_1", "AR_max_10",
 "AR_max_100", "AR_small", "AR_medium", "AR_large" across all the classes. 
+
 
 
 Instance Segmentation
@@ -59,7 +60,7 @@ Submission format
 ^^^^^^^^^^^^^^^^^^^^^^
 
 To evaluate your algorithms on the BDD100K detection benchmark, you may prepare predictions in bitmask format,
-which is illustrated in `Label Format <https://doc.bdd100k.com/format.html>`_.
+which is illustrated in `Label Format <https://doc.bdd100k.com/format.html#segmentation-label-formats>`_.
 Moreover, a score file is needed, with the following format:
 ::
 
@@ -95,6 +96,32 @@ You can evaluate your algorithm with public annotations by running
 - `gt_path`: the path to ground-truch bitmask images folder.
 - `res_path`: the path to the results bitmask images folder.
 - `res_score_file`: the json file with the confidence scores.
+
+
+
+Semantic Segmentation
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+We asess the performance using the standaard Jaccard Index, commonly known as mean-IoU.
+Moreover, IoU for each class are also displayed for reference.
+
+Submission format
+^^^^^^^^^^^^^^^^^^^^^^
+
+To evaluate your algorithms on the BDD100K detection benchmark, you may prepare predictions in bitmask format,
+which is illustrated in `Label Format <https://doc.bdd100k.com/format.html#segmentation-label-formats>`_.
+For the semantic segmentation task, only the `R` channel is important, as it contains the `category_id`.
+
+Run Evaluation on Your Own
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can evaluate your algorithm with public annotations by running 
+::
+    
+    python3 -m bdd100k.eval.run -t sem_seg -g ${gt_path} -r ${res_path}
+
+- `gt_path`: the path to ground-truch bitmask images folder.
+- `res_path`: the path to the results bitmask images folder.
 
 
 
@@ -143,7 +170,7 @@ Run Evaluation on Your Own
 You can evaluate your algorithms with public annotations by running
 ::
 
-    python -m bdd100k.eval.run -t mot -g ${gt_file} -r ${res_file} 
+    python -m bdd100k.eval.run -t box_track -g ${gt_file} -r ${res_file} 
 
 
 Evaluation Metrics
@@ -239,7 +266,7 @@ Run Evaluation on Your Own
 You can evaluate your algorithms with public annotations by running
 ::
 
-    python -m bdd100k.eval.run -t mots -g ${gt_path} -r ${res_path} 
+    python -m bdd100k.eval.run -t seg_track -g ${gt_path} -r ${res_path} 
 
 - `gt_path`: the path to the ground-truch bitmask images folder.
 - `res_path`: the path to the results bitmask images folder.
