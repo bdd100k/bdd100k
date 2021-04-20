@@ -22,12 +22,14 @@ class TestBDD100KInsSegEval(unittest.TestCase):
         result = evaluate_ins_seg(
             gt_base, pred_base, pred_json, DEFAULT_COCO_CONFIG
         )
+        for key, val in result.items():
+            print(key, val)
         overall_reference = {
             "AP": 0.686056105610561,
             "AP_50": 0.8968646864686468,
             "AP_75": 0.6666666666666666,
             "AP_small": 0.686056105610561,
-            "AR_max_1": 0.6749999999999999,
+            "AR_max_1": 0.6583333333333333,
             "AR_max_10": 0.7083333333333334,
             "AR_max_100": 0.7083333333333334,
             "AR_small": 0.7083333333333334,

@@ -2,12 +2,33 @@
 import os
 import shutil
 import unittest
+from typing import Callable, List
 
 import numpy as np
 from PIL import Image
+from scalabel.label.io import read
+from scalabel.label.typing import Frame, Label
 
-from ..common.utils import read
-from .to_bitmasks import segtrack2bitmasks
+from .to_bitmasks import (
+    insseg_to_bitmasks,
+    segtrack_to_bitmasks,
+    semseg_to_bitmasks,
+    set_color,
+)
+
+
+class TestUtilFunctions(unittest.TestCase):
+    """Test case for util function in to_bitmasks.py."""
+
+    def test_set_color(self) -> None:
+        """Check color setting."""
+        label = Label(
+            id="tmp",
+            attributes=dict(truncated=True, crowd=False),
+        )
+        color = set_color(label, 15, 300, False)
+        gt_color = np.array([15, 8, 1, 44])
+        self.assertTrue((color == gt_color).all())
 
 
 class TestToBitmasks(unittest.TestCase):
@@ -15,28 +36,49 @@ class TestToBitmasks(unittest.TestCase):
 
     test_out = "./test_bitmasks"
 
-    def test_conversion(self) -> None:
-        """Check conversion to and from bitmask."""
+    def task_specific_test(
+        self,
+        task_name: str,
+        output_name: str,
+        convert_func: Callable[[List[Frame], str, bool, bool, int], None],
+    ) -> None:
+        """General test function for different tasks."""
         cur_dir = os.path.dirname(os.path.abspath(__file__))
+
         labels = read("{}/testcases/example_annotation.json".format(cur_dir))
+        convert_func(labels, self.test_out, False, False, 1)
+        output_path = os.path.join(self.test_out, output_name)
+        bitmask = np.asarray(Image.open(output_path))
 
-        example_bitmasks = [
-            np.asarray(
-                Image.open("{}/testcases/example_bitmask.png".format(cur_dir))
+        gt_bitmask = np.asarray(
+            Image.open(
+                "{}/testcases/{}_bitmask.png".format(cur_dir, task_name)
             )
-        ]
+        )
 
-        segtrack2bitmasks(labels, self.test_out, nproc=1)
+        self.assertTrue((bitmask == gt_bitmask).all())
 
-        # load bitmasks from file
-        seq_path = os.path.join(self.test_out, os.listdir(self.test_out)[0])
-        converted_bitmasks = [
-            np.asarray(Image.open(os.path.join(seq_path, f)))
-            for f in os.listdir(seq_path)
-        ]
+    def test_semseg_to_bitmasks(self) -> None:
+        """Test case for semantic segmentation to bitmasks."""
+        self.task_specific_test(
+            "semseg",
+            "b1c81faa-3df17267-0000001.png",
+            semseg_to_bitmasks,
+        )
 
-        for e, c in zip(example_bitmasks, converted_bitmasks):
-            self.assertTrue((e == c).all())
+    def test_insseg_to_bitmasks(self) -> None:
+        """Test case for instance segmentation to bitmasks."""
+        self.task_specific_test(
+            "insseg", "b1c81faa-3df17267-0000001.png", insseg_to_bitmasks
+        )
+
+    def test_segtrack_to_bitmasks(self) -> None:
+        """Test case for instance segmentation to bitmasks."""
+        self.task_specific_test(
+            "segtrack",
+            "b1c81faa-3df17267/b1c81faa-3df17267-0000001.png",
+            segtrack_to_bitmasks,
+        )
 
     @classmethod
     def tearDownClass(cls) -> None:

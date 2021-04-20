@@ -4,7 +4,7 @@
     "frameIndex": 0,
     "labels": [
         {
-            "id": 87133,
+            "id": "a",
             "category": "car",
             "attributes": {
                 "crowd": false,
@@ -229,7 +229,7 @@
             ]
         },
         {
-            "id": 61167,
+            "id": "b",
             "category": "car",
             "attributes": {
                 "crowd": false,
@@ -318,11 +318,11 @@
             ]
         },
         {
-            "id": 57772,
+            "id": "a",
             "category": "car",
             "attributes": {
                 "crowd": false,
-                "occluded": true,
+                "occluded": false,
                 "truncated": false
             },
             "poly2d": [
@@ -371,7 +371,7 @@
             ]
         },
         {
-            "id": 91146,
+            "id": "c",
             "category": "car",
             "attributes": {
                 "crowd": false,

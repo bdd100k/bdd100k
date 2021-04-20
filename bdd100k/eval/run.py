@@ -2,9 +2,13 @@
 
 import argparse
 
-from scalabel.label.to_coco import group_and_sort
+from scalabel.label.io import group_and_sort, read
 
-from ..common.utils import DEFAULT_COCO_CONFIG, list_files, read
+from ..common.utils import (
+    DEFAULT_COCO_CONFIG,
+    group_and_sort_files,
+    list_files,
+)
 from .detect import evaluate_det
 from .ins_seg import evaluate_ins_seg
 from .mot import acc_single_video_mot, evaluate_track
@@ -18,7 +22,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--task",
         "-t",
-        choices=["seg", "det", "ins_seg", "drivable", "mot", "mots"],
+        choices=[
+            "det",
+            "sem_seg",
+            "ins_seg",
+            "drivable",
+            "box_track",
+            "seg_track",
+        ],
         required=True,
     )
     parser.add_argument(
@@ -74,13 +85,13 @@ def run() -> None:
 
     if args.task == "drivable":
         evaluate_drivable(args.gt, args.result)
-    elif args.task == "seg":
+    elif args.task == "sem_seg":
         evaluate_segmentation(args.gt, args.result, 19, 17)
     elif args.task == "det":
         evaluate_det(args.gt, args.result, args.config, args.out_dir)
     elif args.task == "ins_seg":
         evaluate_ins_seg(args.gt, args.result, args.score_file, args.out_dir)
-    elif args.task == "mot":
+    elif args.task == "box_track":
         evaluate_track(
             acc_single_video_mot,
             gts=group_and_sort(read(args.gt)),
@@ -89,11 +100,11 @@ def run() -> None:
             ignore_iof_thr=args.mot_ignore_iof_thr,
             nproc=args.mot_nproc,
         )
-    elif args.task == "mots":
+    elif args.task == "seg_track":
         evaluate_track(
             acc_single_video_mots,
-            gts=list_files(args.gt),
-            results=list_files(args.result),
+            gts=group_and_sort_files(list_files(args.gt, ".png")),
+            results=group_and_sort_files(list_files(args.result, ".png")),
             iou_thr=args.mot_iou_thr,
             ignore_iof_thr=args.mot_ignore_iof_thr,
             nproc=args.mot_nproc,

@@ -12,11 +12,11 @@ import numpy as np
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval  # type: ignore
 from scalabel.label.coco_typing import GtType
+from scalabel.label.io import read
 from scalabel.label.to_coco import load_coco_config, scalabel2coco_detection
 from tabulate import tabulate
 
 from ..common.typing import DictAny, ListAny
-from ..common.utils import read
 
 SHAPE = (720, 1280)
 

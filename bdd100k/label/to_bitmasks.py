@@ -19,25 +19,34 @@ the annotations in `ignored` class. To achieve this, add the flag
 import argparse
 import os
 from multiprocessing import Pool
-from typing import Dict, List
+from typing import Callable, Dict, List
 
 import matplotlib  # type: ignore
 import matplotlib.pyplot as plt  # type: ignore
 import numpy as np
 from PIL import Image
+from scalabel.label.io import group_and_sort
 from scalabel.label.to_coco import (
     get_instance_id,
-    group_and_sort,
     load_coco_config,
-    poly_to_patch,
     process_category,
 )
+from scalabel.label.transforms import poly_to_patch
 from scalabel.label.typing import Frame, Label, Poly2D
 from tqdm import tqdm
 
 from ..common.logger import logger
-from ..common.utils import DEFAULT_COCO_CONFIG, list_files
+from ..common.utils import (
+    DEFAULT_COCO_CONFIG,
+    group_and_sort_files,
+    list_files,
+)
+from .label import labels as SEMSEG_LABELS
 from .to_coco import parser_definition, start_converting
+
+cat_id2color = {label.trainId: list(label.color) for label in SEMSEG_LABELS}
+cat_id2color[255] = [0, 0, 0]
+id2color = np.vectorize(lambda id_, index: cat_id2color[id_][index])
 
 
 def parser_definition_bitmasks() -> argparse.ArgumentParser:
@@ -59,7 +68,7 @@ def parser_definition_bitmasks() -> argparse.ArgumentParser:
     return parser
 
 
-def poly2d2bitmasks_per_image(
+def poly2ds_to_bitmasks_per_image(
     out_path: str,
     colors: List[np.ndarray],
     poly2ds: List[List[Poly2D]],
@@ -85,14 +94,19 @@ def poly2d2bitmasks_per_image(
                     poly.vertices,
                     poly.types,
                     # 0 / 255.0 for the background
-                    color=((i + 1) / 255.0, (i + 1) / 255.0, (i + 1) / 255.0),
+                    color=(
+                        ((i + 1) // 255) / 255.0,
+                        ((i + 1) % 255) / 255.0,
+                        0.0,
+                    ),
                     closed=True,
                 )
             )
 
     fig.canvas.draw()
     out = np.frombuffer(fig.canvas.tostring_rgb(), np.uint8)
-    out = out.reshape((*shape, -1))[..., 0]
+    out = out.reshape((*shape, -1)).astype(np.int32)
+    out = out[..., 0] * 255 + out[..., 1]
     plt.close()
 
     img = np.zeros((*shape, 4), dtype=np.uint8)
@@ -138,7 +152,7 @@ def bitmask_conversion(
 
     pool = Pool(nproc)
     pool.starmap(
-        poly2d2bitmasks_per_image,
+        poly2ds_to_bitmasks_per_image,
         tqdm(
             zip(out_paths, colors_list, poly2ds_list),
             total=len(out_paths),
@@ -147,14 +161,64 @@ def bitmask_conversion(
     pool.close()
 
 
-def insseg2bitmasks(
+def semseg_to_bitmasks(
+    frames: List[Frame],
+    out_base: str,
+    ignore_as_class: bool = False,  # pylint: disable=unused-argument
+    remove_ignore: bool = False,  # pylint: disable=unused-argument
+    nproc: int = 4,
+) -> None:
+    """Converting semantic segmentation poly2d to bitmasks."""
+    os.makedirs(out_base, exist_ok=True)
+
+    out_paths: List[str] = []
+    colors_list: List[List[np.ndarray]] = []
+    poly2ds_list: List[List[List[Poly2D]]] = []
+
+    cat_name2id = {label.name: label.trainId for label in SEMSEG_LABELS}
+
+    logger.info("Preparing annotations for Semseg to Bitmasks")
+
+    for image_anns in tqdm(frames):
+        ann_id = 0
+
+        image_name = image_anns.name.replace(".jpg", ".png")
+        image_name = os.path.split(image_name)[-1]
+        out_path = os.path.join(out_base, image_name)
+        out_paths.append(out_path)
+
+        colors: List[np.ndarray] = []
+        poly2ds: List[List[Poly2D]] = []
+
+        if image_anns.labels is None:
+            continue
+
+        for label in image_anns.labels:
+            if label.category not in cat_name2id:
+                continue
+            if label.poly_2d is None:
+                continue
+
+            ann_id += 1
+            category_id = cat_name2id[label.category]
+            color = set_color(label, category_id, ann_id, False)
+            colors.append(color)
+            poly2ds.append(label.poly_2d)
+
+        colors_list.append(colors)
+        poly2ds_list.append(poly2ds)
+
+    bitmask_conversion(nproc, out_paths, colors_list, poly2ds_list)
+
+
+def insseg_to_bitmasks(
     frames: List[Frame],
     out_base: str,
     ignore_as_class: bool = False,
     remove_ignore: bool = False,
     nproc: int = 4,
 ) -> None:
-    """Converting seg_track poly2d to bitmasks."""
+    """Converting instance segmentation poly2d to bitmasks."""
     os.makedirs(out_base, exist_ok=True)
 
     categories, name_mapping, ignore_mapping = load_coco_config(
@@ -208,14 +272,14 @@ def insseg2bitmasks(
     bitmask_conversion(nproc, out_paths, colors_list, poly2ds_list)
 
 
-def segtrack2bitmasks(
+def segtrack_to_bitmasks(
     frames: List[Frame],
     out_base: str,
     ignore_as_class: bool = False,
     remove_ignore: bool = False,
     nproc: int = 4,
 ) -> None:
-    """Converting seg_track poly2d to bitmasks."""
+    """Converting segmentation tracking poly2d to bitmasks."""
     frames_list = group_and_sort(frames)
     categories, name_mapping, ignore_mapping = load_coco_config(
         mode="track",
@@ -277,8 +341,20 @@ def segtrack2bitmasks(
     bitmask_conversion(nproc, out_paths, colors_list, poly2ds_list)
 
 
-def bitmask2labelmap_per_image(bitmask_file: str, colormap_file: str) -> None:
-    """Convert BitMasks to labelmap for one image."""
+def to_color_w_cat_id(bitmask_file: str, colormap_file: str) -> None:
+    """Convert BitMasks to colormap for one image with category id."""
+    bitmask = np.asarray(Image.open(bitmask_file))[..., 0]
+    colormap = np.zeros((*bitmask.shape[:2], 3), dtype=bitmask.dtype)
+    colormap[..., 0] = id2color(bitmask, 0)
+    colormap[..., 1] = id2color(bitmask, 1)
+    colormap[..., 2] = id2color(bitmask, 2)
+
+    img = Image.fromarray(colormap)
+    img.save(colormap_file)
+
+
+def to_color_w_ann_id(bitmask_file: str, colormap_file: str) -> None:
+    """Convert BitMasks to colormap for one image with annotation id."""
     bitmask = np.asarray(Image.open(bitmask_file))
     colormap = np.zeros((*bitmask.shape[:2], 3), dtype=bitmask.dtype)
     # For category. 8 * 30 = 240 < 255.
@@ -291,52 +367,64 @@ def bitmask2labelmap_per_image(bitmask_file: str, colormap_file: str) -> None:
     img.save(colormap_file)
 
 
-def insseg2colormap(out_base: str, color_base: str, nproc: int) -> None:
+def image_dataset_to_colormap(
+    out_base: str,
+    to_color_func: Callable[[str, str], None],
+    color_base: str,
+    nproc: int,
+) -> None:
     """Convert instance segmentation bitmasks to labelmap."""
     if not os.path.isdir(color_base):
         os.makedirs(color_base)
-    files_list = os.listdir(out_base)
+    files = list_files(out_base, ".png")
     bitmasks_files: List[str] = []
     colormap_files: List[str] = []
 
-    logger.info("Preparing annotations for InsSeg to Colormap")
+    logger.info("Preparing annotations for image dataset to Colormap")
 
-    for file_name in tqdm(files_list):
-        if not file_name.endswith(".png"):
-            continue
+    for file_name in tqdm(files):
         label_path = os.path.join(out_base, file_name)
         color_path = os.path.join(color_base, file_name)
         bitmasks_files.append(label_path)
         colormap_files.append(color_path)
-    colormap_conversion(nproc, bitmasks_files, colormap_files)
+    colormap_conversion(nproc, to_color_func, bitmasks_files, colormap_files)
 
 
-def segtrack2colormap(out_base: str, color_base: str, nproc: int) -> None:
+def video_dataset_to_colormap(
+    out_base: str,
+    to_color_func: Callable[[str, str], None],
+    color_base: str,
+    nproc: int,
+) -> None:
     """Convert segmentation tracking bitmasks to labelmap."""
     if not os.path.isdir(color_base):
         os.makedirs(color_base)
-    files_list = list_files(out_base)
+    files = list_files(out_base, ".png")
+    files_list = group_and_sort_files(files)
+
     bitmasks_files: List[str] = []
     colormap_files: List[str] = []
 
-    logger.info("Preparing annotations for SegTrack to Colormap")
+    logger.info("Preparing annotations for video dataset to Colormap")
 
     for files in tqdm(files_list):
         assert len(files) > 0
-        video_name = files[0].rsplit("/", 3)[-2]
+        video_name = os.path.split(files[0])[0]
         video_path = os.path.join(color_base, video_name)
         if not os.path.isdir(video_path):
             os.makedirs(video_path)
+
         for file_name in files:
-            image_name = os.path.split(file_name)[-1]
-            save_path = os.path.join(color_base, video_name, image_name)
-            bitmasks_files.append(file_name)
-            colormap_files.append(save_path)
-    colormap_conversion(nproc, bitmasks_files, colormap_files)
+            label_path = os.path.join(out_base, file_name)
+            color_path = os.path.join(color_base, file_name)
+            bitmasks_files.append(label_path)
+            colormap_files.append(color_path)
+    colormap_conversion(nproc, to_color_func, bitmasks_files, colormap_files)
 
 
 def colormap_conversion(
     nproc: int,
+    to_color_func: Callable[[str, str], None],
     bitmasks_files: List[str],
     colormap_files: List[str],
 ) -> None:
@@ -345,21 +433,24 @@ def colormap_conversion(
 
     pool = Pool(nproc)
     pool.starmap(
-        bitmask2labelmap_per_image,
+        to_color_func,
         tqdm(
             zip(bitmasks_files, colormap_files),
             total=len(bitmasks_files),
         ),
     )
+    pool.close()
 
 
 def main() -> None:
     """Main function."""
     os.environ["QT_QPA_PLATFORM"] = "offscreen"  # matplotlib offscreen render
     args, frames = start_converting(parser_definition_bitmasks)
-    convert_func = dict(ins_seg=insseg2bitmasks, seg_track=segtrack2bitmasks)[
-        args.mode
-    ]
+    convert_func = dict(
+        sem_seg=semseg_to_bitmasks,
+        ins_seg=insseg_to_bitmasks,
+        seg_track=segtrack_to_bitmasks,
+    )[args.mode]
     convert_func(
         frames,
         args.output,
@@ -370,9 +461,16 @@ def main() -> None:
 
     if args.colormap:
         colormap_func = dict(
-            ins_seg=insseg2colormap, seg_track=segtrack2colormap
+            sem_seg=image_dataset_to_colormap,
+            ins_seg=image_dataset_to_colormap,
+            seg_track=video_dataset_to_colormap,
         )[args.mode]
-        colormap_func(args.output, args.color_path, args.nproc)
+        to_color_func = dict(
+            sem_seg=to_color_w_cat_id,
+            ins_seg=to_color_w_ann_id,
+            seg_track=to_color_w_ann_id,
+        )[args.mode]
+        colormap_func(args.output, to_color_func, args.color_path, args.nproc)
 
     logger.info("Finished!")
 
