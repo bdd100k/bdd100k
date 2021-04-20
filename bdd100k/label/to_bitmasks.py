@@ -376,7 +376,7 @@ def image_dataset_to_colormap(
     bitmasks_files: List[str] = []
     colormap_files: List[str] = []
 
-    logger.info("Preparing annotations for InsSeg to Colormap")
+    logger.info("Preparing annotations for image dataset to Colormap")
 
     for file_name in tqdm(files_list):
         if not file_name.endswith(".png"):
@@ -401,7 +401,7 @@ def video_dataset_to_colormap(
     bitmasks_files: List[str] = []
     colormap_files: List[str] = []
 
-    logger.info("Preparing annotations for SegTrack to Colormap")
+    logger.info("Preparing annotations for video dataset to Colormap")
 
     for files in tqdm(files_list):
         assert len(files) > 0
