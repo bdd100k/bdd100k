@@ -68,7 +68,7 @@ def parser_definition_bitmasks() -> argparse.ArgumentParser:
     return parser
 
 
-def poly2d2bitmasks_per_image(
+def poly2ds_to_bitmasks_per_image(
     out_path: str,
     colors: List[np.ndarray],
     poly2ds: List[List[Poly2D]],
@@ -99,7 +99,7 @@ def poly2d2bitmasks_per_image(
                         ((i + 1) % 255) / 255.0,
                         0.0,
                     ),
-                    closed=poly.closed,
+                    closed=True,
                 )
             )
 
@@ -152,7 +152,7 @@ def bitmask_conversion(
 
     pool = Pool(nproc)
     pool.starmap(
-        poly2d2bitmasks_per_image,
+        poly2ds_to_bitmasks_per_image,
         tqdm(
             zip(out_paths, colors_list, poly2ds_list),
             total=len(out_paths),
@@ -201,7 +201,7 @@ def semseg_to_bitmasks(
 
             ann_id += 1
             category_id = cat_name2id[label.category]
-            color = set_color(label, category_id, category_id, False)
+            color = set_color(label, category_id, ann_id, False)
             colors.append(color)
             poly2ds.append(label.poly_2d)
 
@@ -439,6 +439,7 @@ def colormap_conversion(
             total=len(bitmasks_files),
         ),
     )
+    pool.close()
 
 
 def main() -> None:
@@ -469,9 +470,7 @@ def main() -> None:
             ins_seg=to_color_w_ann_id,
             seg_track=to_color_w_ann_id,
         )[args.mode]
-        colormap_func(
-            args.output, to_color_func, args.color_path, args.nproc
-        )
+        colormap_func(args.output, to_color_func, args.color_path, args.nproc)
 
     logger.info("Finished!")
 
