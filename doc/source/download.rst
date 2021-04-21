@@ -101,7 +101,7 @@ Semantic Segmentation
 Bitmasks, colormaps and original json files for semantic segmentation.
 
 +------+----------------------------------+
-| Size | 387.3MB                          |
+| Size | 370MB                            |
 +------+----------------------------------+
 | md5  | cb9b2ececcdb56f1ca3ae54d4ed883bd |
 +------+----------------------------------+
@@ -128,7 +128,7 @@ Instance Segmentation
 Bitmasks, colormaps and original json files for instance segmentation.
 
 +------+----------------------------------+
-| Size | 99.9MB                           |
+| Size | 96MB                             |
 +------+----------------------------------+
 | md5  | e29d82458a6c487b444c40ab82426d03 |
 +------+----------------------------------+
@@ -157,7 +157,7 @@ Multi-object bounding box tracking training and validation labels released in
 2020
 
 +------+----------------------------------+
-| Size | 108.2MB                          |
+| Size | 104MB                            |
 +------+----------------------------------+
 | md5  | 931813bcec4e0483f57b443c4cbd6c5c |
 +------+----------------------------------+
@@ -180,7 +180,7 @@ Multi-object bounding box tracking videos in frames released in 2020
 
     - bdd100k
         - images
-            - box_track_20
+            - track
                 - train
                 - val
                 - test
@@ -195,7 +195,7 @@ annotation went through the additional quality check. The original detection set
 is deprecated.
 
 +------+----------------------------------+
-| Size | 55.4MB                           |
+| Size | 53MB                             |
 +------+----------------------------------+
 | md5  | b86a3e1b7edbcad421b7dad2b3987c94 |
 +------+----------------------------------+
@@ -215,7 +215,7 @@ Multi-object tracking aand segmentation training and validation labels released 
 
 
 +------+----------------------------------+
-| Size | 399.0MB                          |
+| Size | 370MB                            |
 +------+----------------------------------+
 | md5  | 13e15f1f3728a9a3f27a3f4e5e2a5885 |
 +------+----------------------------------+
@@ -241,7 +241,7 @@ MOTS 2020 Images
 Multi-object tracking and segmentation videos in frames released in 2020
 
 +------+----------------------------------+
-| Size | 465.5MB                          |
+| Size | 5.4GB                            |
 +------+----------------------------------+
 | md5  | 7c52a52f3c9cc880c91b264870a1d4bb |
 +------+----------------------------------+
