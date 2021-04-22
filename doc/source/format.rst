@@ -93,8 +93,10 @@ e.g. car should be 13.
 .. _bdd100k_label: https://github.com/bdd100k/bdd100k/blob/master/bdd100k/label/label.py
 
 
+.. _ins-seg-label:
 
-Segmentation Label Formats
+
+Segmentation Format
 ~~~~~~~~~
 
 
@@ -118,7 +120,7 @@ The above four attributes are stored in least significant bits of G. Given this,
    :alt: Downloading buttons
 
 
-Laberl conversion
+Format Conversion
 ~~~~~~~~~
 
 from_coco
