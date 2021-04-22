@@ -211,7 +211,7 @@ is deprecated.
 MOTS 2020 Labels
 ~~~~~~~~~~~~~~~~~
 
-Multi-object tracking aand segmentation training and validation labels released in 2020
+Multi-object tracking and segmentation training and validation labels released in 2020
 
 
 +------+----------------------------------+
