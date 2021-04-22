@@ -14,3 +14,11 @@
    ```bash
    make html
    ```
+
+## Public doc
+
+The document will be deployed to the public S3 bucket when merged to `master`.
+
+Main website: https://doc.bdd100k.com
+
+S3 static website: https://s3.eu-central-1.amazonaws.com/doc.bdd100k.com/index.html
