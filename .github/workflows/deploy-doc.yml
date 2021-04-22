@@ -1,13 +1,12 @@
 # This workflow will deploy the current version of the documentation to the bdd100k website
 
-name: deploy_website
-
+name: deploy doc
 on:
   push:
     branches:
       - master
     paths:
-      - 'doc/**'
+      - "doc/**"
 
 jobs:
   deploy:
@@ -37,4 +36,4 @@ jobs:
           AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          SOURCE_DIR: 'doc/_build/html/'
+          SOURCE_DIR: "doc/_build/html/"
