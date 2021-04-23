@@ -24,7 +24,12 @@ def test_ious_miou() -> None:
     a_dir = "{}/testcases/seg/gt".format(cur_dir)
     b_dir = "{}/testcases/seg/pred".format(cur_dir)
 
-    ious, miou = evaluate_segmentation(a_dir, b_dir, 4, 1)
-    gt_ious = [97.47474747, 37.5, 0.0, 50.0]
-    assert np.allclose(ious, gt_ious)
-    assert np.isclose(miou, 46.243686868686865)
+    ious = evaluate_segmentation(a_dir, b_dir)
+    gt_ious = dict(
+        miou=61.73469388,
+        road=94.89795918,
+        sidewalk=28.57142857,
+        wall=0.0,
+    )
+    for key, val in gt_ious.items():
+        assert np.isclose(ious[key], val)
