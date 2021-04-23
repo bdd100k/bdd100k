@@ -398,7 +398,7 @@ def bdd100k2coco_ins_seg(
     instance_ids_list: List[List[int]] = []
     annotations_list: List[List[AnnType]] = []
 
-    logger.info("Collecting bitmasks...")
+    logger.info("Collecting annotations...")
 
     for image_anns in tqdm(frames):
         instance_id = 0
