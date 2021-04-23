@@ -32,7 +32,7 @@ from scalabel.label.coco_typing import (
     ImgType,
     VidType,
 )
-from scalabel.label.io import group_and_sort, read
+from scalabel.label.io import group_and_sort, load
 from scalabel.label.to_coco import (
     get_instance_id,
     get_object_attributes,
@@ -596,7 +596,7 @@ def start_converting(
         args.ignore_as_class,
     )
     logger.info("Loading annotations...")
-    labels = read(args.label)
+    labels = load(args.label)
     logger.info("Start format converting...")
 
     return args, labels

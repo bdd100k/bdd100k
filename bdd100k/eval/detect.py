@@ -12,7 +12,7 @@ import numpy as np
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval  # type: ignore
 from scalabel.label.coco_typing import GtType
-from scalabel.label.io import read
+from scalabel.label.io import load
 from scalabel.label.to_coco import load_coco_config, scalabel2coco_detection
 from tabulate import tabulate
 
@@ -63,7 +63,7 @@ def evaluate_det(
 
     """
     # Convert the annotation file to COCO format
-    ann_frames = read(ann_file)
+    ann_frames = load(ann_file)
     categories, name_mapping, ignore_mapping = load_coco_config(
         mode="det",
         filepath=cfg_path,
@@ -74,7 +74,7 @@ def evaluate_det(
     coco_gt = COCOV2(None, ann_coco)
 
     # Load results and convert the predictions
-    pred_frames = read(pred_file)
+    pred_frames = load(pred_file)
     pred_res = scalabel2coco_detection(
         SHAPE, pred_frames, categories, name_mapping, ignore_mapping
     )["annotations"]
