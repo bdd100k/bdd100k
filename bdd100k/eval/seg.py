@@ -1,13 +1,14 @@
 """Evaluation procedures for semantic segmentation."""
 
-import os
 import os.path as osp
-from typing import List, Tuple
+from typing import Dict
 
 import numpy as np
+import toml
 from PIL import Image
 
 from ..common.logger import logger
+from ..common.utils import DEFAULT_COCO_CONFIG, DEFAULT_SEG_STRING, list_files
 
 
 def fast_hist(
@@ -27,55 +28,54 @@ def per_class_iu(hist: np.ndarray) -> np.ndarray:
     return ious
 
 
-def find_all_png(folder: str) -> List[str]:
-    """List png files."""
-    paths = []
-    for root, _, files in os.walk(folder, topdown=True):
-        paths.extend(
-            [osp.join(root, f) for f in files if osp.splitext(f)[1] == ".png"]
-        )
-    return paths
-
-
 def evaluate_segmentation(
-    gt_dir: str, result_dir: str, num_classes: int, key_length: int
-) -> Tuple[np.ndarray, float]:
+    gt_dir: str,
+    res_dir: str,
+    cfg_file: str = DEFAULT_COCO_CONFIG,
+    cfg_str: str = DEFAULT_SEG_STRING,
+    mode: str = "sem_seg",
+) -> Dict[str, float]:
     """Evaluate segmentation IoU from input folders."""
-    gt_dict = {osp.split(p)[1][:key_length]: p for p in find_all_png(gt_dir)}
-    result_dict = {
-        osp.split(p)[1][:key_length]: p for p in find_all_png(result_dir)
-    }
-    result_gt_keys = set(gt_dict.keys()) & set(result_dict.keys())
-    if len(result_gt_keys) != len(gt_dict):
-        raise ValueError(
-            "Result folder only has {} of {} ground truth files.".format(
-                len(result_gt_keys), len(gt_dict)
-            )
-        )
-    logger.info("Found %d results", len(result_dict))
-    logger.info("Evaluating %d results", len(gt_dict))
+    assert mode in ["sem_seg", "drivable", "lane_mark"]
+    categories = toml.load(cfg_file)[cfg_str][mode]
+    num_classes = len(categories)
+
+    gt_imgs = list_files(gt_dir, ".png")
+    res_imgs = list_files(res_dir, ".png")
+    logger.info("Found %d results", len(gt_imgs))
+    for gt_img, res_img in zip(gt_imgs, res_imgs):
+        assert gt_img == res_img
+
     hist = np.zeros((num_classes, num_classes))
     gt_id_set = set()
-    for i, key in enumerate(sorted(gt_dict.keys())):
-        gt_path = osp.join(gt_dir, gt_dict[key])
-        result_path = osp.join(result_dir, result_dict[key])
-        gt = np.asarray(Image.open(gt_path, "r"))
+    for i, img in enumerate(gt_imgs):
+        gt_path = osp.join(gt_dir, img)
+        res_path = osp.join(res_dir, img)
+        gt = np.asarray(Image.open(gt_path, "r"))[..., 0]
         gt_id_set.update(np.unique(gt).tolist())
-        prediction = np.asanyarray(Image.open(result_path, "r"))
-        hist += fast_hist(gt.flatten(), prediction.flatten(), num_classes)
+        pred = np.asanyarray(Image.open(res_path, "r"))[..., 0]
+        hist += fast_hist(gt.flatten(), pred.flatten(), num_classes)
         if (i + 1) % 100 == 0:
-            logger.info("Finished %d %f", (i + 1), per_class_iu(hist) * 100)
+            logger.info("Finished %d", (i + 1))
     if 255 in gt_id_set:
         gt_id_set.remove(255)
     logger.info("GT id set [%s]", ",".join(str(s) for s in gt_id_set))
     ious = per_class_iu(hist) * 100
     miou = np.mean(ious[list(gt_id_set)])
 
+    iou_dict = dict(miou=miou)
     logger.info("{:.2f}".format(miou))
-    logger.info(", ".join(["{:.2f}".format(n) for n in list(ious)]))
-    return ious, miou
+    for category, iou in zip(categories, ious):
+        iou_dict[category] = iou
+        logger.info("{}: {:.2f}".format(category, iou))
+    return iou_dict
 
 
-def evaluate_drivable(gt_dir: str, result_dir: str) -> None:
+def evaluate_drivable(gt_dir: str, result_dir: str) -> Dict[str, float]:
     """Evaluate drivable area."""
-    evaluate_segmentation(gt_dir, result_dir, 3, 17)
+    return evaluate_segmentation(gt_dir, result_dir, mode="drivable")
+
+
+def evaluate_lane_marking(gt_dir: str, result_dir: str) -> Dict[str, float]:
+    """Evaluate drivable area."""
+    return evaluate_segmentation(gt_dir, result_dir, mode="lane_mark")

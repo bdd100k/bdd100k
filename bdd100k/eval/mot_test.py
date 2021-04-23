@@ -2,7 +2,7 @@
 import os
 import unittest
 
-from scalabel.label.io import load
+from scalabel.label.io import group_and_sort, load
 
 from .mot import (
     METRIC_MAPS,
@@ -21,8 +21,12 @@ class TestBDD100KMotEval(unittest.TestCase):
     def test_mot(self) -> None:
         """Check mot evaluation correctness."""
         cur_dir = os.path.dirname(os.path.abspath(__file__))
-        gts = [load("{}/testcases/track_sample_anns.json".format(cur_dir))]
-        preds = [load("{}/testcases/track_predictions.json".format(cur_dir))]
+        gts = group_and_sort(
+            load("{}/testcases/track_sample_anns.json".format(cur_dir))
+        )
+        preds = group_and_sort(
+            load("{}/testcases/track_predictions.json".format(cur_dir))
+        )
         result = evaluate_track(acc_single_video_mot, gts, preds)
         overall_reference = {
             "IDF1": 0.7101073676416142,

@@ -5,6 +5,7 @@ import unittest
 import numpy as np
 from PIL import Image
 
+from ..common.utils import group_and_sort_files, list_files
 from .mot import evaluate_track
 from .mots import acc_single_video_mots, mask_intersection_rate, parse_bitmasks
 
@@ -34,13 +35,17 @@ class TestEvaluteMOTS(unittest.TestCase):
     def test_mota_motp_idf1(self) -> None:
         """Check MOTP for the MOTS evaluation."""
         cur_dir = os.path.dirname(os.path.abspath(__file__))
-        a_path = "{}/testcases/mots/a.png".format(cur_dir)
-        b_path = "{}/testcases/mots/b.png".format(cur_dir)
+        a_path = "{}/testcases/mots/gt".format(cur_dir)
+        b_path = "{}/testcases/mots/result".format(cur_dir)
 
-        gts = [[a_path]]
-        results = [[b_path]]
+        gts = group_and_sort_files(
+            list_files(a_path, ".png", with_prefix=True)
+        )
+        results = group_and_sort_files(
+            list_files(b_path, ".png", with_prefix=True)
+        )
 
-        res = evaluate_track(acc_single_video_mots, gts, results)
+        res = evaluate_track(acc_single_video_mots, gts, results, nproc=1)
         self.assertAlmostEqual(res["pedestrian"]["MOTA"], 2 / 3)
         self.assertAlmostEqual(res["pedestrian"]["MOTP"], 3 / 4)
         self.assertAlmostEqual(res["pedestrian"]["IDF1"], 4 / 5)

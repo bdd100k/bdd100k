@@ -13,7 +13,11 @@ from .detect import evaluate_det
 from .ins_seg import evaluate_ins_seg
 from .mot import acc_single_video_mot, evaluate_track
 from .mots import acc_single_video_mots
-from .seg import evaluate_drivable, evaluate_segmentation
+from .seg import (
+    evaluate_drivable,
+    evaluate_lane_marking,
+    evaluate_segmentation,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -27,6 +31,7 @@ def parse_args() -> argparse.Namespace:
             "sem_seg",
             "ins_seg",
             "drivable",
+            "lane_mark",
             "box_track",
             "seg_track",
         ],
@@ -85,8 +90,10 @@ def run() -> None:
 
     if args.task == "drivable":
         evaluate_drivable(args.gt, args.result)
+    elif args.task == "lane_mark":
+        evaluate_lane_marking(args.gt, args.result)
     elif args.task == "sem_seg":
-        evaluate_segmentation(args.gt, args.result, 19, 17)
+        evaluate_segmentation(args.gt, args.result)
     elif args.task == "det":
         evaluate_det(args.gt, args.result, args.config, args.out_dir)
     elif args.task == "ins_seg":
@@ -103,8 +110,12 @@ def run() -> None:
     elif args.task == "seg_track":
         evaluate_track(
             acc_single_video_mots,
-            gts=group_and_sort_files(list_files(args.gt, ".png")),
-            results=group_and_sort_files(list_files(args.result, ".png")),
+            gts=group_and_sort_files(
+                list_files(args.gt, ".png", with_prefix=True)
+            ),
+            results=group_and_sort_files(
+                list_files(args.result, ".png", with_prefix=True)
+            ),
             iou_thr=args.mot_iou_thr,
             ignore_iof_thr=args.mot_ignore_iof_thr,
             nproc=args.mot_nproc,
