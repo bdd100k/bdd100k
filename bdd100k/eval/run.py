@@ -2,7 +2,7 @@
 
 import argparse
 
-from scalabel.label.io import group_and_sort, read
+from scalabel.label.io import group_and_sort, load
 
 from ..common.utils import (
     DEFAULT_COCO_CONFIG,
@@ -94,8 +94,8 @@ def run() -> None:
     elif args.task == "box_track":
         evaluate_track(
             acc_single_video_mot,
-            gts=group_and_sort(read(args.gt)),
-            results=group_and_sort(read(args.result)),
+            gts=group_and_sort(load(args.gt)),
+            results=group_and_sort(load(args.result)),
             iou_thr=args.mot_iou_thr,
             ignore_iof_thr=args.mot_ignore_iof_thr,
             nproc=args.mot_nproc,

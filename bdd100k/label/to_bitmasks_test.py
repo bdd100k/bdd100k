@@ -6,7 +6,7 @@ from typing import Callable, List
 
 import numpy as np
 from PIL import Image
-from scalabel.label.io import read
+from scalabel.label.io import load
 from scalabel.label.typing import Frame, Label
 
 from .to_bitmasks import (
@@ -45,7 +45,7 @@ class TestToBitmasks(unittest.TestCase):
         """General test function for different tasks."""
         cur_dir = os.path.dirname(os.path.abspath(__file__))
 
-        labels = read("{}/testcases/example_annotation.json".format(cur_dir))
+        labels = load("{}/testcases/example_annotation.json".format(cur_dir))
         convert_func(labels, self.test_out, False, False, 1)
         output_path = os.path.join(self.test_out, output_name)
         bitmask = np.asarray(Image.open(output_path))
