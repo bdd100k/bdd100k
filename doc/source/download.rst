@@ -96,7 +96,7 @@ Segmentation maps of Drivable areas.
 +------+----------------------------------+
 
 Semantic Segmentation
-~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 Bitmasks, colormaps and original json files for semantic segmentation.
 

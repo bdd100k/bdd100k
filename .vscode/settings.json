@@ -17,8 +17,7 @@
     "editor.rulers": [79],
     // Python use black as formatter
     "editor.defaultFormatter": null
-  },
-  "python.pythonPath": "python3",
+},
   "python.formatting.provider": "black",
   "python.linting.pylintEnabled": true,
   "python.linting.mypyEnabled": true,

@@ -30,6 +30,12 @@ jobs:
           python3 -m mypy --strict bdd100k
           python3 -m black --check bdd100k
           python3 -m isort -c bdd100k
+      - name: test doc
+        run: |
+          cd doc
+          wget https://github.com/bdd100k/doc-media/archive/master.zip
+          unzip master.zip && mv doc-media-master media
+          make html
 
   test:
     name: test py${{ matrix.python-version }} on ${{ matrix.os }}
