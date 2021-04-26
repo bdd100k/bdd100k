@@ -14,13 +14,15 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+from datetime import datetime
+
 import sphinx_rtd_theme
 
 
 # -- Project information -----------------------------------------------------
 
 project = "BDD100K"
-copyright = "2020, Fisher Yu"
+copyright = "{}, Fisher Yu".format(datetime.now().year)
 author = "Fisher Yu"
 
 
