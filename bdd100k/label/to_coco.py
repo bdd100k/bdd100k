@@ -207,18 +207,14 @@ def bitmask2coco_wo_ids_parallel(
     """Execute the bitmask conversion in parallel."""
     logger.info("Converting annotations...")
 
-    pool = Pool(nproc)
-    annotations_list = pool.starmap(
-        bitmask2coco_wo_ids,
-        tqdm(
-            zip(
-                image_ids,
-                mask_names,
-                [mask_mode for _ in range(len(image_ids))],
+    with Pool(nproc) as pool:
+        annotations_list = pool.starmap(
+            partial(bitmask2coco_wo_ids, mask_mode=mask_mode),
+            tqdm(
+                zip(image_ids, mask_names),
+                total=len(image_ids),
             ),
-            total=len(image_ids),
-        ),
-    )
+        )
     annotations: List[AnnType] = []
     for anns in annotations_list:
         annotations.extend(anns)
@@ -265,20 +261,19 @@ def bitmask2coco_with_ids_parallel(
     """Execute the bitmask conversion in parallel."""
     logger.info("Converting annotations...")
 
-    pool = Pool(nproc)
-    annotations_list = pool.starmap(
-        bitmask2coco_with_ids,
-        tqdm(
-            zip(
-                annotations_list,
-                mask_names,
-                category_ids_list,
-                instance_ids_list,
-                [mask_mode for _ in range(len(annotations_list))],
+    with Pool(nproc) as pool:
+        annotations_list = pool.starmap(
+            partial(bitmask2coco_with_ids, mask_mode=mask_mode),
+            tqdm(
+                zip(
+                    annotations_list,
+                    mask_names,
+                    category_ids_list,
+                    instance_ids_list,
+                ),
+                total=len(annotations_list),
             ),
-            total=len(annotations_list),
-        ),
-    )
+        )
     annotations: List[AnnType] = []
     for anns in annotations_list:
         annotations.extend(anns)

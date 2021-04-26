@@ -1,5 +1,6 @@
 """BDD100K tracking evaluation with CLEAR MOT metrics."""
 import time
+from functools import partial
 from multiprocessing import Pool
 from typing import Callable, Dict, List, Tuple, Union, overload
 
@@ -285,21 +286,20 @@ def evaluate_track(
     metrics = list(METRIC_MAPS.keys())
 
     logger.info("accumulating...")
-    pool = Pool(nproc)
-    accs = pool.starmap(
-        acc_single_video,
-        zip(
-            gts,
-            results,
-            [iou_thr for _ in range(len(gts))],
-            [ignore_iof_thr for _ in range(len(gts))],
-        ),
-    )
+    with Pool(nproc) as pool:
+        accs = pool.starmap(
+            partial(
+                acc_single_video,
+                iou_thr=iou_thr,
+                ignore_iof_thr=ignore_iof_thr,
+            ),
+            zip(gts, results),
+        )
     names, accs, items = aggregate_accs(accs)
 
     logger.info("evaluating...")
-    summaries = pool.starmap(evaluate_single_class, zip(names, accs))
-    pool.close()
+    with Pool(nproc) as pool:
+        summaries = pool.starmap(evaluate_single_class, zip(names, accs))
 
     logger.info("rendering...")
     eval_results = render_results(summaries, items, metrics)

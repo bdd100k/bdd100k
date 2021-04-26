@@ -3,7 +3,7 @@ Evaluation
 
 
 Categories
-~~~~~~~~~
+~~~~~~~~~~~
 
 For object detection, 10 classes are evalued, they are:
 ::
@@ -294,7 +294,7 @@ We will rank the methods without using external datasets except **ImageNet**.
 
 
 Multi Object Tracking and Segmentation (Segmentation Tracking)
-~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We use the same metrics set as MOT above. The only difference lies in the computation of distance matrixes.
 Concretely, in MOT, it is computed using box IoU. While for MOTS, the mask IoU is used.

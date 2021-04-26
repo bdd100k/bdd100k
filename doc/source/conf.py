@@ -14,13 +14,15 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+from datetime import datetime
+
 import sphinx_rtd_theme
 
 
 # -- Project information -----------------------------------------------------
 
 project = "BDD100K"
-copyright = "2020, Fisher Yu"
+copyright = "{}, Fisher Yu".format(datetime.now().year)
 author = "Fisher Yu"
 
 
@@ -50,4 +52,4 @@ html_theme = "sphinx_rtd_theme"
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
+html_static_path = []

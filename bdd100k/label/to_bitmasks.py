@@ -150,15 +150,14 @@ def bitmask_conversion(
     """Execute the bitmask conversion in parallel."""
     logger.info("Converting annotations...")
 
-    pool = Pool(nproc)
-    pool.starmap(
-        poly2ds_to_bitmasks_per_image,
-        tqdm(
-            zip(out_paths, colors_list, poly2ds_list),
-            total=len(out_paths),
-        ),
-    )
-    pool.close()
+    with Pool(nproc) as pool:
+        pool.starmap(
+            poly2ds_to_bitmasks_per_image,
+            tqdm(
+                zip(out_paths, colors_list, poly2ds_list),
+                total=len(out_paths),
+            ),
+        )
 
 
 def semseg_to_bitmasks(
@@ -431,15 +430,14 @@ def colormap_conversion(
     """Execute the colormap conversion in parallel."""
     logger.info("Converting annotations...")
 
-    pool = Pool(nproc)
-    pool.starmap(
-        to_color_func,
-        tqdm(
-            zip(bitmasks_files, colormap_files),
-            total=len(bitmasks_files),
-        ),
-    )
-    pool.close()
+    with Pool(nproc) as pool:
+        pool.starmap(
+            to_color_func,
+            tqdm(
+                zip(bitmasks_files, colormap_files),
+                total=len(bitmasks_files),
+            ),
+        )
 
 
 def main() -> None:
