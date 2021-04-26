@@ -110,10 +110,10 @@ class BDDInsSegEval(COCOeval):  # type: ignore
                     (label["index"], label["score"])
                 )
         self.iou_res = [dict() for i in range(len(self))]
-        pool = Pool(self.nproc)
-        to_updates: List[DictAny] = pool.map(
-            self.compute_iou, tqdm(range(len(self)))
-        )
+        with Pool(self.nproc) as pool:
+            to_updates: List[DictAny] = pool.map(
+                self.compute_iou, tqdm(range(len(self)))
+            )
         for res in to_updates:
             self.iou_res[res["ind"]].update(res)
         pool.close()
@@ -133,10 +133,10 @@ class BDDInsSegEval(COCOeval):  # type: ignore
         self.params = p
 
         # loop through images, area range, max detection number
-        pool = Pool(self.nproc)
-        to_updates: List[Dict[int, DictAny]] = pool.map(
-            self.compute_match, range(len(self))
-        )
+        with Pool(self.nproc) as pool:
+            to_updates: List[Dict[int, DictAny]] = pool.map(
+                self.compute_match, range(len(self))
+            )
         for to_update in to_updates:
             for ind, item in to_update.items():
                 self.evalImgs[ind].update(item)
