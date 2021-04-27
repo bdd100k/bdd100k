@@ -1,5 +1,5 @@
-Categories
-===========
+Category
+==========
 
 Object Detection
 ~~~~~~~~~
