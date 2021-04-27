@@ -590,7 +590,7 @@ def start_converting(args: argparse.Namespace) -> List[Frame]:
         args.ignore_as_class,
     )
     logger.info("Loading annotations...")
-    labels = load(args.label, args.nporc)
+    labels = load(args.label, args.nproc)
     logger.info("Start format converting...")
 
     return labels
