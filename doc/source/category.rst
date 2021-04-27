@@ -2,7 +2,7 @@ Category
 ==========
 
 Object Detection
-~~~~~~~~~
+~~~~~~~~~~~~~~~~~~
 
 For object detection, 10 classes are evalued, they are:
 ::
@@ -21,13 +21,13 @@ For object detection, 10 classes are evalued, they are:
 Note that, the field `category_id` range from **1** instead of 0.
 
 Instance Segmentation, Box Tracking, Segmentation Tracking
-~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For instance segmentation, multi object tracking (box tracking) and multi object tracking and segmentation (segmentation tracking),
 only the first **8** classes are used and evaluated.
 
 Semantic Segmentation
-~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Meanwhile, for the semantic segmentation task, 19 classes are evaluated, they are:
 ::

@@ -97,7 +97,7 @@ e.g. car should be 13.
 
 
 Instance Segmentation Format
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 We provide labels for instance segmentation and segmentation tracking in both JSON and **bitmask** formats.
