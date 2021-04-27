@@ -26,17 +26,13 @@ import matplotlib.pyplot as plt  # type: ignore
 import numpy as np
 from PIL import Image
 from scalabel.label.io import group_and_sort
-from scalabel.label.to_coco import (
-    get_instance_id,
-    load_coco_config,
-    process_category,
-)
+from scalabel.label.to_coco import load_coco_config, process_category
 from scalabel.label.transforms import poly_to_patch
 from scalabel.label.typing import Frame, Label, Poly2D
 from tqdm import tqdm
 
 from ..common.logger import logger
-from ..common.utils import DEFAULT_COCO_CONFIG
+from ..common.utils import DEFAULT_COCO_CONFIG, get_bdd100k_instance_id
 from .label import labels as SEMSEG_LABELS
 from .to_coco import parse_args, start_converting
 
@@ -304,7 +300,7 @@ def segtrack_to_bitmasks(
                 if category_ignored and remove_ignore:
                     continue
 
-                instance_id, global_instance_id = get_instance_id(
+                instance_id, global_instance_id = get_bdd100k_instance_id(
                     instance_id_maps, global_instance_id, str(label.id)
                 )
 

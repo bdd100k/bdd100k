@@ -34,8 +34,6 @@ from scalabel.label.coco_typing import (
 )
 from scalabel.label.io import group_and_sort, load
 from scalabel.label.to_coco import (
-    get_instance_id,
-    get_object_attributes,
     load_coco_config,
     process_category,
     scalabel2coco_box_track,
@@ -50,6 +48,8 @@ from ..common.logger import logger
 from ..common.typing import InstanceType
 from ..common.utils import (
     DEFAULT_COCO_CONFIG,
+    get_bdd100k_instance_id,
+    get_bdd100k_object_attributes,
     group_and_sort_files,
     list_files,
 )
@@ -431,7 +431,9 @@ def bdd100k2coco_ins_seg(
 
             ann_id += 1
             instance_id += 1
-            iscrowd, ignore = get_object_attributes(label, category_ignored)
+            iscrowd, ignore = get_bdd100k_object_attributes(
+                label, category_ignored
+            )
             annotation = AnnType(
                 id=ann_id,
                 image_id=image_id,
@@ -535,12 +537,12 @@ def bdd100k2coco_seg_track(
                     continue
 
                 scalabel_id = str(label.id)
-                instance_id, global_instance_id = get_instance_id(
+                instance_id, global_instance_id = get_bdd100k_instance_id(
                     instance_id_maps, global_instance_id, scalabel_id
                 )
 
                 ann_id += 1
-                iscrowd, ignore = get_object_attributes(
+                iscrowd, ignore = get_bdd100k_object_attributes(
                     label, category_ignored
                 )
                 annotation = AnnType(
