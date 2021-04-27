@@ -98,12 +98,12 @@ Segmentation maps of Drivable areas.
 Semantic Segmentation
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Bitmasks, colormaps and original json files for semantic segmentation.
+Masks, colormaps and original json files for semantic segmentation.
 
 +------+----------------------------------+
-| Size | 370MB                            |
+| Size | 331MB                            |
 +------+----------------------------------+
-| md5  | cb9b2ececcdb56f1ca3ae54d4ed883bd |
+| md5  | 098c0c17ca58364c47c5882b3eb7058d |
 +------+----------------------------------+
 
 :: 
@@ -128,9 +128,9 @@ Instance Segmentation
 Bitmasks, colormaps and original json files for instance segmentation.
 
 +------+----------------------------------+
-| Size | 96MB                             |
+| Size | 98MB                             |
 +------+----------------------------------+
-| md5  | e29d82458a6c487b444c40ab82426d03 |
+| md5  | 4254b7674b827ebf970c06745eb07fe9 |
 +------+----------------------------------+
 
 
@@ -215,9 +215,9 @@ Multi-object tracking and segmentation training and validation labels released i
 
 
 +------+----------------------------------+
-| Size | 370MB                            |
+| Size | 390MB                            |
 +------+----------------------------------+
-| md5  | 13e15f1f3728a9a3f27a3f4e5e2a5885 |
+| md5  | bfb965633c3e34a3fce1bf892ba8f519 |
 +------+----------------------------------+
 
 :: 
