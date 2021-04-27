@@ -41,11 +41,11 @@ class TestBitmasks2COCO(unittest.TestCase):
         coco = bitmask2coco_ins_seg(
             mask_dir,
             SHAPE,
-            list_files(mask_dir, suffix=".png"),
+            list_files(mask_dir, suffix="_bitmask.png"),
             [],
         )
         self.assertEqual(len(coco), 4)
-        self.assertEqual(len(coco["images"]), 3)
+        self.assertEqual(len(coco["images"]), 2)
         self.assertEqual(coco["images"][0]["id"], 1)
         self.assertEqual(coco["images"][0]["file_name"], "insseg_bitmask.png")
 
@@ -55,11 +55,11 @@ class TestBitmasks2COCO(unittest.TestCase):
         coco = bitmask2coco_seg_track(
             mask_dir,
             SHAPE,
-            list_files(mask_dir, suffix=".png"),
+            list_files(mask_dir, suffix="_bitmask.png"),
             [],
         )
         self.assertEqual(len(coco), 5)
-        self.assertEqual(len(coco["images"]), 3)
+        self.assertEqual(len(coco["images"]), 2)
         self.assertEqual(coco["images"][0]["id"], 1)
         self.assertEqual(
             coco["images"][0]["file_name"],

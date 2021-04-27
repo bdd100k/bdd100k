@@ -8,7 +8,6 @@ from typing import List
 DEFAULT_COCO_CONFIG = osp.join(
     osp.dirname(osp.abspath(__file__)), "configs.toml"
 )
-DEFAULT_SEG_STRING = "segmentation"
 
 
 def list_files(
@@ -25,7 +24,7 @@ def list_files(
             [
                 osp.join(path, file_)
                 for file_ in file_iter
-                if osp.splitext(file_)[1] == suffix
+                if file_.endswith(suffix)
             ]
         )
     files = sorted(files)

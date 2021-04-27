@@ -21,7 +21,7 @@ import json
 import os
 from functools import partial
 from multiprocessing import Pool
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 from PIL import Image
@@ -55,7 +55,7 @@ from ..common.utils import (
 )
 
 
-def parser_definition() -> argparse.ArgumentParser:
+def parse_args() -> argparse.Namespace:
     """Parse arguments."""
     parser = argparse.ArgumentParser(description="bdd100k to coco format")
     parser.add_argument(
@@ -132,7 +132,7 @@ def parser_definition() -> argparse.ArgumentParser:
         action="store_true",
         help="Path to the BitMasks base folder.",
     )
-    return parser
+    return parser.parse_args()
 
 
 def bitmasks_loader(mask_name: str) -> List[InstanceType]:
@@ -579,11 +579,8 @@ def bdd100k2coco_seg_track(
     )
 
 
-def start_converting(
-    args_definition: Callable[[], argparse.ArgumentParser]
-) -> Tuple[argparse.Namespace, List[Frame]]:
-    """Parses arguments, and logs settings."""
-    args = args_definition().parse_args()
+def start_converting(args: argparse.Namespace) -> List[Frame]:
+    """Logs settings and load annoatations."""
     logger.info(
         "Mode: %s\nremove-ignore: %s\nignore-as-class: %s",
         args.mode,
@@ -591,15 +588,16 @@ def start_converting(
         args.ignore_as_class,
     )
     logger.info("Loading annotations...")
-    labels = load(args.label)
+    labels = load(args.label, args.nporc)
     logger.info("Start format converting...")
 
-    return args, labels
+    return labels
 
 
 def main() -> None:
     """Main function."""
-    args, frames = start_converting(parser_definition)
+    args = parse_args()
+    frames = start_converting(args)
     categories, name_mapping, ignore_mapping = load_coco_config(
         mode=args.mode,
         filepath=args.config,

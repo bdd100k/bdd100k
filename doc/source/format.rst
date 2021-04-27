@@ -96,11 +96,11 @@ e.g. car should be 13.
 .. _ins-seg-label:
 
 
-Segmentation Format
+Instance Segmentation Format
 ~~~~~~~~~~~~~~~~~~~~
 
 
-We provide labels in both JSON and bitmask formats.
+We provide labels for instance segmentation and segmentation tracking in both JSON and **bitmask** formats.
 
 Note that ``poly2d`` used in JSONs is not of the same format as COCO. Instead, the ``poly2d`` field stores a Bezier Curve with vertices and control points.
 
@@ -135,20 +135,30 @@ Available arguments:
     python3 -m bdd100k.label.from_coco -l ${input_file} -o ${out_path}  
 
 
-to_bitmasks
+to_mask
 -----------------
  
-You can run the conversion from poly2d to bitmasks (and colormaps) by this command:
+You can run the conversion from poly2d to masks/bitmasks by this command:
 ::
     
-    python3 -m bdd100k.label.to_bitmasks -m sem_seg|ins_seg|seg_track -l ${in_path} -o ${out_path} --nproc ${process_num} [-cm -cp ${color_path}]
+    python3 -m bdd100k.label.to_mask -m sem_seg|ins_seg|seg_track -l ${in_path} -o ${out_path} [--nproc ${process_num}]
 
 - `process_num`: the number of processes used for the conversion. Default as 4.
-- `color_path`: the path to the output colormaps
 
 However, as the conversion process is not deterministic, we don't recommend converting it by yourself.
 
 
+to_color
+-----------------
+
+You can run the conversion from masks/bitmasks to colormaps by this command:
+::
+    
+    python3 -m bdd100k.label.to_color -m sem_seg|ins_seg|seg_track -l ${in_path} -o ${out_path} [--nproc ${process_num}]
+
+- `process_num`: the number of processes used for the conversion. Default as 4.
+
+ 
 to_coco
 -----------------
 
@@ -165,12 +175,14 @@ For the first choice, use this command:
 
 ::
    
-    python3 -m bdd100k.label.to_coco -m ins_seg|seg_track -l ${in_path} -o ${out_path} -mb ${mask_path}
+    python3 -m bdd100k.label.to_coco -m ins_seg|seg_track -l ${in_path} -o ${out_path} -mb ${mask_base}
 
-- `mask_path`: the path to the bitmasks
+- `mask_base`: the path to the bitmasks
 
 If you only have Bitmasks in hand and don't use the `scalabel_id` field, you can use this comman:
 
 ::
    
-    python3 -m bdd100k.label.to_coco -m ins_seg|seg_track -l ${mask_path} -o ${out_path}
+    python3 -m bdd100k.label.to_coco -m ins_seg|seg_track -l ${mask_base} -o ${out_path}
+
+- `mask_base`: the path to the bitmasks

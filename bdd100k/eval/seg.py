@@ -4,11 +4,11 @@ import os.path as osp
 from typing import Dict
 
 import numpy as np
-import toml
 from PIL import Image
 
 from ..common.logger import logger
-from ..common.utils import DEFAULT_COCO_CONFIG, DEFAULT_SEG_STRING, list_files
+from ..common.utils import list_files
+from ..label.label import drivables, labels, lane_marks
 
 
 def fast_hist(
@@ -31,13 +31,16 @@ def per_class_iu(hist: np.ndarray) -> np.ndarray:
 def evaluate_segmentation(
     gt_dir: str,
     res_dir: str,
-    cfg_file: str = DEFAULT_COCO_CONFIG,
-    cfg_str: str = DEFAULT_SEG_STRING,
     mode: str = "sem_seg",
 ) -> Dict[str, float]:
     """Evaluate segmentation IoU from input folders."""
     assert mode in ["sem_seg", "drivable", "lane_mark"]
-    categories = toml.load(cfg_file)[cfg_str][mode]
+    label_defs = {
+        "sem_seg": labels,
+        "drivable": drivables,
+        "lane_mark": lane_marks,
+    }[mode]
+    categories = [label.name for label in label_defs if label.trainId != 255]
     num_classes = len(categories)
 
     gt_imgs = list_files(gt_dir, ".png")
@@ -51,9 +54,9 @@ def evaluate_segmentation(
     for i, img in enumerate(gt_imgs):
         gt_path = osp.join(gt_dir, img)
         res_path = osp.join(res_dir, img)
-        gt = np.asarray(Image.open(gt_path, "r"))[..., 0]
+        gt = np.asarray(Image.open(gt_path, "r"))
         gt_id_set.update(np.unique(gt).tolist())
-        pred = np.asanyarray(Image.open(res_path, "r"))[..., 0]
+        pred = np.asanyarray(Image.open(res_path, "r"))
         hist += fast_hist(gt.flatten(), pred.flatten(), num_classes)
         if (i + 1) % 100 == 0:
             logger.info("Finished %d", (i + 1))

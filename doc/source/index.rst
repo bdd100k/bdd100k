@@ -6,6 +6,7 @@ BDD100K Documentation
    
    /download.rst
    /usage.rst
+   /categories.rst
    /format.rst
    /evaluate.rst
    /license.rst
