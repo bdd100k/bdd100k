@@ -9,36 +9,36 @@ from PIL import Image
 from scalabel.label.io import load
 from scalabel.label.typing import Frame, Label
 
-from .to_bitmasks import (
+from .to_mask import (
     insseg_to_bitmasks,
     segtrack_to_bitmasks,
-    semseg_to_bitmasks,
-    set_color,
+    semseg_to_masks,
+    set_instance_color,
 )
 
 
 class TestUtilFunctions(unittest.TestCase):
     """Test case for util function in to_bitmasks.py."""
 
-    def test_set_color(self) -> None:
+    def test_set_instance_color(self) -> None:
         """Check color setting."""
         label = Label(
             id="tmp",
             attributes=dict(truncated=True, crowd=False),
         )
-        color = set_color(label, 15, 300, False)
+        color = set_instance_color(label, 15, 300, False)
         gt_color = np.array([15, 8, 1, 44])
         self.assertTrue((color == gt_color).all())
 
 
-class TestToBitmasks(unittest.TestCase):
-    """Test cases for converting BDD100K labels to bitmasks."""
+class TestToMasks(unittest.TestCase):
+    """Test cases for converting BDD100K labels to masks/bitmasks."""
 
     test_out = "./test_bitmasks"
 
     def task_specific_test(
         self,
-        task_name: str,
+        file_name: str,
         output_name: str,
         convert_func: Callable[[List[Frame], str, bool, bool, int], None],
     ) -> None:
@@ -48,34 +48,34 @@ class TestToBitmasks(unittest.TestCase):
         labels = load("{}/testcases/example_annotation.json".format(cur_dir))
         convert_func(labels, self.test_out, False, False, 1)
         output_path = os.path.join(self.test_out, output_name)
-        bitmask = np.asarray(Image.open(output_path))
+        mask = np.asarray(Image.open(output_path))
 
-        gt_bitmask = np.asarray(
-            Image.open(
-                "{}/testcases/{}_bitmask.png".format(cur_dir, task_name)
-            )
+        gt_mask = np.asarray(
+            Image.open("{}/testcases/{}".format(cur_dir, file_name))
         )
 
-        self.assertTrue((bitmask == gt_bitmask).all())
+        self.assertTrue((mask == gt_mask).all())
 
-    def test_semseg_to_bitmasks(self) -> None:
+    def test_semseg_to_masks(self) -> None:
         """Test case for semantic segmentation to bitmasks."""
         self.task_specific_test(
-            "semseg",
+            "semseg_mask.png",
             "b1c81faa-3df17267-0000001.png",
-            semseg_to_bitmasks,
+            semseg_to_masks,
         )
 
     def test_insseg_to_bitmasks(self) -> None:
         """Test case for instance segmentation to bitmasks."""
         self.task_specific_test(
-            "insseg", "b1c81faa-3df17267-0000001.png", insseg_to_bitmasks
+            "insseg_bitmask.png",
+            "b1c81faa-3df17267-0000001.png",
+            insseg_to_bitmasks,
         )
 
     def test_segtrack_to_bitmasks(self) -> None:
         """Test case for instance segmentation to bitmasks."""
         self.task_specific_test(
-            "segtrack",
+            "segtrack_bitmask.png",
             "b1c81faa-3df17267/b1c81faa-3df17267-0000001.png",
             segtrack_to_bitmasks,
         )

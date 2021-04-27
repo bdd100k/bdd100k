@@ -62,10 +62,10 @@ def parse_args() -> argparse.Namespace:
         help="ignore iof threshold for mot evaluation",
     )
     parser.add_argument(
-        "--mot-nproc",
+        "--nproc",
         type=int,
         default=4,
-        help="number of processes for mot evaluation",
+        help="number of processes for evaluation",
     )
     # Flags for detection and instance segmentation
     parser.add_argument(
@@ -95,17 +95,19 @@ def run() -> None:
     elif args.task == "sem_seg":
         evaluate_segmentation(args.gt, args.result)
     elif args.task == "det":
-        evaluate_det(args.gt, args.result, args.config, args.out_dir)
+        evaluate_det(
+            args.gt, args.result, args.config, args.out_dir, args.nproc
+        )
     elif args.task == "ins_seg":
         evaluate_ins_seg(args.gt, args.result, args.score_file, args.out_dir)
     elif args.task == "box_track":
         evaluate_track(
             acc_single_video_mot,
-            gts=group_and_sort(load(args.gt)),
-            results=group_and_sort(load(args.result)),
+            gts=group_and_sort(load(args.gt, args.nproc)),
+            results=group_and_sort(load(args.result, args.nproc)),
             iou_thr=args.mot_iou_thr,
             ignore_iof_thr=args.mot_ignore_iof_thr,
-            nproc=args.mot_nproc,
+            nproc=args.nproc,
         )
     elif args.task == "seg_track":
         evaluate_track(
@@ -118,7 +120,7 @@ def run() -> None:
             ),
             iou_thr=args.mot_iou_thr,
             ignore_iof_thr=args.mot_ignore_iof_thr,
-            nproc=args.mot_nproc,
+            nproc=args.nproc,
         )
 
 

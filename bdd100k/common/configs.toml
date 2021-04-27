@@ -59,30 +59,3 @@ name = "traffic light"
 supercategory = "traffic sign"
 id = 10
 name = "traffic sign"
-
-[segmentation]
-sem_seg = [
-    "road",
-    "sidewalk",
-    "building",
-    "wall",
-    "fence",
-    "pole",
-    "traffic light",
-    "traffic sign",
-    "vegetation",
-    "terrain",
-    "sky",
-    "person",
-    "rider",
-    "car",
-    "truck",
-    "bus",
-    "train",
-    "motorcycle",
-    "bicycle",
-]
-
-drivable = []
-
-lane_mark = []

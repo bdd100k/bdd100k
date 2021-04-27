@@ -98,3 +98,23 @@ labels = [
     Label("train", 39, 16, "vehicle", 7, True, False, (0, 80, 100)),
     Label("truck", 40, 14, "vehicle", 7, True, False, (0, 0, 70)),
 ]
+
+drivables = [
+    #       name                     id    trainId   category catId
+    #       hasInstances   ignoreInEval   color
+    Label("direct", 0, 0, "drivable", 0, False, False, (219, 94, 86)),
+    Label("alternative", 1, 1, "drivable", 0, False, False, (86, 211, 219)),
+]
+
+lane_marks = [
+    #       name                     id    trainId   category catId
+    #       hasInstances   ignoreInEval   color
+    Label("crosswalk", 0, 0, "lane_mark", 0, False, False, (219, 94, 86)),
+    Label("double other", 1, 1, "lane_mark", 0, False, False, (219, 194, 86)),
+    Label("double white", 2, 2, "lane_mark", 0, False, False, (145, 219, 86)),
+    Label("double yellow", 3, 3, "lane_mark", 0, False, False, (86, 219, 127)),
+    Label("road curb", 4, 4, "lane_mark", 0, False, False, (86, 211, 219)),
+    Label("single other", 5, 5, "lane_mark", 0, False, False, (86, 111, 219)),
+    Label("single white", 6, 6, "lane_mark", 0, False, False, (160, 86, 219)),
+    Label("single yellow", 7, 7, "lane_mark", 0, False, False, (219, 86, 178)),
+]

@@ -49,6 +49,7 @@ def evaluate_det(
     pred_file: str,
     cfg_path: str,
     out_dir: str = "none",
+    nproc: int = 4,
 ) -> Dict[str, float]:
     """Load the ground truth and prediction results.
 
@@ -57,13 +58,14 @@ def evaluate_det(
         pred_file: path to the prediciton results in BDD format. "*.json"
         cfg_path: path to the config file
         out_dir: output_directory
+        nproc: processes number for loading jsons
 
     Returns:
         dict: detection metric scores
 
     """
     # Convert the annotation file to COCO format
-    ann_frames = load(ann_file)
+    ann_frames = load(ann_file, nproc)
     categories, name_mapping, ignore_mapping = load_coco_config(
         mode="det",
         filepath=cfg_path,
@@ -74,7 +76,7 @@ def evaluate_det(
     coco_gt = COCOV2(None, ann_coco)
 
     # Load results and convert the predictions
-    pred_frames = load(pred_file)
+    pred_frames = load(pred_file, nproc)
     pred_res = scalabel2coco_detection(
         SHAPE, pred_frames, categories, name_mapping, ignore_mapping
     )["annotations"]

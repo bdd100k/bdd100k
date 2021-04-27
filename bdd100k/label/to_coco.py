@@ -21,7 +21,7 @@ import json
 import os
 from functools import partial
 from multiprocessing import Pool
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 from PIL import Image
@@ -34,8 +34,6 @@ from scalabel.label.coco_typing import (
 )
 from scalabel.label.io import group_and_sort, load
 from scalabel.label.to_coco import (
-    get_instance_id,
-    get_object_attributes,
     load_coco_config,
     process_category,
     scalabel2coco_box_track,
@@ -50,12 +48,14 @@ from ..common.logger import logger
 from ..common.typing import InstanceType
 from ..common.utils import (
     DEFAULT_COCO_CONFIG,
+    get_bdd100k_instance_id,
+    get_bdd100k_object_attributes,
     group_and_sort_files,
     list_files,
 )
 
 
-def parser_definition() -> argparse.ArgumentParser:
+def parse_args() -> argparse.Namespace:
     """Parse arguments."""
     parser = argparse.ArgumentParser(description="bdd100k to coco format")
     parser.add_argument(
@@ -113,7 +113,7 @@ def parser_definition() -> argparse.ArgumentParser:
         "--nproc",
         type=int,
         default=4,
-        help="number of processes for mot evaluation",
+        help="number of processes for conversion",
     )
     parser.add_argument(
         "--config",
@@ -132,7 +132,7 @@ def parser_definition() -> argparse.ArgumentParser:
         action="store_true",
         help="Path to the BitMasks base folder.",
     )
-    return parser
+    return parser.parse_args()
 
 
 def bitmasks_loader(mask_name: str) -> List[InstanceType]:
@@ -431,7 +431,9 @@ def bdd100k2coco_ins_seg(
 
             ann_id += 1
             instance_id += 1
-            iscrowd, ignore = get_object_attributes(label, category_ignored)
+            iscrowd, ignore = get_bdd100k_object_attributes(
+                label, category_ignored
+            )
             annotation = AnnType(
                 id=ann_id,
                 image_id=image_id,
@@ -535,12 +537,12 @@ def bdd100k2coco_seg_track(
                     continue
 
                 scalabel_id = str(label.id)
-                instance_id, global_instance_id = get_instance_id(
+                instance_id, global_instance_id = get_bdd100k_instance_id(
                     instance_id_maps, global_instance_id, scalabel_id
                 )
 
                 ann_id += 1
-                iscrowd, ignore = get_object_attributes(
+                iscrowd, ignore = get_bdd100k_object_attributes(
                     label, category_ignored
                 )
                 annotation = AnnType(
@@ -579,11 +581,8 @@ def bdd100k2coco_seg_track(
     )
 
 
-def start_converting(
-    args_definition: Callable[[], argparse.ArgumentParser]
-) -> Tuple[argparse.Namespace, List[Frame]]:
-    """Parses arguments, and logs settings."""
-    args = args_definition().parse_args()
+def start_converting(args: argparse.Namespace) -> List[Frame]:
+    """Logs settings and load annoatations."""
     logger.info(
         "Mode: %s\nremove-ignore: %s\nignore-as-class: %s",
         args.mode,
@@ -591,15 +590,16 @@ def start_converting(
         args.ignore_as_class,
     )
     logger.info("Loading annotations...")
-    labels = load(args.label)
+    labels = load(args.label, args.nproc)
     logger.info("Start format converting...")
 
-    return args, labels
+    return labels
 
 
 def main() -> None:
     """Main function."""
-    args, frames = start_converting(parser_definition)
+    args = parse_args()
+    frames = start_converting(args)
     categories, name_mapping, ignore_mapping = load_coco_config(
         mode=args.mode,
         filepath=args.config,

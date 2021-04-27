@@ -3,12 +3,14 @@
 import os
 import os.path as osp
 from itertools import groupby
-from typing import List
+from typing import Dict, List, Tuple
+
+from scalabel.label.to_coco import get_instance_id, get_object_attributes
+from scalabel.label.typing import Label
 
 DEFAULT_COCO_CONFIG = osp.join(
     osp.dirname(osp.abspath(__file__)), "configs.toml"
 )
-DEFAULT_SEG_STRING = "segmentation"
 
 
 def list_files(
@@ -25,7 +27,7 @@ def list_files(
             [
                 osp.join(path, file_)
                 for file_ in file_iter
-                if osp.splitext(file_)[1] == suffix
+                if file_.endswith(suffix)
             ]
         )
     files = sorted(files)
@@ -39,3 +41,23 @@ def group_and_sort_files(files: List[str]) -> List[List[str]]:
         files_list.append(sorted(list(files_iter)))
     files_list = sorted(files_list, key=lambda files: files[0])
     return files_list
+
+
+def get_bdd100k_instance_id(
+    instance_id_maps: Dict[str, int], global_instance_id: int, scalabel_id: str
+) -> Tuple[int, int]:
+    """Get instance id given its corresponding Scalabel id for BDD100K."""
+    if scalabel_id == "-1":
+        instance_id = global_instance_id
+        global_instance_id += 1
+        return instance_id, global_instance_id
+    return get_instance_id(instance_id_maps, global_instance_id, scalabel_id)
+
+
+def get_bdd100k_object_attributes(
+    label: Label, ignore: bool
+) -> Tuple[int, int]:
+    """Set attributes for the ann dict in BDD100K."""
+    if label.id == "-1":
+        ignore = True
+    return get_object_attributes(label, ignore)
