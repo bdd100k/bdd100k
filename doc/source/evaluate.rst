@@ -115,7 +115,7 @@ Moreover, a score file is needed, with the following format:
         "name": str, name of the input image,
         "labels": [
             {
-                "index": int in range [1, 255], the index in R channel
+                "index": int in range [1, 65535], the index in B and A channel
                 "score": float, confidence score of the prediction
             } 
         ]
