@@ -111,7 +111,7 @@ Bitmasks, colormaps and original json files for semantic segmentation.
     - bdd100k
         - labels
             - sem_seg 
-                - bitmasks
+                - masks
                     - train
                     - val
                 - colormaps
