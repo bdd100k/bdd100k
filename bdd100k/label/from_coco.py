@@ -17,6 +17,12 @@ def parse_arguments() -> argparse.Namespace:
         "-o",
         help="path to save bdd formatted label file",
     )
+    parser.add_argument(
+        "--nproc",
+        type=int,
+        default=4,
+        help="number of processes for evaluation",
+    )
     return parser.parse_args()
 
 
