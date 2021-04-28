@@ -185,7 +185,7 @@ Format Conversion
 ~~~~~~~~~~~~~~~~~~
 
 from_coco
------------------
+^^^^^^^^^^^^^^^^^^
 
 ``from_coco`` converts coco-format json files into bdd100k format.
 Currently, for conversion of segmentation, only the ``polygon`` format is supported.
