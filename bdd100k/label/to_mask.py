@@ -33,7 +33,7 @@ from tqdm import tqdm
 
 from ..common.logger import logger
 from ..common.utils import DEFAULT_COCO_CONFIG, get_bdd100k_instance_id
-from .label import labels, drivables
+from .label import drivables, labels
 from .to_coco import parse_args, start_converting
 
 IGNORE_LABEL = 255
