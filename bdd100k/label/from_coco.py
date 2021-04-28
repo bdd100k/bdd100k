@@ -21,7 +21,7 @@ def parse_arguments() -> argparse.Namespace:
         "--nproc",
         type=int,
         default=4,
-        help="number of processes for evaluation",
+        help="number of processes for the conversion",
     )
     return parser.parse_args()
 

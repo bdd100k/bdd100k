@@ -599,7 +599,6 @@ def start_converting(args: argparse.Namespace) -> List[Frame]:
 def main() -> None:
     """Main function."""
     args = parse_args()
-    frames = start_converting(args)
     categories, name_mapping, ignore_mapping = load_coco_config(
         mode=args.mode,
         filepath=args.config,
@@ -637,6 +636,7 @@ def main() -> None:
                 mask_mode=args.mask_mode,
                 nproc=args.nproc,
             )
+        frames = start_converting(args)
         coco = convert_func(
             shape=shape,
             frames=frames,
