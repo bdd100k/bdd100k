@@ -15,6 +15,7 @@ Specifically, these fields are required:
 
     - name: str
     - labels []:
+        - id: str, not used here, but required for loading
         - category: str
         - score: float
         - box2d:
@@ -64,15 +65,11 @@ which is illustrated in `Label Format <https://doc.bdd100k.com/format.html#segme
 Moreover, a score file is needed, with the following format:
 ::
 
-    {
-        "name": str, name of the input image,
-        "labels": [
-            {
-                "index": int in range [1, 65535], the index in B and A channel
-                "score": float, confidence score of the prediction
-            } 
-        ]
-    }
+    - name: str, name of the input image,
+    - labels []:
+        - id: str, not used here, but required for loading
+        - index: int, in range [1, 65535], the index in B and A channel
+        - score: float, confidence score of the prediction
 
 - `index`: the value correspondence to the "ann_id" stored in B and A channels.
 
@@ -138,27 +135,17 @@ To evaluate your algorithms on BDD100K multiple object tracking benchmark, the s
 The JSON file for each video should contain a list of per-frame result dictionaries with the following structure:
 ::
 
-    {
-        "videoName": str, name of the current sequence,
-        "name": str, name of the current frame,
-        "framIndex": int, index of the current frame within the sequence,
-        "labels": List[dict], List of predictions for the current frame
-    }
-
-The 'labels' list will contain the predictions for the current frame, each specified by another dict in `Scalabel Format <https://doc.scalabel.ai/format.html>`_:
-::
-
-    {
-        "name": str, name of the input image,
-        "category": str, name of the predicted category,
-        "id": int, unique instance id of the prediction in the current sequence,
-        "score": float, confidence score of the prediction,
-        "box2d": 
-            "x1": float,
-            "y1": float,
-            "x2": float,
-            "y2": float
-    }
+    - videoName: str, name of the current sequence,
+    - name: str, name of the current frame,
+    - framIndex: int, index of the current frame within the sequence,
+    - labels []:
+        - id: str, unique instance id of the prediction in the current sequence,
+        - category: str, name of the predicted category,
+        - box2d []:
+            - x1: float,
+            - y1: float,
+            - x2: float,
+            - y2: float
 
 You can find an example result file in `bbd100k.eval.testcases <https://github.com/bdd100k/bdd100k/blob/master/bdd100k/eval/testcases/track_predictions.json>`_
 
