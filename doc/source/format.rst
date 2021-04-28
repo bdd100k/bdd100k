@@ -10,6 +10,67 @@ superset of the data fields. For example, `box3d` may be absent if the label is
 a 2d bounding box, and `intrinsics` may not appear if the exact camera
 calibration is unknown.
 
+
+Category
+~~~~~~~~~
+
+Object Detection
+^^^^^^^^^^^^^^^^^^
+
+For object detection, 9 classes are evalued, they are:
+::
+
+    0: pedestrian
+    1: rider
+    2: car
+    3: truck
+    4: bus
+    5: train
+    6: motorcycle
+    7: bicycle
+    8: traffic light
+    9: traffic sign
+
+Note that, the field `category_id` range from **0** instead of 0.
+
+Instance Segmentation, Box Tracking, Segmentation Tracking
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For instance segmentation, multi object tracking (box tracking) and multi object tracking and segmentation (segmentation tracking),
+only the first **7** classes are used and evaluated.
+
+Semantic Segmentation
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Meanwhile, for the semantic segmentation task, 18 classes are evaluated, they are:
+::
+
+    -1: road 
+    0: sidewalk
+    1: building
+    2: wall
+    3: fence
+    4: pole
+    5: traffic light
+    6: traffic sign
+    7: vegetation
+    8: terrain
+    9: sky
+    10: person
+    11: rider
+    12: car
+    13: truck
+    14: bus
+    15: train
+    16: motorcycle
+    17: bicycle
+
+`category_id` ranges from **-1** for the semantic segmentation task.
+**254** is used for "unknown" category, and will not be evaluated.
+
+Attributes
+~~~~~~~~~~~~
+
 BDD100K dataset has some specific properties.
 
 Frame attributes
@@ -124,7 +185,7 @@ Format Conversion
 ~~~~~~~~~~~~~~~~~~
 
 from_coco
------------------
+^^^^^^^^^^^^^^^^^^
 
 ``from_coco`` converts coco-format json files into bdd100k format.
 Currently, for conversion of segmentation, only the ``polygon`` format is supported.
@@ -136,7 +197,7 @@ Available arguments:
 
 
 to_mask
------------------
+^^^^^^^^^^^^^^^^^^
  
 You can run the conversion from poly2d to masks/bitmasks by this command:
 ::
@@ -149,7 +210,7 @@ However, as the conversion process is not deterministic, we don't recommend conv
 
 
 to_color
------------------
+^^^^^^^^^^^^^^^^^^
 
 You can run the conversion from masks/bitmasks to colormaps by this command:
 ::
@@ -160,7 +221,7 @@ You can run the conversion from masks/bitmasks to colormaps by this command:
 
  
 to_coco
------------------
+^^^^^^^^^^^^^^^^^^
 
 ``to_coco`` converts bdd100k json files into coco format.
 
