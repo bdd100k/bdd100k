@@ -8,7 +8,7 @@ from PIL import Image
 
 from ..common.logger import logger
 from ..common.utils import list_files
-from ..label.label import drivables, labels, lane_marks
+from ..label.label import drivables, labels
 
 
 def fast_hist(
@@ -34,11 +34,10 @@ def evaluate_segmentation(
     mode: str = "sem_seg",
 ) -> Dict[str, float]:
     """Evaluate segmentation IoU from input folders."""
-    assert mode in ["sem_seg", "drivable", "lane_mark"]
+    assert mode in ["sem_seg", "drivable"]
     label_defs = {
         "sem_seg": labels,
         "drivable": drivables,
-        "lane_mark": lane_marks,
     }[mode]
     categories = [label.name for label in label_defs if label.trainId != 255]
     num_classes = len(categories)

@@ -22,6 +22,7 @@ from functools import partial
 from multiprocessing import Pool
 from typing import List
 
+import numpy as np
 from PIL import Image
 from tqdm import tqdm
 
@@ -43,8 +44,8 @@ def parse_args() -> argparse.Namespace:
         "-m",
         "--mode",
         default="det",
-        choices=["sem_seg", "ins_seg", "seg_track"],
-        help="conversion mode: detection or tracking.",
+        choices=["sem_seg", "drivable", "lane_mark", "ins_seg", "seg_track"],
+        help="conversion mode.",
     )
     parser.add_argument(
         "--nproc",
@@ -60,6 +61,11 @@ def mask_to_color(bitmask_file: str, colormap_file: str, mode: str) -> None:
     bitmask = Image.open(bitmask_file)
     if mode in ["ins_seg", "seg_track"]:
         bitmask = bitmask.split()[3]
+    elif mode == "lane_mark":
+        array = np.asarray(bitmask)
+        # 15 = (1 << 4) - 1, only take the last 4 bits
+        array = array & 15
+        bitmask = Image.fromarray(array)
     palette = get_palette(mode)
     bitmask.putpalette(palette)
     bitmask.save(colormap_file)
