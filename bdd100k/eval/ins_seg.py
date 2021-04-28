@@ -116,7 +116,6 @@ class BDDInsSegEval(COCOeval):  # type: ignore
             )
         for res in to_updates:
             self.iou_res[res["ind"]].update(res)
-        pool.close()
 
     def evaluate(self) -> None:
         """Run per image evaluation."""
@@ -140,7 +139,6 @@ class BDDInsSegEval(COCOeval):  # type: ignore
         for to_update in to_updates:
             for ind, item in to_update.items():
                 self.evalImgs[ind].update(item)
-        pool.close()
 
         self._paramsEval = copy.deepcopy(self.params)
         toc = time.time()
