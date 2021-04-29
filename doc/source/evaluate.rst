@@ -119,6 +119,13 @@ You can evaluate your algorithm with public annotations by running
 - `res_path`: the path to the results bitmask images folder.
 
 
+Drivable Area
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Drivable area task applies the same rule with semantic segmentation.
+The only difference is that they have different classes definitions and numbers.
+
+
 
 Multiple Object Tracking
 ~~~~~~~~~~~~~~~~~~~~~~~~

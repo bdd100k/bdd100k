@@ -87,8 +87,16 @@ def parse_args() -> argparse.Namespace:
         "-m",
         "--mode",
         default="det",
-        choices=["det", "sem_seg", "ins_seg", "box_track", "seg_track"],
-        help="conversion mode: detection or tracking.",
+        choices=[
+            "det",
+            "sem_seg",
+            "drivable",
+            "lane_mark",
+            "ins_seg",
+            "box_track",
+            "seg_track",
+        ],
+        help="conversion mode.",
     )
     parser.add_argument(
         "-ri",
@@ -599,6 +607,7 @@ def start_converting(args: argparse.Namespace) -> List[Frame]:
 def main() -> None:
     """Main function."""
     args = parse_args()
+    assert args.mode in ["det", "box_track", "ins_seg", "seg_track"]
     categories, name_mapping, ignore_mapping = load_coco_config(
         mode=args.mode,
         filepath=args.config,

@@ -45,28 +45,76 @@ Semantic Segmentation
 Meanwhile, for the semantic segmentation task, 18 classes are evaluated, they are:
 ::
 
-    -1: road 
-    0: sidewalk
-    1: building
-    2: wall
-    3: fence
-    4: pole
-    5: traffic light
-    6: traffic sign
-    7: vegetation
-    8: terrain
-    9: sky
-    10: person
-    11: rider
-    12: car
-    13: truck
-    14: bus
-    15: train
-    16: motorcycle
-    17: bicycle
+    0: road 
+    1: sidewalk
+    2: building
+    3: wall
+    4: fence
+    5: pole
+    6: traffic light
+    7: traffic sign
+    8: vegetation
+    9: terrain
+    10: sky
+    11: person
+    12: rider
+    13: car
+    14: truck
+    15: bus
+    16: train
+    17: motorcycle
+    18: bicycle
 
-`category_id` ranges from **-1** for the semantic segmentation task.
-**254** is used for "unknown" category, and will not be evaluated.
+`category_id` ranges from **0** for the semantic segmentation task.
+**255** is used for "unknown" category, and will not be evaluated.
+
+
+Drivable Area
+^^^^^^^^^^^^^^^^^^^^^^^
+For the drivable area task, 3 classes are evaluated, they are:
+::
+
+    0: direct
+    1: alternative
+    2: background
+
+`category_id` ranges from **0** for the drivable area task.
+
+
+Lane Marking
+^^^^^^^^^^^^^^^^^^^^^^^
+For the lane marking task, there are 3 sub-task: lane categories, lane directions and lane styles.
+There are 9, 3 and 3 classes for each sub-task listed above.
+
+Lane Categories
+::
+
+    0: crosswalk
+    1: double other
+    2: double white
+    3: double yellow
+    4: road curb
+    5: single other
+    6: single white
+    7: single yellow
+    8: background
+
+Lane Directions
+::
+
+    0: parallel
+    1: vertical
+    2: background
+
+
+Lane Styles
+::
+
+    0: solid
+    1: dashed
+    2: background
+
+
 
 Attributes
 ~~~~~~~~~~~~
@@ -74,6 +122,7 @@ Attributes
 BDD100K dataset has some specific properties.
 
 Frame attributes
+^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: yaml
 
@@ -82,6 +131,7 @@ Frame attributes
     - timeofday: "daytime|night|dawn/dusk|undefined"
 
 Label attributes
+^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: yaml
 
@@ -93,68 +143,6 @@ Label attributes
     - laneStyle: "solid | dashed" (for lanes)
     - laneTypes: (for lanes)
 
-
-Road object categories:
-
-.. code-block:: json
-
-    [
-        "bike",
-        "bus",
-        "car",
-        "motor",
-        "person",
-        "rider",
-        "traffic light",
-        "traffic sign",
-        "train",
-        "truck"
-    ]
-
-
-They are labeld by `box2d`.
-
-Drivable area category is `drivable area`. There are two area types `areaType`:
-
-.. code-block:: json
-
-    [
-        "alternative",
-        "direct"
-    ]
-
-
-Lane marking category is `lane`. There are 8 lane types `laneTypes`:
-
-.. code-block:: json
-
-    [
-        "crosswalk",
-        "double other",
-        "double white",
-        "double yellow",
-        "road curb",
-        "single other",
-        "single white",
-        "single yellow"
-    ]
-
-
-Both drivable areas and lane markings are labeled by `poly2d`. Please check the
-visulization code |vis_labels|_ for examples of
-drawing all the labels.
-
-.. |vis_labels| replace:: ``bdd100k.vis.labels``
-.. _vis_labels: https://github.com/bdd100k/bdd100k/blob/master/bdd100k/vis/labels.py
-
-The labels for semantic segmentation are encoded in the field ``train_id`` defined in |bdd100k_label|_,
-e.g. car should be 13.
-
-.. |bdd100k_label| replace:: ``bdd100k.label.label``
-.. _bdd100k_label: https://github.com/bdd100k/bdd100k/blob/master/bdd100k/label/label.py
-
-
-.. _ins-seg-label:
 
 
 Instance Segmentation Format

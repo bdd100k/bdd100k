@@ -19,7 +19,7 @@ the annotations in `ignored` class. To achieve this, add the flag
 import os
 from functools import partial
 from multiprocessing import Pool
-from typing import Dict, List
+from typing import Callable, Dict, List
 
 import matplotlib  # type: ignore
 import matplotlib.pyplot as plt  # type: ignore
@@ -33,11 +33,13 @@ from tqdm import tqdm
 
 from ..common.logger import logger
 from ..common.utils import DEFAULT_COCO_CONFIG, get_bdd100k_instance_id
-from .label import labels as SEMSEG_LABELS
+from .label import drivables, labels
 from .to_coco import parse_args, start_converting
 
 IGNORE_LABEL = 255
 SHAPE = np.array([720, 1280])
+LANE_DIRECTION_MAP = {"parallel": 0, "vertical": 1}
+LANE_STYLE_MAP = {"solid": 0, "dashed": 1}
 
 
 def frame_to_mask(
@@ -45,9 +47,20 @@ def frame_to_mask(
     colors: List[np.ndarray],
     poly2ds: List[List[Poly2D]],
     with_instances: bool = True,
+    back_color: int = 0,
+    closed: bool = True,
 ) -> None:
     """Converting a frame of poly2ds to mask/bitmask."""
     assert len(colors) == len(poly2ds)
+
+    if with_instances:
+        img = np.ones([*SHAPE, 4], dtype=np.uint8) * back_color
+    else:
+        img = np.ones([*SHAPE, 1], dtype=np.uint8) * back_color
+
+    if len(colors) == 0:
+        pil_img = Image.fromarray(img.squeeze())
+        pil_img.save(out_path)
 
     matplotlib.use("Agg")
     fig = plt.figure(facecolor="0")
@@ -65,13 +78,13 @@ def frame_to_mask(
                 poly_to_patch(
                     poly.vertices,
                     poly.types,
-                    # 0 / 255.0 for the background
+                    # (0, 0, 0) for the background
                     color=(
                         ((i + 1) >> 8) / 255.0,
                         ((i + 1) % 255) / 255.0,
                         0.0,
                     ),
-                    closed=True,
+                    closed=closed,
                 )
             )
 
@@ -80,11 +93,6 @@ def frame_to_mask(
     out = out.reshape((*SHAPE, -1)).astype(np.int32)
     out = (out[..., 0] << 8) + out[..., 1]
     plt.close()
-
-    if with_instances:
-        img = np.zeros([*SHAPE, 4], dtype=np.uint8)
-    else:
-        img = np.ones([*SHAPE, 1], dtype=np.uint8) * IGNORE_LABEL
 
     for i, color in enumerate(colors):
         # 0 is for the background
@@ -117,17 +125,40 @@ def set_instance_color(
     return color
 
 
+def set_lane_color(label: Label, category_id: int) -> np.ndarray:
+    """Set the color for the lane given its attributes and category."""
+    attributes = label.attributes
+    if attributes is None:
+        lane_direction, lane_style = 0, 0
+    else:
+        lane_direction = LANE_DIRECTION_MAP[
+            str(attributes.get("laneDirection", "parallel"))
+        ]
+        lane_style = LANE_STYLE_MAP[str(attributes.get("laneStyle", "solid"))]
+
+    value = category_id + (lane_direction << 5) + (lane_style << 4)
+    color = np.array([value], dtype=np.uint8)
+    return color
+
+
 def frames_to_masks(
     nproc: int,
     out_paths: List[str],
     colors_list: List[List[np.ndarray]],
     poly2ds_list: List[List[List[Poly2D]]],
     with_instances: bool = True,
+    back_color: int = 0,
+    closed: bool = True,
 ) -> None:
     """Execute the mask conversion in parallel."""
     with Pool(nproc) as pool:
         pool.starmap(
-            partial(frame_to_mask, with_instances=with_instances),
+            partial(
+                frame_to_mask,
+                with_instances=with_instances,
+                closed=closed,
+                back_color=back_color,
+            ),
             tqdm(
                 zip(out_paths, colors_list, poly2ds_list),
                 total=len(out_paths),
@@ -135,21 +166,27 @@ def frames_to_masks(
         )
 
 
-def semseg_to_masks(
+def seg_to_masks(
     frames: List[Frame],
     out_base: str,
     ignore_as_class: bool = False,  # pylint: disable=unused-argument
     remove_ignore: bool = False,  # pylint: disable=unused-argument
     nproc: int = 4,
+    mode: str = "sem_seg",
+    back_color: int = IGNORE_LABEL,
+    closed: bool = True,
 ) -> None:
-    """Converting semantic segmentation poly2d to 1-channel masks."""
+    """Converting segmentation poly2d to 1-channel masks."""
     os.makedirs(out_base, exist_ok=True)
 
     out_paths: List[str] = []
     colors_list: List[List[np.ndarray]] = []
     poly2ds_list: List[List[List[Poly2D]]] = []
 
-    cat_name2id = {label.name: label.trainId for label in SEMSEG_LABELS}
+    categories = dict(sem_seg=labels, drivable=drivables)[mode]
+    cat_name2id = {
+        cat.name: cat.trainId for cat in categories if cat.trainId != 255
+    }
 
     logger.info("Preparing annotations for Semseg to Bitmasks")
 
@@ -161,6 +198,8 @@ def semseg_to_masks(
 
         colors: List[np.ndarray] = []
         poly2ds: List[List[Poly2D]] = []
+        colors_list.append(colors)
+        poly2ds_list.append(poly2ds)
 
         if image_anns.labels is None:
             continue
@@ -172,16 +211,38 @@ def semseg_to_masks(
                 continue
 
             category_id = cat_name2id[label.category]
-            color = np.array([category_id])
+            if mode in ["sem_seg", "drivable"]:
+                color = np.array([category_id])
+            else:
+                color = set_lane_color(label, category_id)
             colors.append(color)
             poly2ds.append(label.poly_2d)
 
-        colors_list.append(colors)
-        poly2ds_list.append(poly2ds)
-
+    logger.info("Start Conversion for Seg to Masks")
     frames_to_masks(
-        nproc, out_paths, colors_list, poly2ds_list, with_instances=False
+        nproc,
+        out_paths,
+        colors_list,
+        poly2ds_list,
+        with_instances=False,
+        back_color=back_color,
+        closed=closed,
     )
+
+
+ToMasksFunc = Callable[[List[Frame], str, bool, bool, int], None]
+semseg_to_masks: ToMasksFunc = partial(
+    seg_to_masks, mode="sem_seg", back_color=IGNORE_LABEL, closed=True
+)
+drivable_to_masks: ToMasksFunc = partial(
+    seg_to_masks,
+    mode="drivable",
+    back_color=len(drivables) - 1,
+    closed=True,
+)
+lanemark_to_masks: ToMasksFunc = partial(
+    seg_to_masks, mode="lane_mark", back_color=IGNORE_LABEL, closed=False
+)
 
 
 def insseg_to_bitmasks(
@@ -216,6 +277,8 @@ def insseg_to_bitmasks(
 
         colors: List[np.ndarray] = []
         poly2ds: List[List[Poly2D]] = []
+        colors_list.append(colors)
+        poly2ds_list.append(poly2ds)
 
         if image_anns.labels is None:
             continue
@@ -241,9 +304,7 @@ def insseg_to_bitmasks(
             colors.append(color)
             poly2ds.append(label.poly_2d)
 
-        colors_list.append(colors)
-        poly2ds_list.append(poly2ds)
-
+    logger.info("Start conversion for InsSeg to Bitmasks")
     frames_to_masks(nproc, out_paths, colors_list, poly2ds_list)
 
 
@@ -285,6 +346,8 @@ def segtrack_to_bitmasks(
 
             colors: List[np.ndarray] = []
             poly2ds: List[List[Poly2D]] = []
+            colors_list.append(colors)
+            poly2ds_list.append(poly2ds)
 
             for label in image_anns.labels:
                 if label.poly_2d is None:
@@ -310,25 +373,31 @@ def segtrack_to_bitmasks(
                 colors.append(color)
                 poly2ds.append(label.poly_2d)
 
-            colors_list.append(colors)
-            poly2ds_list.append(poly2ds)
-
+    logger.info("Start Conversion for SegTrack to Bitmasks")
     frames_to_masks(nproc, out_paths, colors_list, poly2ds_list)
 
 
 def main() -> None:
     """Main function."""
     args = parse_args()
-    assert args.mode in ["sem_seg", "ins_seg", "seg_track"]
+    assert args.mode in [
+        "sem_seg",
+        "drivable",
+        "lane_mark",
+        "ins_seg",
+        "seg_track",
+    ]
     frames = start_converting(args)
     os.environ["QT_QPA_PLATFORM"] = "offscreen"  # matplotlib offscreen render
 
-    convert_func = dict(
+    convert_funcs: Dict[str, ToMasksFunc] = dict(
         sem_seg=semseg_to_masks,
+        drivable=drivable_to_masks,
+        lane_mark=lanemark_to_masks,
         ins_seg=insseg_to_bitmasks,
         seg_track=segtrack_to_bitmasks,
-    )[args.mode]
-    convert_func(
+    )
+    convert_funcs[args.mode](
         frames,
         args.output,
         args.ignore_as_class,

@@ -104,6 +104,7 @@ drivables = [
     #       hasInstances   ignoreInEval   color
     Label("direct", 0, 0, "drivable", 0, False, False, (219, 94, 86)),
     Label("alternative", 1, 1, "drivable", 0, False, False, (86, 211, 219)),
+    Label("background", 2, 2, "drivable", 0, False, False, (0, 0, 0)),
 ]
 
 lane_marks = [
