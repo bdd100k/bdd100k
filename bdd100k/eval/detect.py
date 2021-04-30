@@ -6,7 +6,7 @@ resuilts are from the COCO toolkit.
 import datetime
 import json
 import os
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 from pycocotools.coco import COCO
@@ -14,6 +14,7 @@ from pycocotools.cocoeval import COCOeval  # type: ignore
 from scalabel.label.coco_typing import GtType
 from scalabel.label.io import load
 from scalabel.label.to_coco import load_coco_config, scalabel2coco_detection
+from scalabel.label.typing import Frame
 from tabulate import tabulate
 
 from ..common.typing import DictAny, ListAny
@@ -45,8 +46,8 @@ class COCOV2(COCO):  # type: ignore
 
 
 def evaluate_det(
-    ann_file: str,
-    pred_file: str,
+    ann_file: Union[str, List[Frame]],
+    pred_file: Union[str, List[Frame]],
     cfg_path: str,
     out_dir: str = "none",
     nproc: int = 4,
@@ -65,7 +66,11 @@ def evaluate_det(
 
     """
     # Convert the annotation file to COCO format
-    ann_frames = load(ann_file, nproc)
+    if isinstance(ann_file, str):
+        ann_frames = load(ann_file, nproc)
+    else:
+        ann_frames = ann_file
+
     categories, name_mapping, ignore_mapping = load_coco_config(
         mode="det",
         filepath=cfg_path,
@@ -76,7 +81,11 @@ def evaluate_det(
     coco_gt = COCOV2(None, ann_coco)
 
     # Load results and convert the predictions
-    pred_frames = load(pred_file, nproc)
+    if isinstance(pred_file, str):
+        pred_frames = load(pred_file, nproc)
+    else:
+        pred_frames = pred_file
+
     pred_res = scalabel2coco_detection(
         SHAPE, pred_frames, categories, name_mapping, ignore_mapping
     )["annotations"]
