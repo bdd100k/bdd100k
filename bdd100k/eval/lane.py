@@ -65,7 +65,11 @@ from typing import Callable, Dict, List
 
 import numpy as np
 from PIL import Image
-from skimage.morphology import binary_dilation, disk, skeletonize
+from skimage.morphology import (  # type: ignore
+    binary_dilation,
+    disk,
+    skeletonize,
+)
 from tabulate import tabulate
 from tqdm import tqdm
 
@@ -148,9 +152,9 @@ sub_task_funcs = dict(
     category=lane_class_func(0, 3),
 )
 sub_task_cats: Dict[str, List[str]] = dict(
-    direction=[label.category for label in lane_directions],
-    style=[label.category for label in lane_styles],
-    category=[label.category for label in lane_categories],
+    direction=[label.name for label in lane_directions],
+    style=[label.name for label in lane_styles],
+    category=[label.name for label in lane_categories],
 )
 
 
@@ -184,19 +188,19 @@ def merge_results(
 ) -> Dict[str, np.ndarray]:
     """Merge F-score results from all images."""
     task2arr: Dict[str, np.ndarray] = {
-        task_name: np.array(
+        task_name: np.stack(
             [task2arr_img[task_name] for task2arr_img in task2arr_list]
-        ).mean()
+        ).mean(axis=0)
         for task_name in sub_task_cats
     }
 
     for task_name, arr2d in task2arr.items():
         arr2d *= 100
-        arr_mean = arr2d.mean(axis=0, keepaxis=True)
+        arr_mean = arr2d.mean(axis=0, keepdims=True)
         task2arr[task_name] = np.concatenate([arr_mean, arr2d], axis=0)
 
     avg_arr = np.stack([arr2d[-1] for arr2d in task2arr.values()])
-    task2arr[TOTAL] = avg_arr.mean(axis=0, keepaxis=True)
+    task2arr[TOTAL] = avg_arr.mean(axis=0, keepdims=True)
 
     return task2arr
 
@@ -212,23 +216,23 @@ def create_table(
     for task_name in sorted(sub_task_cats.keys()) + [TOTAL]:
         arr2d = task2arr[task_name]
         task_list, cat_list, num_strs = [], [], []
-        for i, cat_name in enumerate(sub_task_cats[task_name] + [AVG]):
-            task_name_temp = task_name if i == arr2d.shape[0] // 2 else ""
+        for i, cat_name in enumerate(all_task_cats[task_name]):
+            task_name_temp = task_name if i == arr2d.shape[0] // 2 else " "
             task_list.append("{}".format(task_name_temp))
-            cat_list.append(cat_name)
+            cat_list.append(cat_name.replace(" ", "_"))
         task_str = "\n".join(task_list)
         cat_str = "\n".join(cat_list)
 
         for j in range(len(bound_ths)):
             num_list = []
             for i in range(len(all_task_cats[task_name])):
-                num_list.append(arr2d[i, j])
+                num_list.append("{:.1f}".format(arr2d[i, j]))
             num_str = "\n".join(num_list)
             num_strs.append(num_str)
 
         table.append([task_str, cat_str] + num_strs)
 
-    print(tabulate(table, headers, tablefmt="grid"))
+    print(tabulate(table, headers, tablefmt="grid", stralign="center"))
 
 
 def render_results(
@@ -242,13 +246,15 @@ def render_results(
         for cat_name, arr1d in zip(all_task_cats[task_name], arr2d):
             for bound_th, f_score in zip(bound_ths, arr1d):
                 f_score_dict[
-                    "{:.0f}_{}_{}".format(bound_th, task_name, cat_name)
+                    "{:.1f}_{}_{}".format(
+                        bound_th, task_name, cat_name.replace(" ", "_")
+                    )
                 ] = f_score
     f_score_dict["average"] = task2arr[TOTAL].mean()
     return f_score_dict
 
 
-def eval_lane_marking(
+def evaluate_lane_marking(
     gt_dir: str, pred_dir: str, bound_ths: List[float], nproc: int = 4
 ) -> Dict[str, float]:
     """Evaluate F-score for lane marking from input folders."""

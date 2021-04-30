@@ -17,32 +17,32 @@ Category
 Object Detection
 ^^^^^^^^^^^^^^^^^^
 
-For object detection, 9 classes are evalued, they are:
+For object detection, 10 classes are evalued, they are:
 ::
 
-    0: pedestrian
-    1: rider
-    2: car
-    3: truck
-    4: bus
-    5: train
-    6: motorcycle
-    7: bicycle
-    8: traffic light
-    9: traffic sign
+    1: pedestrian
+    2: rider
+    3: car
+    4: truck
+    5: bus
+    6: train
+    7: motorcycle
+    8: bicycle
+    9: traffic light
+    10: traffic sign
 
-Note that, the field `category_id` range from **0** instead of 0.
+Note that, the field `category_id` range from **1** instead of 0.
 
 Instance Segmentation, Box Tracking, Segmentation Tracking
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For instance segmentation, multi object tracking (box tracking) and multi object tracking and segmentation (segmentation tracking),
-only the first **7** classes are used and evaluated.
+only the first **8** classes are used and evaluated.
 
 Semantic Segmentation
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Meanwhile, for the semantic segmentation task, 18 classes are evaluated, they are:
+Meanwhile, for the semantic segmentation task, 19 classes are evaluated, they are:
 ::
 
     0: road 
@@ -181,8 +181,8 @@ We expect each pixel only corresponds to one predicted class, ``poly2d`` cannot 
 For the RGBA image, The first byte, R, is used for the category id range from 1 (0 is used for the background).
 Moreover, G is for the instance attributes. Currently, four attributes are used, they are "truncated", "occluded", "crowd" and "ignore".
 Note that boxes with "crowd" or "ignore" labels will not be considered during testing.
-The above four attributes are stored in least significant bits of G. Given this, ``G = 8 & truncated + 4 & occluded + 2 & crowd + ignore``
-. Finally, the B channel and A channel store the "ann_id" for instance segmentation and "ann_id" for segmentation tracking, respectively, which can be computed as ``B * 256 + A``. The below image is for reference.
+The above four attributes are stored in least significant bits of G. Given this, ``G = (truncated << 3) + (occluded << 2) + (crowd << 1) + ignore``
+. Finally, the B channel and A channel store the "ann_id" for instance segmentation and "ann_id" for segmentation tracking, respectively, which can be computed as ``(B << 8) + A``. The below image is for reference.
 
 .. figure:: ../images/bitmask.png
    :alt: Downloading buttons
