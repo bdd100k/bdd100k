@@ -11,8 +11,8 @@ a 2d bounding box, and `intrinsics` may not appear if the exact camera
 calibration is unknown.
 
 
-Category
-~~~~~~~~~
+Categories
+~~~~~~~~~~~
 
 Object Detection
 ^^^^^^^^^^^^^^^^^^
