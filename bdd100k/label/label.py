@@ -107,7 +107,21 @@ drivables = [
     Label("background", 2, 2, "drivable", 0, False, False, (0, 0, 0)),
 ]
 
-lane_marks = [
+lane_directions = [
+    #       name                     id    trainId   category catId
+    #       hasInstances   ignoreInEval   color
+    Label("parallel", 0, 0, "lane_mark", 0, False, False, (0, 0, 0)),
+    Label("vertical", 1, 1, "lane_mark", 0, False, False, (0, 0, 0)),
+]
+
+lane_styles = [
+    #       name                     id    trainId   category catId
+    #       hasInstances   ignoreInEval   color
+    Label("solid", 0, 0, "lane_mark", 0, False, False, (0, 0, 0)),
+    Label("dashed", 1, 1, "lane_mark", 0, False, False, (0, 0, 0)),
+]
+
+lane_categories = [
     #       name                     id    trainId   category catId
     #       hasInstances   ignoreInEval   color
     Label("crosswalk", 0, 0, "lane_mark", 0, False, False, (219, 94, 86)),

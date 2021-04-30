@@ -122,9 +122,49 @@ You can evaluate your algorithm with public annotations by running
 Drivable Area
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Drivable area task applies the same rule with semantic segmentation.
-The only difference is that they have different classes definitions and numbers.
+The drivable area task applies the same rule with semantic segmentation.
+One notable difference is that they have different class definitions and numbers.
+Another is that the prediction of background pixels matters for drivable area.
+Unlike semantic segmentation, which ignores *unknown* pixels, drivable area instead takes consideration of
+*background* pixels when computing IoUs. Though the *background* class is not counted into the final mIoU.
 
+Run Evaluation on Your Own
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can evaluate your algorithm with public annotations by running 
+::
+    
+    python3 -m bdd100k.eval.run -t drivable -g ${gt_path} -r ${res_path}
+
+- `gt_path`: the path to ground-truch bitmask images folder.
+- `res_path`: the path to the results bitmask images folder.
+
+
+Lane Marking
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The lane marking takes the F-score [1] as the measurement.
+We evaluate the F-score for each cateogry of the three sub-tasks with threshold as 1, 2 and 10 pixels.
+Before the evaluation, morphological thinning is adopted to get predictions of 1-pixel width.
+For each sub-task, the mean F-score will be showed.
+The main item for the leaderboard is the averaged mean F-score of these three sub-tasks.
+
+[1] `A Benchmark Dataset and Evaluation Methodology for Video Object Segmentation. F. Perazzi, J. Pont-Tuset, B. McWilliams, L. Van Gool, M. Gross, and A. Sorkine-Hornung. Computer Vision and Pattern Recognition (CVPR) 2016`_
+
+Submission format
+^^^^^^^^^^^^^^^^^^^^^^
+
+To evaluate your algorithms on the BDD100K detection benchmark, you may prepare predictions in 1-channel png files.
+The submission format should be aligned with label format defined in `Label Format <https://doc.bdd100k.com/format.html#lane-marking-formats>`_.
+
+
+Run Evaluation on Your Own
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can evaluate your algorithm with public annotations by running 
+::
+    
+    python3 -m bdd100k.eval.run -t lane_mark -g ${gt_path} -r ${res_path}
 
 
 Multiple Object Tracking
