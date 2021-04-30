@@ -61,7 +61,7 @@ Submission format
 ^^^^^^^^^^^^^^^^^^^^^^
 
 To evaluate your algorithms on the BDD100K detection benchmark, you may prepare predictions in bitmask format,
-which is illustrated in `Label Format <https://doc.bdd100k.com/format.html#segmentation-label-formats>`_.
+which is illustrated in `Segmentation Label Formats <https://doc.bdd100k.com/format.html#segmentation-label-formats>`_.
 Moreover, a score file is needed, with the following format:
 ::
 
@@ -149,13 +149,13 @@ Before the evaluation, morphological thinning is adopted to get predictions of 1
 For each sub-task, the mean F-score will be showed.
 The main item for the leaderboard is the averaged mean F-score of these three sub-tasks.
 
-[1] `A Benchmark Dataset and Evaluation Methodology for Video Object Segmentation. F. Perazzi, J. Pont-Tuset, B. McWilliams, L. Van Gool, M. Gross, and A. Sorkine-Hornung. Computer Vision and Pattern Recognition (CVPR) 2016`_
+[1] `A Benchmark Dataset and Evaluation Methodology for Video Object Segmentation. F. Perazzi, J. Pont-Tuset, B. McWilliams, L. Van Gool, M. Gross, and A. Sorkine-Hornung. Computer Vision and Pattern Recognition (CVPR) 2016 <https://www.cv-foundation.org/openaccess/content_cvpr_2016/papers/Perazzi_A_Benchmark_Dataset_CVPR_2016_paper.pdf>`_
 
 Submission format
 ^^^^^^^^^^^^^^^^^^^^^^
 
 To evaluate your algorithms on the BDD100K detection benchmark, you may prepare predictions in 1-channel png files.
-The submission format should be aligned with label format defined in `Label Format <https://doc.bdd100k.com/format.html#lane-marking-formats>`_.
+The submission format should be aligned with label format defined in `Lane Marking Formats <https://doc.bdd100k.com/format.html#lane-marking-formats>`_.
 
 
 Run Evaluation on Your Own
