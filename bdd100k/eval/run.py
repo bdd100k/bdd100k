@@ -11,13 +11,10 @@ from ..common.utils import (
 )
 from .detect import evaluate_det
 from .ins_seg import evaluate_ins_seg
+from .lane import evaluate_lane_marking
 from .mot import acc_single_video_mot, evaluate_track
 from .mots import acc_single_video_mots
-from .seg import (
-    evaluate_drivable,
-    evaluate_lane_marking,
-    evaluate_segmentation,
-)
+from .seg import evaluate_drivable, evaluate_segmentation
 
 
 def parse_args() -> argparse.Namespace:
@@ -91,7 +88,7 @@ def run() -> None:
     if args.task == "drivable":
         evaluate_drivable(args.gt, args.result)
     elif args.task == "lane_mark":
-        evaluate_lane_marking(args.gt, args.result)
+        evaluate_lane_marking(args.gt, args.result, [1, 2, 5, 10], args.nproc)
     elif args.task == "sem_seg":
         evaluate_segmentation(args.gt, args.result)
     elif args.task == "det":

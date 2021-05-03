@@ -144,17 +144,39 @@ Label attributes
     - laneTypes: (for lanes)
 
 
+Semantic Segmentation Format
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We provide labels for **semantic segmentation** and **drivable area** in both JSON and **mask** formats.
+The mask format save the ground-truch of each image into an one-channel png (8 bits per pixel).
+The value of each pixel represents its category. 255 usually means "ignore".
+
+
+.. _lane mask:
+
+Lane Marking Format
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For lane marking, there are three sub-tasks: lane categories, lane direction and lane styles.
+A one-channel png file is used for each image to store all classes information.
+The format for a pixel is defined as the image below.
+The **3-th** bit and the **4-th** bit are for **direction** and **style**.
+The **last 3** bits are for **category**.
+Most importantly, the **5**-th bit is to indicate whether this pixel belongs to the **background** (0: lane, 1: background).
+
+
+.. figure:: ../images/lane.png
+   :alt: Downloading buttons
+
+
+.. _bitmask:
 
 Instance Segmentation Format
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
-We provide labels for instance segmentation and segmentation tracking in both JSON and **bitmask** formats.
-
+We provide labels for **instance segmentation** and **segmentation tracking** in both JSON and **bitmask** formats.
 Note that ``poly2d`` used in JSONs is not of the same format as COCO. Instead, the ``poly2d`` field stores a Bezier Curve with vertices and control points.
-
-For segmentation labels, besides JSON files contain the ``poly2d`` field, we also provide bitmasks labels.
-In this format, labels for each image are stored in an **RGBA** png file.
+In the bitmask format, labels for each image are stored in an **RGBA** png file.
 
 **The evaluation scripts use bitmasks as ground-truth, so we suggest using bitmasks as input all the way.**
 We expect each pixel only corresponds to one predicted class, ``poly2d`` cannot guarantee that, while bitmasks can assure that.
