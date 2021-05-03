@@ -61,7 +61,7 @@ Submission format
 ^^^^^^^^^^^^^^^^^^^^^^
 
 To evaluate your algorithms on the BDD100K detection benchmark, you may prepare predictions in bitmask format,
-which is illustrated in `Segmentation Label Formats <https://doc.bdd100k.com/format.html#segmentation-label-formats>`_.
+which is illustrated in `Segmentation Label Formats </format.html#segmentation-label-formats>`_.
 Moreover, a score file is needed, with the following format:
 ::
 
@@ -155,7 +155,7 @@ Submission format
 ^^^^^^^^^^^^^^^^^^^^^^
 
 To evaluate your algorithms on the BDD100K detection benchmark, you may prepare predictions in 1-channel png files.
-The submission format should be aligned with label format defined in `Lane Marking Formats <https://doc.bdd100k.com/format.html#lane-marking-formats>`_.
+The submission format should be aligned with label format defined in `Lane Marking Formats </format.html#lane-marking-formats>`_.
 
 
 Run Evaluation on Your Own
