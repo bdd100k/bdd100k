@@ -61,7 +61,7 @@ Submission format
 ^^^^^^^^^^^^^^^^^^^^^^
 
 To evaluate your algorithms on the BDD100K detection benchmark, you may prepare predictions in bitmask format,
-which is illustrated in `Instance Segmentaiton Bitmask`__.
+which is illustrated in :ref:`Instance Segmentaiton Bitmask <bitmask>`.
 Moreover, a score file is needed, with the following format:
 ::
 
@@ -72,8 +72,6 @@ Moreover, a score file is needed, with the following format:
         - score: float, confidence score of the prediction
 
 - `index`: the value correspondence to the "ann_id" stored in B and A channels.
-
-__ bitmask_
 
 To be evaluated on the Codalab server, the submission file needs to be a zipped nested folder with the following structure:
 ::
@@ -157,9 +155,7 @@ Submission format
 ^^^^^^^^^^^^^^^^^^^^^^
 
 To evaluate your algorithms on the BDD100K detection benchmark, you may prepare predictions in 1-channel png files.
-The submission format should be aligned with label format defined in `Lane Mask Format`__.
-
-__ mask_
+The submission format should be aligned with label format defined in :ref:`Lane Mask Format <lane mask>`.
 
 
 Run Evaluation on Your Own

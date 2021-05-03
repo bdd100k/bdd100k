@@ -152,10 +152,10 @@ The mask format save the ground-truch of each image into an one-channel png (8 b
 The value of each pixel represents its category. 255 usually means "ignore".
 
 
+.. _lane mask:
+
 Lane Marking Format
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. _mask:
 
 For lane marking, there are three sub-tasks: lane categories, lane direction and lane styles.
 A one-channel png file is used for each image to store all classes information.
@@ -169,10 +169,10 @@ Most importantly, the **5**-th bit is to indicate whether this pixel belongs to 
    :alt: Downloading buttons
 
 
+.. _bitmask:
+
 Instance Segmentation Format
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. _bitmask:
 
 We provide labels for **instance segmentation** and **segmentation tracking** in both JSON and **bitmask** formats.
 Note that ``poly2d`` used in JSONs is not of the same format as COCO. Instead, the ``poly2d`` field stores a Bezier Curve with vertices and control points.
