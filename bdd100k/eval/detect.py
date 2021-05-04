@@ -70,6 +70,7 @@ def evaluate_det(
         ann_frames = load(ann_file, nproc)
     else:
         ann_frames = ann_file
+    ann_frames = sorted(ann_frames, key=lambda frame: frame.name)
 
     categories, name_mapping, ignore_mapping = load_coco_config(
         mode="det",
@@ -85,6 +86,7 @@ def evaluate_det(
         pred_frames = load(pred_file, nproc)
     else:
         pred_frames = pred_file
+    pred_frames = sorted(pred_frames, key=lambda frame: frame.name)
 
     pred_res = scalabel2coco_detection(
         SHAPE, pred_frames, categories, name_mapping, ignore_mapping
