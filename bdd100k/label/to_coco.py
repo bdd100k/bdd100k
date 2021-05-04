@@ -309,7 +309,7 @@ def bitmask2coco_ins_seg(
         image_id += 1
         image = ImgType(
             id=image_id,
-            file_name=file_,
+            file_name=file_.replace(".png", ".jpg"),
             height=shape[0],
             width=shape[1],
         )
@@ -354,11 +354,13 @@ def bitmask2coco_seg_track(
         video = VidType(id=video_id, name=video_name)
         videos.append(video)
 
-        for file_ in tqdm(files):
+        for frame_id, file_ in tqdm(enumerate(files)):
             image_id += 1
             image = ImgType(
+                video_id=video_id,
+                frame_id=frame_id,
                 id=image_id,
-                file_name=file_,
+                file_name=file_.replace(".png", ".jpg"),
                 height=shape[0],
                 width=shape[1],
             )
