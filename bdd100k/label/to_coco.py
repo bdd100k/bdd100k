@@ -418,6 +418,7 @@ def bdd100k2coco_ins_seg(
 
         mask_name = os.path.join(
             mask_base,
+            # Bitmask in .png format, image in .jpg format
             image_anns.name.replace(".jpg", ".png"),
         )
         mask_names.append(mask_name)
@@ -525,6 +526,7 @@ def bdd100k2coco_seg_track(
             mask_name = os.path.join(
                 mask_base,
                 video_name,
+                # Bitmask in .png format, image in .jpg format
                 image_anns.name.replace(".jpg", ".png"),
             )
             mask_names.append(mask_name)

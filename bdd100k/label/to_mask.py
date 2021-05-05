@@ -191,6 +191,7 @@ def seg_to_masks(
     logger.info("Preparing annotations for Semseg to Bitmasks")
 
     for image_anns in tqdm(frames):
+        # Mask in .png format
         image_name = image_anns.name.replace(".jpg", ".png")
         image_name = os.path.split(image_name)[-1]
         out_path = os.path.join(out_base, image_name)
@@ -270,6 +271,7 @@ def insseg_to_bitmasks(
     for image_anns in tqdm(frames):
         ann_id = 0
 
+        # Bitmask in .png format
         image_name = image_anns.name.replace(".jpg", ".png")
         image_name = os.path.split(image_name)[-1]
         out_path = os.path.join(out_base, image_name)
@@ -280,10 +282,15 @@ def insseg_to_bitmasks(
         colors_list.append(colors)
         poly2ds_list.append(poly2ds)
 
-        if image_anns.labels is None:
+        labels_ = image_anns.labels
+        if labels_ is None or len(labels_) == 0:
             continue
 
-        for label in image_anns.labels:
+        # Scores higher, rendering later
+        if labels_[0].score is not None:
+            labels_ = sorted(labels_, key=lambda label: float(label.score))
+
+        for label in labels_:
             if label.poly_2d is None:
                 continue
 
@@ -339,6 +346,7 @@ def segtrack_to_bitmasks(
             os.makedirs(out_dir)
 
         for image_anns in video_anns:
+            # Bitmask in .png format
             image_name = image_anns.name.replace(".jpg", ".png")
             image_name = os.path.split(image_name)[-1]
             out_path = os.path.join(out_dir, image_name)
@@ -349,7 +357,15 @@ def segtrack_to_bitmasks(
             colors_list.append(colors)
             poly2ds_list.append(poly2ds)
 
-            for label in image_anns.labels:
+            labels_ = image_anns.labels
+            if labels_ is None or len(labels_) == 0:
+                continue
+
+            # Scores higher, rendering later
+            if labels_[0].score is not None:
+                labels_ = sorted(labels_, key=lambda label: float(label.score))
+
+            for label in labels_:
                 if label.poly_2d is None:
                     continue
 
