@@ -194,6 +194,21 @@ The above four attributes are stored in least significant bits of G. Given this,
 Format Conversion
 ~~~~~~~~~~~~~~~~~~
 
+Coordinate System
+^^^^^^^^^^^^^^^^^^
+
+During our labeling, we regard the left-top corner of the most left-top pixel as (0, 0),
+so in our conversion scripts, the width is computed as :code:`x2 - x1 + 1`,
+and height is computed as :code:`y2 - y1 + 1`. This manner also influence the mIoU calculation.
+This manner is consistent with `pycocotools <https://pypi.org/project/pycocotools/>`_,
+`MMDetection 1.x <https://github.com/open-mmlab/mmdetection/releases/tag/v1.2.0>`_ and
+`maskrcnn-benchmark <https://github.com/facebookresearch/maskrcnn-benchmark>`_.
+Note that, 
+`MMDetection 2.x <https://github.com/open-mmlab/mmdetection>`_ and
+`Detectron2 <https://github.com/facebookresearch/detectron2>`_ adopt a different manner.
+You need to take care when using them.
+
+
 from_coco
 ^^^^^^^^^^^^^^^^^^
 
