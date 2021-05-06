@@ -208,7 +208,7 @@ def seg_to_masks(
         for label in image_anns.labels:
             if label.category not in cat_name2id:
                 continue
-            if label.poly_2d is None:
+            if label.poly2d is None:
                 continue
 
             category_id = cat_name2id[label.category]
@@ -217,7 +217,7 @@ def seg_to_masks(
             else:
                 color = set_lane_color(label, category_id)
             colors.append(color)
-            poly2ds.append(label.poly_2d)
+            poly2ds.append(label.poly2d)
 
     logger.info("Start Conversion for Seg to Masks")
     frames_to_masks(
@@ -291,7 +291,7 @@ def insseg_to_bitmasks(
             labels_ = sorted(labels_, key=lambda label: float(label.score))
 
         for label in labels_:
-            if label.poly_2d is None:
+            if label.poly2d is None:
                 continue
 
             category_ignored, category_id = process_category(
@@ -309,7 +309,7 @@ def insseg_to_bitmasks(
                 label, category_id, ann_id, category_ignored
             )
             colors.append(color)
-            poly2ds.append(label.poly_2d)
+            poly2ds.append(label.poly2d)
 
     logger.info("Start conversion for InsSeg to Bitmasks")
     frames_to_masks(nproc, out_paths, colors_list, poly2ds_list)
@@ -366,7 +366,7 @@ def segtrack_to_bitmasks(
                 labels_ = sorted(labels_, key=lambda label: float(label.score))
 
             for label in labels_:
-                if label.poly_2d is None:
+                if label.poly2d is None:
                     continue
 
                 category_ignored, category_id = process_category(
@@ -387,7 +387,7 @@ def segtrack_to_bitmasks(
                     label, category_id, instance_id, category_ignored
                 )
                 colors.append(color)
-                poly2ds.append(label.poly_2d)
+                poly2ds.append(label.poly2d)
 
     logger.info("Start Conversion for SegTrack to Bitmasks")
     frames_to_masks(nproc, out_paths, colors_list, poly2ds_list)

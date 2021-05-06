@@ -428,7 +428,7 @@ def bdd100k2coco_ins_seg(
         annotations: List[AnnType] = []
 
         for label in image_anns.labels:
-            if label.poly_2d is None:
+            if label.poly2d is None:
                 continue
             category_ignored, category_id = process_category(
                 label.category,
@@ -536,7 +536,7 @@ def bdd100k2coco_seg_track(
             annotations: List[AnnType] = []
 
             for label in image_anns.labels:
-                if label.poly_2d is None:
+                if label.poly2d is None:
                     continue
                 category_ignored, category_id = process_category(
                     label.category,
