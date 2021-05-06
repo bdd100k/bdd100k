@@ -88,7 +88,7 @@ Drivable Area
 ~~~~~~~~~~~~~~
 
 Masks, colormaps and original json files for drivable area.
-The mask format is explained at: `Semantic Segmentation Format <https://doc.bdd100k.com/format.html#semantic-segmentation-format>`_
+The mask format is explained at: :ref:`Semantic Segmentation Format <seg mask>`.
 
 +------+----------------------------------+
 | Size | 466MB                            |
@@ -116,7 +116,7 @@ Lane Marking
 ~~~~~~~~~~~~~~
 
 Masks, colormaps and original json files for lane marking.
-The mask format is explained at: `Lane Marking Format <https://doc.bdd100k.com/format.html#lane-marking-format>`_
+The mask format is explained at: :ref:`Lane Marking Format <lane mask>`.
 
 +------+----------------------------------+
 | Size | 434MB                            |
@@ -144,7 +144,7 @@ Semantic Segmentation
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Masks, colormaps and original json files for semantic segmentation.
-The mask format is explained at: `Semantic Segmentation Format <https://doc.bdd100k.com/format.html#semantic-segmentation-format>`_
+The mask format is explained at: :ref:`Semantic Segmentation Format <seg mask>`.
 
 +------+----------------------------------+
 | Size | 331MB                            |
@@ -172,7 +172,7 @@ Instance Segmentation
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Bitmasks, colormaps and original json files for instance segmentation.
-The bitmask format is explained at: `Instance Segmentation Format <https://doc.bdd100k.com/format.html#instance-segmentation-format>`_
+The bitmask format is explained at: :ref:`Instance Segmentation Format <bitmask>`.
 
 +------+----------------------------------+
 | Size | 98MB                             |
@@ -259,7 +259,7 @@ MOTS 2020 Labels
 ~~~~~~~~~~~~~~~~~
 
 Multi-object tracking and segmentation training and validation labels released in 2020
-The bitmask format is explained at: `Instance Segmentation Format <https://doc.bdd100k.com/format.html#instance-segmentation-format>`_
+The bitmask format is explained at: :ref:`Instance Segmentation Format <bitmask>`.
 
 
 +------+----------------------------------+

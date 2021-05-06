@@ -144,6 +144,8 @@ Label attributes
     - laneTypes: (for lanes)
 
 
+.. _seg mask:
+
 Semantic Segmentation Format
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
