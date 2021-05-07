@@ -22,8 +22,6 @@ class TestBDD100KInsSegEval(unittest.TestCase):
         result = evaluate_ins_seg(
             gt_base, pred_base, pred_json, DEFAULT_COCO_CONFIG
         )
-        for key, val in result.items():
-            print(key, val)
         overall_reference = {
             "AP": 0.686056105610561,
             "AP_50": 0.8968646864686468,

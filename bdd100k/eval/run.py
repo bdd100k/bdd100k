@@ -2,6 +2,8 @@
 
 import argparse
 
+from scalabel.eval.detect import evaluate_det
+from scalabel.eval.mot import acc_single_video_mot, evaluate_track
 from scalabel.label.io import group_and_sort, load
 
 from ..common.utils import (
@@ -9,10 +11,8 @@ from ..common.utils import (
     group_and_sort_files,
     list_files,
 )
-from .detect import evaluate_det
 from .ins_seg import evaluate_ins_seg
 from .lane import evaluate_lane_marking
-from .mot import acc_single_video_mot, evaluate_track
 from .mots import acc_single_video_mots
 from .seg import evaluate_drivable, evaluate_segmentation
 
@@ -68,7 +68,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--out-dir", type=str, default=".", help="Path to store output files"
     )
-    # Flags for instance segmentatoin
+    # Flags for instance segmentation
     parser.add_argument(
         "--score-file",
         type=str,

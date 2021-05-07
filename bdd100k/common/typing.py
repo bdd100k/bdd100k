@@ -12,7 +12,6 @@ else:
 
 
 DictAny = Dict[str, Any]  # type: ignore[misc]
-ListAny = List[Any]  # type: ignore[misc]
 
 
 class InstanceType(TypedDict, total=False):

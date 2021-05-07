@@ -207,7 +207,7 @@ def seg_to_masks(
         for label in image_anns.labels:
             if label.category not in cat_name2id:
                 continue
-            if label.poly_2d is None:
+            if label.poly2d is None:
                 continue
 
             category_id = cat_name2id[label.category]
@@ -216,7 +216,7 @@ def seg_to_masks(
             else:
                 color = set_lane_color(label, category_id)
             colors.append(color)
-            poly2ds.append(label.poly_2d)
+            poly2ds.append(label.poly2d)
 
     logger.info("Start Conversion for Seg to Masks")
     frames_to_masks(
@@ -255,7 +255,7 @@ def insseg_to_bitmasks(
     """Converting instance segmentation poly2d to bitmasks."""
     os.makedirs(out_base, exist_ok=True)
 
-    categories, name_mapping, ignore_mapping = load_coco_config(
+    _, categories, name_mapping, ignore_mapping = load_coco_config(
         mode="track",
         filepath=DEFAULT_COCO_CONFIG,
         ignore_as_class=ignore_as_class,
@@ -284,7 +284,7 @@ def insseg_to_bitmasks(
             continue
 
         for label in image_anns.labels:
-            if label.poly_2d is None:
+            if label.poly2d is None:
                 continue
 
             category_ignored, category_id = process_category(
@@ -302,7 +302,7 @@ def insseg_to_bitmasks(
                 label, category_id, ann_id, category_ignored
             )
             colors.append(color)
-            poly2ds.append(label.poly_2d)
+            poly2ds.append(label.poly2d)
 
     logger.info("Start conversion for InsSeg to Bitmasks")
     frames_to_masks(nproc, out_paths, colors_list, poly2ds_list)
@@ -317,7 +317,7 @@ def segtrack_to_bitmasks(
 ) -> None:
     """Converting segmentation tracking poly2d to bitmasks."""
     frames_list = group_and_sort(frames)
-    categories, name_mapping, ignore_mapping = load_coco_config(
+    _, categories, name_mapping, ignore_mapping = load_coco_config(
         mode="track",
         filepath=DEFAULT_COCO_CONFIG,
         ignore_as_class=ignore_as_class,
@@ -350,7 +350,7 @@ def segtrack_to_bitmasks(
             poly2ds_list.append(poly2ds)
 
             for label in image_anns.labels:
-                if label.poly_2d is None:
+                if label.poly2d is None:
                     continue
 
                 category_ignored, category_id = process_category(
@@ -371,7 +371,7 @@ def segtrack_to_bitmasks(
                     label, category_id, instance_id, category_ignored
                 )
                 colors.append(color)
-                poly2ds.append(label.poly_2d)
+                poly2ds.append(label.poly2d)
 
     logger.info("Start Conversion for SegTrack to Bitmasks")
     frames_to_masks(nproc, out_paths, colors_list, poly2ds_list)

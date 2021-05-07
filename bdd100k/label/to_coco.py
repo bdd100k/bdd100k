@@ -425,7 +425,7 @@ def bdd100k2coco_ins_seg(
         annotations: List[AnnType] = []
 
         for label in image_anns.labels:
-            if label.poly_2d is None:
+            if label.poly2d is None:
                 continue
             category_ignored, category_id = process_category(
                 label.category,
@@ -532,7 +532,7 @@ def bdd100k2coco_seg_track(
             annotations: List[AnnType] = []
 
             for label in image_anns.labels:
-                if label.poly_2d is None:
+                if label.poly2d is None:
                     continue
                 category_ignored, category_id = process_category(
                     label.category,
@@ -608,7 +608,7 @@ def main() -> None:
     """Main function."""
     args = parse_args()
     assert args.mode in ["det", "box_track", "ins_seg", "seg_track"]
-    categories, name_mapping, ignore_mapping = load_coco_config(
+    _, categories, name_mapping, ignore_mapping = load_coco_config(
         mode=args.mode,
         filepath=args.config,
         ignore_as_class=args.ignore_as_class,

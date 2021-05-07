@@ -2,8 +2,9 @@
 import os
 import unittest
 
+from scalabel.eval.detect import evaluate_det
+
 from ..common.utils import DEFAULT_COCO_CONFIG
-from .detect import evaluate_det
 
 
 class TestBDD100KDetectEval(unittest.TestCase):

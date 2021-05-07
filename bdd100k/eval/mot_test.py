@@ -2,17 +2,19 @@
 import os
 import unittest
 
-from scalabel.label.io import group_and_sort, load
-
-from .mot import (
+from scalabel.eval.mot import (
     METRIC_MAPS,
-    SUPER_CLASSES,
     acc_single_video_mot,
     aggregate_accs,
     evaluate_single_class,
     evaluate_track,
     render_results,
 )
+from scalabel.label.io import group_and_sort, load
+
+from bdd100k.common.utils import DEFAULT_COCO_CONFIG
+
+from .mot import CLASSES, IGNORE_CLASSES, SUPER_CLASSES
 
 
 class TestBDD100KMotEval(unittest.TestCase):
@@ -27,7 +29,9 @@ class TestBDD100KMotEval(unittest.TestCase):
         preds = group_and_sort(
             load("{}/testcases/track_predictions.json".format(cur_dir))
         )
-        result = evaluate_track(acc_single_video_mot, gts, preds)
+        result = evaluate_track(
+            acc_single_video_mot, gts, preds, DEFAULT_COCO_CONFIG
+        )
         overall_reference = {
             "IDF1": 0.7101073676416142,
             "MOTA": 0.6420070762302992,
@@ -57,12 +61,14 @@ class TestRenderResults(unittest.TestCase):
     preds = load("{}/testcases/track_predictions.json".format(cur_dir))
 
     metrics = list(METRIC_MAPS.keys())
-    accs = [acc_single_video_mot(gts, preds)]
-    names, accs, items = aggregate_accs(accs)
+    accs = [acc_single_video_mot(gts, preds, CLASSES, IGNORE_CLASSES)]
+    names, accs, items = aggregate_accs(accs, CLASSES, SUPER_CLASSES)
     summaries = [
         evaluate_single_class(name, acc) for name, acc in zip(names, accs)
     ]
-    eval_results = render_results(summaries, items, metrics)
+    eval_results = render_results(
+        summaries, items, metrics, CLASSES, SUPER_CLASSES
+    )
 
     def test_categories(self) -> None:
         """Check the correctness of the 1st-level keys in eval_results."""
