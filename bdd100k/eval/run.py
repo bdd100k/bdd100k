@@ -96,7 +96,14 @@ def run() -> None:
             args.gt, args.result, args.config, args.out_dir, args.nproc
         )
     elif args.task == "ins_seg":
-        evaluate_ins_seg(args.gt, args.result, args.score_file, args.out_dir)
+        evaluate_ins_seg(
+            args.gt,
+            args.result,
+            args.score_file,
+            args.config,
+            args.out_dir,
+            args.nproc,
+        )
     elif args.task == "box_track":
         evaluate_track(
             acc_single_video_mot,
