@@ -285,15 +285,11 @@ def insseg_to_bitmasks(
         if labels_ is None or len(labels_) == 0:
             continue
 
-<<<<<<< HEAD
-        for label in image_anns.labels:
-=======
         # Scores higher, rendering later
         if labels_[0].score is not None:
             labels_ = sorted(labels_, key=lambda label: float(label.score))
 
         for label in labels_:
->>>>>>> master
             if label.poly2d is None:
                 continue
 
@@ -359,9 +355,6 @@ def segtrack_to_bitmasks(
             colors_list.append(colors)
             poly2ds_list.append(poly2ds)
 
-<<<<<<< HEAD
-            for label in image_anns.labels:
-=======
             labels_ = image_anns.labels
             if labels_ is None or len(labels_) == 0:
                 continue
@@ -371,7 +364,6 @@ def segtrack_to_bitmasks(
                 labels_ = sorted(labels_, key=lambda label: float(label.score))
 
             for label in labels_:
->>>>>>> master
                 if label.poly2d is None:
                     continue
 

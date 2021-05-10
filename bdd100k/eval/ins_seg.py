@@ -282,6 +282,6 @@ def evaluate_ins_seg(
     """
     _, categories, _, _ = load_label_config(cfg_path)
     bdd_eval = BDDInsSegEval(ann_base, pred_base, pred_score_file, nproc)
-    cat_ids = [int(category["id"]) for category in categories]
-    cat_names = [str(category["name"]) for category in categories]
+    cat_ids = [category["id"] for category in categories]
+    cat_names = [category["name"] for category in categories]
     return evaluate_workflow(bdd_eval, cat_ids, cat_names, out_dir)
