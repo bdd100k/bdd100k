@@ -8,7 +8,7 @@ from typing import Dict, List, Tuple
 from scalabel.label.to_coco import get_instance_id, get_object_attributes
 from scalabel.label.typing import Label
 
-DEFAULT_COCO_CONFIG = osp.join(
+DEFAULT_LABEL_CONFIG = osp.join(
     osp.dirname(osp.abspath(__file__)), "configs.toml"
 )
 

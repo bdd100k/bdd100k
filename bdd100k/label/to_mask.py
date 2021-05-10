@@ -25,14 +25,14 @@ import matplotlib  # type: ignore
 import matplotlib.pyplot as plt  # type: ignore
 import numpy as np
 from PIL import Image
-from scalabel.label.io import group_and_sort
-from scalabel.label.to_coco import load_coco_config, process_category
+from scalabel.label.io import group_and_sort, load_label_config
+from scalabel.label.to_coco import process_category
 from scalabel.label.transforms import poly_to_patch
 from scalabel.label.typing import Frame, Label, Poly2D
 from tqdm import tqdm
 
 from ..common.logger import logger
-from ..common.utils import DEFAULT_COCO_CONFIG, get_bdd100k_instance_id
+from ..common.utils import DEFAULT_LABEL_CONFIG, get_bdd100k_instance_id
 from .label import drivables, labels
 from .to_coco import parse_args, start_converting
 
@@ -255,9 +255,8 @@ def insseg_to_bitmasks(
     """Converting instance segmentation poly2d to bitmasks."""
     os.makedirs(out_base, exist_ok=True)
 
-    _, categories, name_mapping, ignore_mapping = load_coco_config(
-        mode="track",
-        filepath=DEFAULT_COCO_CONFIG,
+    _, categories, name_mapping, ignore_mapping = load_label_config(
+        filepath=DEFAULT_LABEL_CONFIG,
         ignore_as_class=ignore_as_class,
     )
 
@@ -317,9 +316,8 @@ def segtrack_to_bitmasks(
 ) -> None:
     """Converting segmentation tracking poly2d to bitmasks."""
     frames_list = group_and_sort(frames)
-    _, categories, name_mapping, ignore_mapping = load_coco_config(
-        mode="track",
-        filepath=DEFAULT_COCO_CONFIG,
+    _, categories, name_mapping, ignore_mapping = load_label_config(
+        filepath=DEFAULT_LABEL_CONFIG,
         ignore_as_class=ignore_as_class,
     )
 

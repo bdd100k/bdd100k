@@ -7,7 +7,7 @@ from scalabel.eval.mot import acc_single_video_mot, evaluate_track
 from scalabel.label.io import group_and_sort, load
 
 from ..common.utils import (
-    DEFAULT_COCO_CONFIG,
+    DEFAULT_LABEL_CONFIG,
     group_and_sort_files,
     list_files,
 )
@@ -43,7 +43,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         "-c",
-        default=DEFAULT_COCO_CONFIG,
+        default=DEFAULT_LABEL_CONFIG,
         help="path to the config file",
     )
     parser.add_argument(
@@ -102,6 +102,7 @@ def run() -> None:
             acc_single_video_mot,
             gts=group_and_sort(load(args.gt, args.nproc)),
             results=group_and_sort(load(args.result, args.nproc)),
+            cfg_path=args.config,
             iou_thr=args.mot_iou_thr,
             ignore_iof_thr=args.mot_ignore_iof_thr,
             nproc=args.nproc,
@@ -115,6 +116,7 @@ def run() -> None:
             results=group_and_sort_files(
                 list_files(args.result, ".png", with_prefix=True)
             ),
+            cfg_path=args.config,
             iou_thr=args.mot_iou_thr,
             ignore_iof_thr=args.mot_ignore_iof_thr,
             nproc=args.nproc,

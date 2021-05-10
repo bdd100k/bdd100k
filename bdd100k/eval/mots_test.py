@@ -7,7 +7,7 @@ from PIL import Image
 from scalabel.eval.mot import evaluate_track
 
 from ..common.utils import (
-    DEFAULT_COCO_CONFIG,
+    DEFAULT_LABEL_CONFIG,
     group_and_sort_files,
     list_files,
 )
@@ -50,7 +50,7 @@ class TestEvaluteMOTS(unittest.TestCase):
         )
 
         res = evaluate_track(
-            acc_single_video_mots, gts, results, DEFAULT_COCO_CONFIG, nproc=1
+            acc_single_video_mots, gts, results, DEFAULT_LABEL_CONFIG, nproc=1
         )
         self.assertAlmostEqual(res["pedestrian"]["MOTA"], 2 / 3)
         self.assertAlmostEqual(res["pedestrian"]["MOTP"], 3 / 4)

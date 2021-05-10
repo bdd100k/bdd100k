@@ -12,7 +12,7 @@ from scalabel.eval.mot import (
 )
 from scalabel.label.io import group_and_sort, load
 
-from bdd100k.common.utils import DEFAULT_COCO_CONFIG
+from bdd100k.common.utils import DEFAULT_LABEL_CONFIG
 
 from .mot import CLASSES, IGNORE_CLASSES, SUPER_CLASSES
 
@@ -30,7 +30,7 @@ class TestBDD100KMotEval(unittest.TestCase):
             load("{}/testcases/track_predictions.json".format(cur_dir))
         )
         result = evaluate_track(
-            acc_single_video_mot, gts, preds, DEFAULT_COCO_CONFIG
+            acc_single_video_mot, gts, preds, DEFAULT_LABEL_CONFIG
         )
         overall_reference = {
             "IDF1": 0.7101073676416142,

@@ -25,29 +25,22 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 from PIL import Image
-from scalabel.label.coco_typing import (
-    AnnType,
-    CatType,
-    GtType,
-    ImgType,
-    VidType,
-)
-from scalabel.label.io import group_and_sort, load
+from scalabel.label.coco_typing import AnnType, GtType, ImgType, VidType
+from scalabel.label.io import group_and_sort, load, load_label_config
 from scalabel.label.to_coco import (
-    load_coco_config,
     process_category,
     scalabel2coco_box_track,
     scalabel2coco_detection,
     set_seg_object_geometry,
 )
 from scalabel.label.transforms import mask_to_bbox
-from scalabel.label.typing import Frame
+from scalabel.label.typing import CatType, Frame
 from tqdm import tqdm
 
 from ..common.logger import logger
 from ..common.typing import InstanceType
 from ..common.utils import (
-    DEFAULT_COCO_CONFIG,
+    DEFAULT_LABEL_CONFIG,
     get_bdd100k_instance_id,
     get_bdd100k_object_attributes,
     group_and_sort_files,
@@ -126,7 +119,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         type=str,
-        default=DEFAULT_COCO_CONFIG,
+        default=DEFAULT_LABEL_CONFIG,
         help="Configuration for COCO categories",
     )
     parser.add_argument(
@@ -608,10 +601,10 @@ def main() -> None:
     """Main function."""
     args = parse_args()
     assert args.mode in ["det", "box_track", "ins_seg", "seg_track"]
-    _, categories, name_mapping, ignore_mapping = load_coco_config(
-        mode=args.mode,
+    _, categories, name_mapping, ignore_mapping = load_label_config(
         filepath=args.config,
         ignore_as_class=args.ignore_as_class,
+        include_non_tracking=args.mode == "det",
     )
 
     shape = (args.height, args.width)

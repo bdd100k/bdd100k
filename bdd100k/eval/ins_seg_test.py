@@ -6,7 +6,7 @@ import unittest
 import numpy as np
 from PIL import Image
 
-from ..common.utils import DEFAULT_COCO_CONFIG
+from ..common.utils import DEFAULT_LABEL_CONFIG
 from .ins_seg import evaluate_ins_seg
 
 
@@ -20,7 +20,7 @@ class TestBDD100KInsSegEval(unittest.TestCase):
         pred_base = "{}/testcases/ins_seg/pred".format(cur_dir)
         pred_json = "{}/testcases/ins_seg/pred.json".format(cur_dir)
         result = evaluate_ins_seg(
-            gt_base, pred_base, pred_json, DEFAULT_COCO_CONFIG
+            gt_base, pred_base, pred_json, DEFAULT_LABEL_CONFIG
         )
         overall_reference = {
             "AP": 0.686056105610561,
