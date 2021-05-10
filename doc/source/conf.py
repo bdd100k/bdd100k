@@ -50,12 +50,12 @@ exclude_patterns = []
 html_theme = "sphinx_rtd_theme"
 
 html_theme_options = {
-    "analytics_id": "G-0G3CG42YMM",
+    "analytics_id": "",
     "analytics_anonymize_ip": False,
     "display_version": True,
     "style_external_links": True,
     "prev_next_buttons_location": "bottom",
-    "style_external_links": False,
+    "style_external_links": True,
     # Toc options
     "collapse_navigation": False,
     "sticky_navigation": True,

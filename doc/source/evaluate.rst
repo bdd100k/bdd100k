@@ -155,7 +155,7 @@ Submission format
 ^^^^^^^^^^^^^^^^^^^^^^
 
 To evaluate your algorithms on the BDD100K detection benchmark, you may prepare predictions in 1-channel png files.
-The submission format should be aligned with label format defined in :ref:`Lane Mask Format <lane mask>`.
+The submission format should be aligned with label format defined in :ref:`Lane Marking Format <lane mask>`.
 
 
 Run Evaluation on Your Own

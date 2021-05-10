@@ -84,21 +84,67 @@ legacy results.
 | md5  | e21be3e7d6a07ee439faf61e769667e4 |
 +------+----------------------------------+
 
-Drivable Maps
+Drivable Area
 ~~~~~~~~~~~~~~
 
-Segmentation maps of Drivable areas.
+Masks, colormaps and original json files for drivable area.
+The mask format is explained at: :ref:`Semantic Segmentation Format <seg mask>`.
 
 +------+----------------------------------+
-| Size | 661MB                            |
+| Size | 466MB                            |
 +------+----------------------------------+
-| md5  | 1bd70019468a81572c70d374751eb9e2 |
+| md5  | 98dcfa4c3c68e2e86f132ac085f8e329 |
 +------+----------------------------------+
+
+:: 
+
+    - bdd100k
+        - labels
+            - drivable
+                - masks
+                    - train
+                    - val
+                - colormaps
+                    - train
+                    - val
+                - polygons
+                    - drivable_train.json
+                    - drivable_val.json
+
+
+Lane Marking
+~~~~~~~~~~~~~~
+
+Masks, colormaps and original json files for lane marking.
+The mask format is explained at: :ref:`Lane Marking Format <lane mask>`.
+
++------+----------------------------------+
+| Size | 434MB                            |
++------+----------------------------------+
+| md5  | 80d3d5daf57b9de340d564f0c4b395ea |
++------+----------------------------------+
+
+:: 
+
+    - bdd100k
+        - labels
+            - lane 
+                - masks
+                    - train
+                    - val
+                - colormaps
+                    - train
+                    - val
+                - polygons
+                    - lane_train.json
+                    - lane_val.json
+
 
 Semantic Segmentation
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Masks, colormaps and original json files for semantic segmentation.
+The mask format is explained at: :ref:`Semantic Segmentation Format <seg mask>`.
 
 +------+----------------------------------+
 | Size | 331MB                            |
@@ -126,6 +172,7 @@ Instance Segmentation
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Bitmasks, colormaps and original json files for instance segmentation.
+The bitmask format is explained at: :ref:`Instance Segmentation Format <bitmask>`.
 
 +------+----------------------------------+
 | Size | 98MB                             |
@@ -212,6 +259,7 @@ MOTS 2020 Labels
 ~~~~~~~~~~~~~~~~~
 
 Multi-object tracking and segmentation training and validation labels released in 2020
+The bitmask format is explained at: :ref:`Instance Segmentation Format <bitmask>`.
 
 
 +------+----------------------------------+

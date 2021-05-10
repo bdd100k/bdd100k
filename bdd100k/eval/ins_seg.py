@@ -104,9 +104,12 @@ class BDDInsSegEval(COCOeval):  # type: ignore
         with open(self.dt_json) as fp:
             dt_pred = json.load(fp)
         for image in dt_pred:
-            self.img2score[image["name"]] = []
+            img_name = image["name"].replace(".jpg", ".png")
+            self.img2score[img_name] = []
+            if "labels" not in image or image["labels"] is None:
+                continue
             for label in image["labels"]:
-                self.img2score[image["name"]].append(
+                self.img2score[img_name].append(
                     (label["index"], label["score"])
                 )
         self.iou_res = [dict() for i in range(len(self))]
@@ -211,6 +214,8 @@ class BDDInsSegEval(COCOeval):  # type: ignore
                 gt_ignores_a = gt_ignores_c & gt_out_of_range_a
 
                 for t_ind, thr in enumerate(p.iouThrs):
+                    if ious_c.shape[1] == 0:
+                        break
                     ious_t = ious_c.copy()
                     for d_ind in range(ious_t.shape[0]):
                         max_iou = np.max(ious_t[d_ind])
@@ -260,6 +265,7 @@ def evaluate_ins_seg(
     pred_score_file: str,
     cfg_path: str,
     out_dir: str = "none",
+    nproc: int = 4,
 ) -> Dict[str, float]:
     """Load the ground truth and prediction results.
 
@@ -269,12 +275,13 @@ def evaluate_ins_seg(
         pred_score_file: path tothe prediction scores.
         cfg_path: path to the config file.
         out_dir: output_directory.
+        nproc: number of processes.
 
     Returns:
         dict: detection metric scores
     """
     _, categories, _, _ = load_label_config(cfg_path)
-    bdd_eval = BDDInsSegEval(ann_base, pred_base, pred_score_file)
+    bdd_eval = BDDInsSegEval(ann_base, pred_base, pred_score_file, nproc)
     cat_ids = [int(category["id"]) for category in categories]
     cat_names = [str(category["name"]) for category in categories]
     return evaluate_workflow(bdd_eval, cat_ids, cat_names, out_dir)
