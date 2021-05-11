@@ -1,10 +1,13 @@
 """Evaluation procedures for semantic segmentation."""
 
 import os.path as osp
-from typing import Dict
+from functools import partial
+from multiprocessing import Pool
+from typing import Dict, Set, Tuple
 
 import numpy as np
 from PIL import Image
+from tqdm import tqdm
 
 from ..common.logger import logger
 from ..common.utils import list_files
@@ -28,10 +31,22 @@ def per_class_iu(hist: np.ndarray) -> np.ndarray:
     return ious
 
 
+def per_image_hist(
+    gt_path: str, res_path: str, num_classes: int
+) -> Tuple[np.ndarray, Set[int]]:
+    """Calculate per image hist."""
+    gt = np.asarray(Image.open(gt_path, "r"))
+    gt_id_set = set(np.unique(gt).tolist())
+    pred = np.asanyarray(Image.open(res_path, "r"))
+    hist = fast_hist(gt.flatten(), pred.flatten(), num_classes)
+    return hist, gt_id_set
+
+
 def evaluate_segmentation(
     gt_dir: str,
     res_dir: str,
     mode: str = "sem_seg",
+    nproc: int = 4,
 ) -> Dict[str, float]:
     """Evaluate segmentation IoU from input folders."""
     assert mode in ["sem_seg", "drivable"]
@@ -48,36 +63,43 @@ def evaluate_segmentation(
     for gt_img, res_img in zip(gt_imgs, res_imgs):
         assert gt_img == res_img
 
+    gt_paths = [osp.join(gt_dir, img) for img in gt_imgs]
+    res_paths = [osp.join(res_dir, img) for img in gt_imgs]
+
+    with Pool(nproc) as pool:
+        hist_and_gt_id_sets = pool.starmap(
+            partial(per_image_hist, num_classes=num_classes),
+            tqdm(zip(gt_paths, res_paths), total=len(gt_imgs)),
+        )
     hist = np.zeros((num_classes, num_classes))
     gt_id_set = set()
-    for i, img in enumerate(gt_imgs):
-        gt_path = osp.join(gt_dir, img)
-        res_path = osp.join(res_dir, img)
-        gt = np.asarray(Image.open(gt_path, "r"))
-        gt_id_set.update(np.unique(gt).tolist())
-        pred = np.asanyarray(Image.open(res_path, "r"))
-        hist += fast_hist(gt.flatten(), pred.flatten(), num_classes)
-        if (i + 1) % 100 == 0:
-            logger.info("Finished %d", (i + 1))
+    for (hist_, gt_id_set_) in hist_and_gt_id_sets:
+        hist += hist_
+        gt_id_set.update(gt_id_set_)
+
     if 255 in gt_id_set:
         gt_id_set.remove(255)
+    if mode == "drivable":
+        background = len(categories) - 1
+        if background in gt_id_set:
+            gt_id_set.remove(background)
+        categories.remove("background")
     logger.info("GT id set [%s]", ",".join(str(s) for s in gt_id_set))
     ious = per_class_iu(hist) * 100
     miou = np.mean(ious[list(gt_id_set)])
 
     iou_dict = dict(miou=miou)
-    logger.info("{:.2f}".format(miou))
+    logger.info("mIoU: {:.2f}".format(miou))
     for category, iou in zip(categories, ious):
         iou_dict[category] = iou
         logger.info("{}: {:.2f}".format(category, iou))
     return iou_dict
 
 
-def evaluate_drivable(gt_dir: str, result_dir: str) -> Dict[str, float]:
+def evaluate_drivable(
+    gt_dir: str, result_dir: str, nproc: int = 4
+) -> Dict[str, float]:
     """Evaluate drivable area."""
-    return evaluate_segmentation(gt_dir, result_dir, mode="drivable")
-
-
-def evaluate_lane_marking(gt_dir: str, result_dir: str) -> Dict[str, float]:
-    """Evaluate drivable area."""
-    return evaluate_segmentation(gt_dir, result_dir, mode="lane_mark")
+    return evaluate_segmentation(
+        gt_dir, result_dir, mode="drivable", nproc=nproc
+    )
