@@ -3,7 +3,7 @@
 import os.path as osp
 from functools import partial
 from multiprocessing import Pool
-from typing import Dict
+from typing import Dict, Set, Tuple
 
 import numpy as np
 from PIL import Image
@@ -31,7 +31,10 @@ def per_class_iu(hist: np.ndarray) -> np.ndarray:
     return ious
 
 
-def per_image_hist(gt_path, res_path, num_classes):
+def per_image_hist(
+    gt_path: str, res_path: str, num_classes: int
+) -> Tuple[np.ndarray, Set[int]]:
+    """Calculate per image hist."""
     gt = np.asarray(Image.open(gt_path, "r"))
     gt_id_set = set(np.unique(gt).tolist())
     pred = np.asanyarray(Image.open(res_path, "r"))
