@@ -63,13 +63,10 @@ from functools import partial
 from multiprocessing import Pool
 from typing import Callable, Dict, List
 
+import cv2  # type: ignore
 import numpy as np
 from PIL import Image
-from skimage.morphology import (  # type: ignore
-    binary_dilation,
-    disk,
-    skeletonize,
-)
+from skimage.morphology import disk, skeletonize  # type: ignore
 from tabulate import tabulate
 from tqdm import tqdm
 
@@ -80,43 +77,10 @@ AVG = "avg"
 TOTAL = "total"
 
 
-def eval_lane_per_threshold(
-    gt_mask: np.ndarray, pd_mask: np.ndarray, bound_th: float = 0.008
-) -> float:
-    """Compute mean,recall and decay from per-threshold evaluation."""
-    bound_pix = (
-        bound_th
-        if bound_th >= 1
-        else np.ceil(bound_th * np.linalg.norm(gt_mask.shape))
-    )
-
-    gt_dil = binary_dilation(gt_mask, disk(bound_pix))
-    pd_dil = binary_dilation(pd_mask, disk(bound_pix))
-
-    # Area of the intersection
-    n_gt = np.sum(gt_mask)
-    n_pd = np.sum(pd_mask)
-
-    # Get the intersection
-    gt_match = gt_mask * pd_dil
-    pd_match = pd_mask * gt_dil
-
-    precision = np.sum(pd_match) / float(n_pd)
-    recall = np.sum(gt_match) / float(n_gt)
-
-    f_score = 2.0 * precision * recall / (precision + recall)
-
-    return f_score
-
-
 def get_lane_class(
     byte: np.ndarray, value: int, offset: int, width: int
 ) -> np.ndarray:
     """Extract the lane class given offset, width and value."""
-    assert byte.dtype == "uint8"
-    assert 0 <= value < (1 << 8)
-    assert 0 <= offset < 8
-    assert 0 < width <= 8
     return (((byte >> offset) & ((1 << width) - 1)) == value).astype(np.bool)
 
 
@@ -140,38 +104,58 @@ sub_task_cats: Dict[str, List[str]] = dict(
 )
 
 
+def eval_lane_per_cat(
+    gt_mask: np.ndarray, pd_mask: np.ndarray, bound_ths: List[int]
+) -> List[float]:
+    """Compute mean,recall and decay from per-threshold evaluation."""
+    gt_mask = skeletonize(gt_mask).astype(np.uint8)
+    pd_mask = skeletonize(pd_mask).astype(np.uint8)
+
+    # Area of the intersection
+    n_gt = np.sum(gt_mask)
+    n_pd = np.sum(pd_mask)
+
+    if n_gt == 0 and n_pd == 0:
+        return [1.0 for _ in bound_ths]
+    if n_gt == 0 or n_pd == 0:
+        return [0.0 for _ in bound_ths]
+
+    f_scores: List[float] = []
+    for bound_th in bound_ths:
+        kernel = disk(bound_th)
+        gt_dil = cv2.dilate(gt_mask, kernel)
+        pd_dil = cv2.dilate(pd_mask, kernel)
+
+        # Get the intersection
+        gt_match = gt_mask * pd_dil
+        pd_match = pd_mask * gt_dil
+
+        precision = np.sum(pd_match) / float(n_pd)
+        recall = np.sum(gt_match) / float(n_gt)
+
+        if precision + recall == 0:
+            f_score = 0.0
+        else:
+            f_score = 2.0 * precision * recall / (precision + recall)
+        f_scores.append(f_score)
+
+    return f_scores
+
+
 def eval_lane_per_frame(
-    gt_file: str, pred_file: str, bound_ths: List[float]
+    gt_file: str, pred_file: str, bound_ths: List[int]
 ) -> Dict[str, np.ndarray]:
     """Compute mean,recall and decay from per-frame evaluation."""
-    task2arr: Dict[str, np.ndarray] = dict()  # str -> 2d array
+    task2arr: Dict[str, np.ndarray] = dict()  # str -> 2d array, [cat, thres]
     gt_byte = np.asarray(Image.open(gt_file))
     pred_byte = np.asarray(Image.open(pred_file))
-    gt_foreground = get_foreground(gt_byte)
-    pd_foreground = get_foreground(pred_byte)
 
     for task_name, class_func in sub_task_funcs.items():
         task_scores: List[List[float]] = []
         for value in range(len(sub_task_cats[task_name])):
-            gt_mask = class_func(gt_byte, value) & gt_foreground
-            pd_mask = class_func(pred_byte, value) & pd_foreground
-            gt_mask = skeletonize(gt_mask)
-            pd_mask = skeletonize(pd_mask)
-
-            # Area of the intersection
-            n_gt = np.sum(gt_mask)
-            n_pd = np.sum(pd_mask)
-
-            # Compute precision and recall
-            if n_pd == 0 and n_gt == 0:
-                cat_scores = [1.0 for _ in bound_ths]
-            elif n_pd == 0 or n_gt == 0:
-                cat_scores = [0.0 for _ in bound_ths]
-            else:
-                cat_scores = [
-                    eval_lane_per_threshold(gt_mask, pd_mask, bound_th)
-                    for bound_th in bound_ths
-                ]
+            gt_mask = class_func(gt_byte, value)
+            pd_mask = class_func(pred_byte, value)
+            cat_scores = eval_lane_per_cat(gt_mask, pd_mask, bound_ths)
             task_scores.append(cat_scores)
         task2arr[task_name] = np.array(task_scores)
 
@@ -203,7 +187,7 @@ def merge_results(
 def create_table(
     task2arr: Dict[str, np.ndarray],
     all_task_cats: Dict[str, List[str]],
-    bound_ths: List[float],
+    bound_ths: List[int],
 ) -> None:
     """Render the evaluation results."""
     table = []
@@ -233,7 +217,7 @@ def create_table(
 def render_results(
     task2arr: Dict[str, np.ndarray],
     all_task_cats: Dict[str, List[str]],
-    bound_ths: List[float],
+    bound_ths: List[int],
 ) -> Dict[str, float]:
     """Render the evaluation results."""
     f_score_dict: Dict[str, float] = dict()
@@ -241,7 +225,7 @@ def render_results(
         for cat_name, arr1d in zip(all_task_cats[task_name], arr2d):
             for bound_th, f_score in zip(bound_ths, arr1d):
                 f_score_dict[
-                    "{:.1f}_{}_{}".format(
+                    "{}_{}_{}".format(
                         bound_th, task_name, cat_name.replace(" ", "_")
                     )
                 ] = f_score
@@ -250,9 +234,13 @@ def render_results(
 
 
 def evaluate_lane_marking(
-    gt_dir: str, pred_dir: str, bound_ths: List[float], nproc: int = 4
+    gt_dir: str, pred_dir: str, bound_ths: List[int], nproc: int = 4
 ) -> Dict[str, float]:
     """Evaluate F-score for lane marking from input folders."""
+    bound_ths = sorted(set(bound_ths))
+    for bound_th in bound_ths:
+        assert bound_th >= 0
+
     gt_files = list_files(gt_dir, ".png", with_prefix=True)
     pred_files = list_files(pred_dir, ".png", with_prefix=True)
 
@@ -260,6 +248,7 @@ def evaluate_lane_marking(
         task2arr_list = pool.starmap(
             partial(eval_lane_per_frame, bound_ths=bound_ths),
             tqdm(zip(gt_files, pred_files), total=len(gt_files)),
+            chunksize=10,
         )
     task2arr = merge_results(task2arr_list)
 

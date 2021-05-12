@@ -6,7 +6,7 @@ from typing import Dict
 import numpy as np
 
 from .lane import (
-    eval_lane_per_threshold,
+    eval_lane_per_cat,
     evaluate_lane_marking,
     get_foreground,
     get_lane_class,
@@ -48,10 +48,10 @@ class TestEvalLanePerThreshold(unittest.TestCase):
         a[3, 3:7] = True
         b[7, 3:7] = True
 
-        for radius in [1, 2, 3]:
-            self.assertAlmostEqual(eval_lane_per_threshold(a, b, radius), 0.0)
-        for radius in [4, 5, 6]:
-            self.assertAlmostEqual(eval_lane_per_threshold(a, b, radius), 1.0)
+        for f_score in eval_lane_per_cat(a, b, [1, 2, 3]):
+            self.assertAlmostEqual(f_score, 0.0)
+        for f_score in eval_lane_per_cat(a, b, [4, 5, 6]):
+            self.assertAlmostEqual(f_score, 1.0)
 
     def test_two_vertical_lines(self) -> None:
         """Check the correctness of the function in general cases."""
@@ -60,10 +60,9 @@ class TestEvalLanePerThreshold(unittest.TestCase):
         a[3, 3:6] = True
         b[5:8, 7] = True
 
-        self.assertAlmostEqual(eval_lane_per_threshold(a, b, 2), 0.0)
-        self.assertAlmostEqual(eval_lane_per_threshold(a, b, 3), 1 / 3)
-        self.assertAlmostEqual(eval_lane_per_threshold(a, b, 4), 2 / 3)
-        self.assertAlmostEqual(eval_lane_per_threshold(a, b, 5), 1.0)
+        gts = [0.0, 1 / 3, 2 / 3, 1.0]
+        for i, f_score in enumerate(eval_lane_per_cat(a, b, [2, 3, 4, 5])):
+            self.assertAlmostEqual(f_score, gts[i])
 
     def test_two_vertical_border_lines(self) -> None:
         """Check the correctness of the function in general cases."""
@@ -72,10 +71,9 @@ class TestEvalLanePerThreshold(unittest.TestCase):
         a[1:6, 1:4] = True
         b[4:7, 3:8] = True
 
-        self.assertAlmostEqual(eval_lane_per_threshold(a, b, 2), 0.0)
-        self.assertAlmostEqual(eval_lane_per_threshold(a, b, 3), 0.4)
-        self.assertAlmostEqual(eval_lane_per_threshold(a, b, 4), 0.70588235)
-        self.assertAlmostEqual(eval_lane_per_threshold(a, b, 5), 1.0)
+        gts = [0.0, 0.4, 0.70588235, 1.0]
+        for i, f_score in enumerate(eval_lane_per_cat(a, b, [2, 3, 4, 5])):
+            self.assertAlmostEqual(f_score, gts[i])
 
 
 class TestEvaluateLaneMarking(unittest.TestCase):
@@ -88,39 +86,39 @@ class TestEvaluateLaneMarking(unittest.TestCase):
         res_dir = "{}/testcases/lane/res".format(cur_dir)
         f_scores = evaluate_lane_marking(gt_dir, res_dir, bound_ths=[1, 2])
         gt_f_scores: Dict[str, float] = {
-            "1.0_direction_parallel": 79.46877879291574,
-            "2.0_direction_parallel": 87.61816039690531,
-            "1.0_direction_vertical": 58.9375575858315,
-            "2.0_direction_vertical": 75.23632079381062,
-            "1.0_direction_avg": 100.0,
-            "2.0_direction_avg": 100.0,
-            "1.0_style_solid": 79.46877879291574,
-            "2.0_style_solid": 87.61816039690531,
-            "1.0_style_dashed": 58.9375575858315,
-            "2.0_style_dashed": 75.23632079381062,
-            "1.0_style_avg": 100.0,
-            "2.0_style_avg": 100.0,
-            "1.0_category_crosswalk": 88.24432582570225,
-            "2.0_category_crosswalk": 93.82889258902341,
-            "1.0_category_double_other": 99.01265721381078,
-            "2.0_category_double_other": 100.0,
-            "1.0_category_double_white": 100.0,
-            "2.0_category_double_white": 100.0,
-            "1.0_category_double_yellow": 100.0,
-            "2.0_category_double_yellow": 100.0,
-            "1.0_category_road_curb": 75.0,
-            "2.0_category_road_curb": 75.16008049762166,
-            "1.0_category_single_other": 59.173962031069706,
-            "2.0_category_single_other": 75.48380881221992,
-            "1.0_category_single_white": 100.0,
-            "2.0_category_single_white": 100.0,
-            "1.0_category_single_yellow": 89.27983318704442,
-            "2.0_category_single_yellow": 99.98725140234575,
-            "1.0_category_avg": 83.48815417369305,
-            "2.0_category_avg": 100.0,
-            "1.0_total_avg": 94.496051391231,
-            "2.0_total_avg": 100.0,
-            "average": 97.2480256956155,
+            "1_direction_parallel": 64.7337276349192,
+            "2_direction_parallel": 81.77311698792636,
+            "1_direction_vertical": 58.9375575858315,
+            "2_direction_vertical": 75.23632079381062,
+            "1_direction_avg": 70.52989768400693,
+            "2_direction_avg": 88.3099131820421,
+            "1_style_solid": 64.7337276349192,
+            "2_style_solid": 81.77311698792636,
+            "1_style_dashed": 58.9375575858315,
+            "2_style_dashed": 75.23632079381062,
+            "1_style_avg": 70.52989768400693,
+            "2_style_avg": 88.3099131820421,
+            "1_category_crosswalk": 86.92723052565553,
+            "2_category_crosswalk": 92.30414200475008,
+            "1_category_double_other": 99.01265721381078,
+            "2_category_double_other": 100.0,
+            "1_category_double_white": 100.0,
+            "2_category_double_white": 100.0,
+            "1_category_double_yellow": 100.0,
+            "2_category_double_yellow": 100.0,
+            "1_category_road_curb": 75.0,
+            "2_category_road_curb": 75.16008049762166,
+            "1_category_single_other": 59.173962031069706,
+            "2_category_single_other": 75.48380881221992,
+            "1_category_single_white": 100.0,
+            "2_category_single_white": 100.0,
+            "1_category_single_yellow": 89.27983318704442,
+            "2_category_single_yellow": 99.98725140234575,
+            "1_category_avg": 72.95139177331933,
+            "2_category_avg": 87.80199532581338,
+            "1_total_avg": 71.3370623804444,
+            "2_total_avg": 88.14060722996585,
+            "average": 79.73883480520513,
         }
         for key, val in gt_f_scores.items():
             self.assertAlmostEqual(val, f_scores[key])
