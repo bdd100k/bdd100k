@@ -90,39 +90,21 @@ def eval_lane_per_threshold(
         else np.ceil(bound_th * np.linalg.norm(gt_mask.shape))
     )
 
-    gt_skeleton = skeletonize(gt_mask)
-    pd_skeleton = skeletonize(pd_mask)
-
-    gt_dil = binary_dilation(gt_skeleton, disk(bound_pix))
-    pd_dil = binary_dilation(pd_skeleton, disk(bound_pix))
-
-    # Get the intersection
-    gt_match = gt_skeleton * pd_dil
-    pd_match = pd_skeleton * gt_dil
+    gt_dil = binary_dilation(gt_mask, disk(bound_pix))
+    pd_dil = binary_dilation(pd_mask, disk(bound_pix))
 
     # Area of the intersection
-    n_gt = np.sum(gt_skeleton)
-    n_pd = np.sum(pd_skeleton)
+    n_gt = np.sum(gt_mask)
+    n_pd = np.sum(pd_mask)
 
-    # Compute precision and recall
-    if n_pd == 0 and n_gt > 0:
-        precision = 1
-        recall = 0
-    elif n_pd > 0 and n_gt == 0:
-        precision = 0
-        recall = 1
-    elif n_pd == 0 and n_gt == 0:
-        precision = 1
-        recall = 1
-    else:
-        precision = np.sum(pd_match) / float(n_pd)
-        recall = np.sum(gt_match) / float(n_gt)
+    # Get the intersection
+    gt_match = gt_mask * pd_dil
+    pd_match = pd_mask * gt_dil
 
-    # Compute F measure
-    if precision + recall == 0:
-        f_score = 0.0
-    else:
-        f_score = 2.0 * precision * recall / (precision + recall)
+    precision = np.sum(pd_match) / float(n_pd)
+    recall = np.sum(gt_match) / float(n_gt)
+
+    f_score = 2.0 * precision * recall / (precision + recall)
 
     return f_score
 
@@ -173,10 +155,23 @@ def eval_lane_per_frame(
         for value in range(len(sub_task_cats[task_name])):
             gt_mask = class_func(gt_byte, value) & gt_foreground
             pd_mask = class_func(pred_byte, value) & pd_foreground
-            cat_scores = [
-                eval_lane_per_threshold(gt_mask, pd_mask, bound_th)
-                for bound_th in bound_ths
-            ]
+            gt_mask = skeletonize(gt_mask)
+            pd_mask = skeletonize(pd_mask)
+
+            # Area of the intersection
+            n_gt = np.sum(gt_mask)
+            n_pd = np.sum(pd_mask)
+
+            # Compute precision and recall
+            if n_pd == 0 and n_gt == 0:
+                cat_scores = [1.0 for _ in bound_ths]
+            elif n_pd == 0 or n_gt == 0:
+                cat_scores = [0.0 for _ in bound_ths]
+            else:
+                cat_scores = [
+                    eval_lane_per_threshold(gt_mask, pd_mask, bound_th)
+                    for bound_th in bound_ths
+                ]
             task_scores.append(cat_scores)
         task2arr[task_name] = np.array(task_scores)
 
