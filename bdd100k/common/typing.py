@@ -1,17 +1,16 @@
 """Common type definitions."""
 
 import sys
-from typing import Any, Dict, List
+from typing import Dict, List, Optional
 
 import numpy as np
+
+from scalabel.label.typing import Config
 
 if sys.version_info >= (3, 8):
     from typing import TypedDict  # pylint: disable=no-name-in-module
 else:
     from typing_extensions import TypedDict
-
-
-DictAny = Dict[str, Any]  # type: ignore[misc]
 
 
 class InstanceType(TypedDict, total=False):
@@ -26,3 +25,11 @@ class InstanceType(TypedDict, total=False):
     mask: np.ndarray
     bbox: List[float]
     area: float
+
+
+class BDDConfig(Config):
+    """Extend metadata for BDD100K."""
+
+    remove_ignore: bool = False
+    ignore_as_class: bool = False
+    ignore_mapping: Optional[Dict[str, str]]

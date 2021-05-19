@@ -13,10 +13,10 @@ import numpy as np
 from PIL import Image
 from pycocotools.cocoeval import COCOeval  # type: ignore
 from scalabel.eval.detect import evaluate_workflow
+from scalabel.common.typing import DictStrAny
 from scalabel.label.io import load_label_config
 from tqdm import tqdm
 
-from ..common.typing import DictAny
 from ..common.utils import list_files
 from .mots import mask_intersection_rate, parse_bitmasks
 
@@ -82,8 +82,8 @@ class BDDInsSegEval(COCOeval):  # type: ignore
         self.nproc = nproc
         self.img_names: List[str] = list()
         self.img2score: Dict[str, List[Tuple[int, float]]] = dict()
-        self.evalImgs: List[DictAny] = []
-        self.iou_res: List[DictAny] = []
+        self.evalImgs: List[DictStrAny] = []
+        self.iou_res: List[DictStrAny] = []
 
         print("Precompute per image IoUs...")
         self._prepare()
@@ -114,7 +114,7 @@ class BDDInsSegEval(COCOeval):  # type: ignore
                 )
         self.iou_res = [dict() for i in range(len(self))]
         with Pool(self.nproc) as pool:
-            to_updates: List[DictAny] = pool.map(
+            to_updates: List[DictStrAny] = pool.map(
                 self.compute_iou, tqdm(range(len(self)))
             )
         for res in to_updates:
@@ -136,7 +136,7 @@ class BDDInsSegEval(COCOeval):  # type: ignore
 
         # loop through images, area range, max detection number
         with Pool(self.nproc) as pool:
-            to_updates: List[Dict[int, DictAny]] = pool.map(
+            to_updates: List[Dict[int, DictStrAny]] = pool.map(
                 self.compute_match, range(len(self))
             )
         for to_update in to_updates:
@@ -147,7 +147,7 @@ class BDDInsSegEval(COCOeval):  # type: ignore
         toc = time.time()
         print("DONE (t={:0.2f}s).".format(toc - tic))
 
-    def compute_iou(self, img_ind: int) -> DictAny:
+    def compute_iou(self, img_ind: int) -> DictStrAny:
         """Compute IoU per image."""
         img_name = self.img_names[img_ind]
         ann_score = self.img2score[img_name]
@@ -179,7 +179,7 @@ class BDDInsSegEval(COCOeval):  # type: ignore
             dt_cat_ids=dt_cat_ids,
         )
 
-    def compute_match(self, img_ind: int) -> Dict[int, DictAny]:
+    def compute_match(self, img_ind: int) -> Dict[int, DictStrAny]:
         """Compute matching results for each image."""
         res = self.iou_res[img_ind]
 

@@ -5,8 +5,11 @@ import os.path as osp
 from itertools import groupby
 from typing import Dict, List, Tuple
 
-from scalabel.label.to_coco import get_instance_id, get_object_attributes
+from scalabel.common.io import load_config
+from scalabel.label.to_coco import get_instance_id
 from scalabel.label.typing import Label
+
+from .typing import BDDConfig
 
 DEFAULT_LABEL_CONFIG = osp.join(
     osp.dirname(osp.abspath(__file__)), "configs.toml"
@@ -54,10 +57,18 @@ def get_bdd100k_instance_id(
     return get_instance_id(instance_id_maps, global_instance_id, scalabel_id)
 
 
-def get_bdd100k_object_attributes(
-    label: Label, ignore: bool
-) -> Tuple[int, int]:
+def get_bdd100k_iscrowd(label: Label, ignore: bool) -> int:
     """Set attributes for the ann dict in BDD100K."""
     if label.id == "-1":
-        ignore = True
-    return get_object_attributes(label, ignore)
+        return 1
+    if label.attributes is None:
+        return 0
+    crowd = label.attributes.get("crowd", False)
+    return int(crowd or ignore)
+
+
+def load_bdd_config(filepath: str) -> BDDConfig:
+    """Load label configuration from a config file (toml / yaml)."""
+    cfg = load_config(filepath)
+    config = BDDConfig(**cfg)
+    return config
