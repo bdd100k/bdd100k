@@ -4,7 +4,7 @@ import argparse
 
 from scalabel.eval.detect import evaluate_det
 from scalabel.eval.mot import acc_single_video_mot, evaluate_track
-from scalabel.label.io import group_and_sort, load
+from scalabel.label.io import group_and_sort, load, load_label_config
 
 from ..common.utils import (
     DEFAULT_LABEL_CONFIG,
@@ -47,13 +47,13 @@ def parse_args() -> argparse.Namespace:
         help="path to the config file",
     )
     parser.add_argument(
-        "--mot-iou-thr",
+        "--iou-thr",
         type=float,
         default=0.5,
         help="iou threshold for mot evaluation",
     )
     parser.add_argument(
-        "--mot-ignore-iof-thr",
+        "--ignore-iof-thr",
         type=float,
         default=0.5,
         help="ignore iof threshold for mot evaluation",
@@ -84,6 +84,7 @@ def parse_args() -> argparse.Namespace:
 def run() -> None:
     """Main."""
     args = parse_args()
+    config = load_label_config(args.config)
 
     if args.task == "drivable":
         evaluate_drivable(args.gt, args.result)
@@ -93,7 +94,10 @@ def run() -> None:
         evaluate_segmentation(args.gt, args.result)
     elif args.task == "det":
         evaluate_det(
-            args.gt, args.result, args.config, args.out_dir, args.nproc
+            load(args.gt, args.nproc).frames,
+            load(args.result, args.nproc).frames,
+            config,
+            args.out_dir,
         )
     elif args.task == "ins_seg":
         evaluate_ins_seg(
@@ -107,11 +111,11 @@ def run() -> None:
     elif args.task == "box_track":
         evaluate_track(
             acc_single_video_mot,
-            gts=group_and_sort(load(args.gt, args.nproc)),
-            results=group_and_sort(load(args.result, args.nproc)),
-            cfg_path=args.config,
-            iou_thr=args.mot_iou_thr,
-            ignore_iof_thr=args.mot_ignore_iof_thr,
+            gts=group_and_sort(load(args.gt, args.nproc).frames),
+            results=group_and_sort(load(args.result, args.nproc).frames),
+            config=config,
+            iou_thr=args.iou_thr,
+            ignore_iof_thr=args.ignore_iof_thr,
             nproc=args.nproc,
         )
     elif args.task == "seg_track":
@@ -123,9 +127,9 @@ def run() -> None:
             results=group_and_sort_files(
                 list_files(args.result, ".png", with_prefix=True)
             ),
-            cfg_path=args.config,
-            iou_thr=args.mot_iou_thr,
-            ignore_iof_thr=args.mot_ignore_iof_thr,
+            config=config,
+            iou_thr=args.iou_thr,
+            ignore_iof_thr=args.ignore_iof_thr,
             nproc=args.nproc,
         )
 

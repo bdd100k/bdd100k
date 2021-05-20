@@ -12,9 +12,10 @@ from typing import Dict, List, Tuple
 import numpy as np
 from PIL import Image
 from pycocotools.cocoeval import COCOeval  # type: ignore
-from scalabel.eval.detect import evaluate_workflow
 from scalabel.common.typing import DictStrAny
+from scalabel.eval.detect import evaluate_workflow
 from scalabel.label.io import load_label_config
+from scalabel.label.transforms import get_coco_categories
 from tqdm import tqdm
 
 from ..common.utils import list_files
@@ -280,7 +281,8 @@ def evaluate_ins_seg(
     Returns:
         dict: detection metric scores
     """
-    _, categories, _, _ = load_label_config(cfg_path)
+    config = load_label_config(cfg_path)
+    categories = get_coco_categories(config)
     bdd_eval = BDDInsSegEval(ann_base, pred_base, pred_score_file, nproc)
     cat_ids = [category["id"] for category in categories]
     cat_names = [category["name"] for category in categories]

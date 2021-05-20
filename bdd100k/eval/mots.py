@@ -1,12 +1,16 @@
 """BDD100K tracking evaluation with CLEAR MOT metrics."""
 import os
-from typing import List, Tuple
+from typing import Callable, List, Tuple
 
 import motmetrics as mm
 import numpy as np
 from PIL import Image
 
 MAX_DET = 100
+
+Files = List[str]
+FilesList = List[Files]
+FilesFunc = Callable[[Files, Files, float, float], List[mm.MOTAccumulator]]
 
 
 def parse_bitmasks(
@@ -76,7 +80,6 @@ def acc_single_video_mots(  # pylint: disable=unused-argument
     gts: List[str],
     results: List[str],
     classes: List[str],
-    ignore_classes: List[str],
     iou_thr: float = 0.5,
     ignore_iof_thr: float = 0.5,
 ) -> List[mm.MOTAccumulator]:

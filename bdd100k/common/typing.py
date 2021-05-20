@@ -4,7 +4,6 @@ import sys
 from typing import Dict, List, Optional
 
 import numpy as np
-
 from scalabel.label.typing import Config
 
 if sys.version_info >= (3, 8):

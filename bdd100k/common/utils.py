@@ -8,6 +8,7 @@ from typing import Dict, List, Tuple
 from scalabel.common.io import load_config
 from scalabel.label.to_coco import get_instance_id
 from scalabel.label.typing import Label
+from scalabel.label.utils import get_leaf_categories
 
 from .typing import BDDConfig
 
@@ -72,3 +73,29 @@ def load_bdd_config(filepath: str) -> BDDConfig:
     cfg = load_config(filepath)
     config = BDDConfig(**cfg)
     return config
+
+
+def get_bdd100k_category_id(
+    category_name: str, config: BDDConfig
+) -> Tuple[bool, int]:
+    """Get category id from category name and MetaConfig.
+
+    The returned boolean item means whether this instance should be ignored.
+    """
+    leaf_cats = get_leaf_categories(config.categories)
+    leaf_cat_names = [cat.name for cat in leaf_cats]
+    if config.ignore_as_class:
+        leaf_cat_names.append("ignore")
+
+    if category_name not in leaf_cat_names:
+        if config.remove_ignore:
+            return True, 0
+
+        if config.ignore_as_class:
+            category_name = "ignore"
+        else:
+            assert config.ignore_mapping is not None
+            assert category_name in config.ignore_mapping
+            category_name = config.ignore_mapping[category_name]
+    category_id = leaf_cat_names.index(category_name) + 1
+    return False, category_id
