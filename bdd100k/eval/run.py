@@ -86,11 +86,11 @@ def run() -> None:
         config = load_bdd_config(args.task)
 
     if args.task == "drivable":
-        evaluate_drivable(args.gt, args.result)
+        evaluate_drivable(args.gt, args.result, args.nproc)
     elif args.task == "lane_mark":
         evaluate_lane_marking(args.gt, args.result, [1, 2, 5, 10], args.nproc)
     elif args.task == "sem_seg":
-        evaluate_segmentation(args.gt, args.result)
+        evaluate_segmentation(args.gt, args.result, args.nproc)
     elif args.task == "det":
         evaluate_det(
             load(args.gt, args.nproc).frames,
