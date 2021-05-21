@@ -26,7 +26,7 @@ class InstanceType(TypedDict, total=False):
     area: float
 
 
-class BDDConfig(Config):
+class BDDConfig(Config):  # pylint: disable=too-few-public-methods
     """Extend metadata for BDD100K."""
 
     remove_ignore: bool = False
