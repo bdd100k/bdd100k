@@ -7,11 +7,10 @@ from typing import Callable, List
 import numpy as np
 from PIL import Image
 from scalabel.label.io import load
-from scalabel.label.to_coco import GetCatIdFunc
 from scalabel.label.typing import Frame, Label
 
 from ..common.typing import BDDConfig
-from ..common.utils import get_bdd100k_category_id, load_bdd_config
+from ..common.utils import load_bdd_config
 from .to_mask import (
     insseg_to_bitmasks,
     segtrack_to_bitmasks,
@@ -44,9 +43,7 @@ class TestToMasks(unittest.TestCase):
         task_name: str,
         file_name: str,
         output_name: str,
-        convert_func: Callable[
-            [List[Frame], str, BDDConfig, int, GetCatIdFunc], None
-        ],
+        convert_func: Callable[[List[Frame], str, BDDConfig, int], None],
     ) -> None:
         """General test function for different tasks."""
         cur_dir = os.path.dirname(os.path.abspath(__file__))
@@ -54,7 +51,7 @@ class TestToMasks(unittest.TestCase):
         dataset = load("{}/testcases/example_annotation.json".format(cur_dir))
         frames = dataset.frames
         config = load_bdd_config(task_name)
-        convert_func(frames, self.test_out, config, 1, get_bdd100k_category_id)
+        convert_func(frames, self.test_out, config, 1)
         output_path = os.path.join(self.test_out, output_name)
         mask = np.asarray(Image.open(output_path))
 

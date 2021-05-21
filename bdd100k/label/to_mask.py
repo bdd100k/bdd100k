@@ -178,7 +178,6 @@ def seg_to_masks(
     out_base: str,
     config: BDDConfig,
     nproc: int = 4,
-    get_cat_id_func: GetCatIdFunc = get_bdd100k_category_id,
     mode: str = "sem_seg",
     back_color: int = IGNORE_LABEL,
     closed: bool = True,
@@ -250,7 +249,7 @@ def seg_to_masks(
     )
 
 
-ToMasksFunc = Callable[[List[Frame], str, BDDConfig, int, GetCatIdFunc], None]
+ToMasksFunc = Callable[[List[Frame], str, BDDConfig, int], None]
 semseg_to_masks: ToMasksFunc = partial(
     seg_to_masks, mode="sem_seg", back_color=IGNORE_LABEL, closed=True
 )
@@ -419,8 +418,12 @@ def main() -> None:
         sem_seg=semseg_to_masks,
         drivable=drivable_to_masks,
         lane_mark=lanemark_to_masks,
-        ins_seg=insseg_to_bitmasks,
-        seg_track=segtrack_to_bitmasks,
+        ins_seg=partial(
+            insseg_to_bitmasks, get_cat_id_func=get_bdd100k_category_id
+        ),
+        seg_track=partial(
+            segtrack_to_bitmasks, get_cat_id_func=get_bdd100k_category_id
+        ),
     )
 
     dataset = load(args.input, args.nproc)
@@ -436,7 +439,6 @@ def main() -> None:
         args.output,
         config,
         args.nproc,
-        get_bdd100k_category_id,
     )
 
     logger.info("Finished!")
