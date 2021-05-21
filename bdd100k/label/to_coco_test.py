@@ -2,9 +2,7 @@
 import os
 import unittest
 
-from scalabel.label.io import load_label_config
-
-from ..common.utils import DEFAULT_LABEL_CONFIG
+from ..common.utils import load_bdd_config
 from .to_coco import (
     bitmask2coco_ins_seg,
     bitmask2coco_seg_track,
@@ -19,7 +17,6 @@ class TestBitmasks2COCO(unittest.TestCase):
 
     cur_dir = os.path.dirname(os.path.abspath(__file__))
     os.chdir(cur_dir)
-    config = load_label_config(DEFAULT_LABEL_CONFIG)
 
     def test_bitmask_loader(self) -> None:
         """Check the correctness of the bitmask loader."""
@@ -41,7 +38,8 @@ class TestBitmasks2COCO(unittest.TestCase):
     def test_bitmask2coco_ins_seg(self) -> None:
         """Check the correctness of bitmask2coco_ins_seg."""
         mask_dir = "./testcases/bitmasks/quasi-video"
-        coco = bitmask2coco_ins_seg(mask_dir, self.config)
+        config = load_bdd_config("ins_seg")
+        coco = bitmask2coco_ins_seg(mask_dir, config)
         self.assertEqual(len(coco), 4)
         self.assertEqual(len(coco["images"]), 2)
         self.assertEqual(coco["images"][0]["id"], 1)
@@ -50,7 +48,8 @@ class TestBitmasks2COCO(unittest.TestCase):
     def test_bitmask2coco_seg_track(self) -> None:
         """Check the correctness of bitmask2coco_seg_track."""
         mask_dir = "./testcases/bitmasks"
-        coco = bitmask2coco_seg_track(mask_dir, self.config)
+        config = load_bdd_config("seg_track")
+        coco = bitmask2coco_seg_track(mask_dir, config)
         self.assertEqual(len(coco), 5)
         self.assertEqual(len(coco["images"]), 2)
         self.assertEqual(coco["images"][0]["id"], 1)

@@ -5,13 +5,8 @@ import unittest
 import numpy as np
 from PIL import Image
 from scalabel.eval.mot import evaluate_track
-from scalabel.label.io import load_label_config
 
-from ..common.utils import (
-    DEFAULT_LABEL_CONFIG,
-    group_and_sort_files,
-    list_files,
-)
+from ..common.utils import group_and_sort_files, list_files, load_bdd_config
 from .mots import acc_single_video_mots, mask_intersection_rate, parse_bitmasks
 
 
@@ -49,7 +44,7 @@ class TestEvaluteMOTS(unittest.TestCase):
         results = group_and_sort_files(
             list_files(b_path, ".png", with_prefix=True)
         )
-        config = load_label_config(DEFAULT_LABEL_CONFIG)
+        config = load_bdd_config("seg_track")
         res = evaluate_track(
             acc_single_video_mots, gts, results, config, nproc=1
         )

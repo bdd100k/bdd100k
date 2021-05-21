@@ -14,9 +14,10 @@ from PIL import Image
 from pycocotools.cocoeval import COCOeval  # type: ignore
 from scalabel.common.typing import DictStrAny
 from scalabel.eval.detect import evaluate_workflow
-from scalabel.label.io import load_label_config
 from scalabel.label.transforms import get_coco_categories
 from tqdm import tqdm
+
+from bdd100k.common.typing import BDDConfig
 
 from ..common.utils import list_files
 from .mots import mask_intersection_rate, parse_bitmasks
@@ -264,7 +265,7 @@ def evaluate_ins_seg(
     ann_base: str,
     pred_base: str,
     pred_score_file: str,
-    cfg_path: str,
+    config: BDDConfig,
     out_dir: str = "none",
     nproc: int = 4,
 ) -> Dict[str, float]:
@@ -274,14 +275,13 @@ def evaluate_ins_seg(
         ann_base: path to the ground truth bitmasks folder.
         pred_base: path to the prediciton bitmasks folder.
         pred_score_file: path tothe prediction scores.
-        cfg_path: path to the config file.
+        config: BDDConfig instance.
         out_dir: output_directory.
         nproc: number of processes.
 
     Returns:
         dict: detection metric scores
     """
-    config = load_label_config(cfg_path)
     categories = get_coco_categories(config)
     bdd_eval = BDDInsSegEval(ann_base, pred_base, pred_score_file, nproc)
     cat_ids = [category["id"] for category in categories]

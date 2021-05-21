@@ -32,3 +32,4 @@ class BDDConfig(Config):
     remove_ignore: bool = False
     ignore_as_class: bool = False
     ignore_mapping: Optional[Dict[str, str]]
+    name_mapping: Optional[Dict[str, str]]

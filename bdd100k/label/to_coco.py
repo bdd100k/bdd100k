@@ -26,7 +26,7 @@ from typing import Dict, List, Tuple
 import numpy as np
 from PIL import Image
 from scalabel.label.coco_typing import AnnType, GtType, ImgType, VidType
-from scalabel.label.io import group_and_sort, load, load_label_config
+from scalabel.label.io import group_and_sort, load
 from scalabel.label.to_coco import (
     GetCatIdFunc,
     scalabel2coco_box_track,
@@ -40,7 +40,6 @@ from tqdm import tqdm
 from ..common.logger import logger
 from ..common.typing import BDDConfig, InstanceType
 from ..common.utils import (
-    DEFAULT_LABEL_CONFIG,
     get_bdd100k_category_id,
     get_bdd100k_instance_id,
     get_bdd100k_iscrowd,
@@ -97,7 +96,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         type=str,
-        default=DEFAULT_LABEL_CONFIG,
+        default=None,
         help="Configuration for COCO categories",
     )
     parser.add_argument(
@@ -561,7 +560,10 @@ def main() -> None:
             seg_track=bitmask2coco_seg_track,
         )[args.mode]
 
-        config = load_label_config(args.config)
+        if args.config is not None:
+            config = load_bdd_config(args.config)
+        else:
+            config = load_bdd_config(args.mode)
         logger.info("Start format converting...")
         coco = convert_function(
             args.input,
@@ -588,15 +590,17 @@ def main() -> None:
 
         logger.info("Loading annotations...")
         dataset = load(args.input, args.nproc)
-        frames, bdd_cfg = dataset.frames, dataset.config
         if args.config is not None:
-            bdd_cfg = load_bdd_config(args.config)
-        assert bdd_cfg is not None
+            config = load_bdd_config(args.config)
+        elif dataset.config is not None:
+            config = BDDConfig(**dataset.config.dict())
+        if config is None:
+            config = load_bdd_config(args.mode)
 
         logger.info("Start format converting...")
         coco = convert_func(
-            frames=frames,
-            config=bdd_cfg,
+            frames=dataset.frames,
+            config=config,
             get_cat_id_func=get_bdd100k_category_id,
         )
 

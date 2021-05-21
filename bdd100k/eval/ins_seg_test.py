@@ -6,7 +6,7 @@ import unittest
 import numpy as np
 from PIL import Image
 
-from ..common.utils import DEFAULT_LABEL_CONFIG
+from ..common.utils import load_bdd_config
 from .ins_seg import evaluate_ins_seg
 
 
@@ -19,9 +19,8 @@ class TestBDD100KInsSegEval(unittest.TestCase):
         gt_base = "{}/testcases/ins_seg/gt".format(cur_dir)
         pred_base = "{}/testcases/ins_seg/pred".format(cur_dir)
         pred_json = "{}/testcases/ins_seg/pred.json".format(cur_dir)
-        result = evaluate_ins_seg(
-            gt_base, pred_base, pred_json, DEFAULT_LABEL_CONFIG
-        )
+        config = load_bdd_config("ins_seg")
+        result = evaluate_ins_seg(gt_base, pred_base, pred_json, config)
         overall_reference = {
             "AP": 0.686056105610561,
             "AP_50": 0.8968646864686468,
@@ -93,5 +92,4 @@ def create_test_file() -> None:
 
 
 if __name__ == "__main__":
-    create_test_file()
     unittest.main()

@@ -26,6 +26,7 @@ import matplotlib.pyplot as plt  # type: ignore
 import numpy as np
 from PIL import Image
 from scalabel.label.io import group_and_sort, load
+from scalabel.label.to_coco import GetCatIdFunc
 from scalabel.label.transforms import poly_to_patch
 from scalabel.label.typing import Frame, ImageSize, Label, Poly2D
 from tqdm import tqdm
@@ -177,6 +178,7 @@ def seg_to_masks(
     out_base: str,
     config: BDDConfig,
     nproc: int = 4,
+    get_cat_id_func: GetCatIdFunc = get_bdd100k_category_id,
     mode: str = "sem_seg",
     back_color: int = IGNORE_LABEL,
     closed: bool = True,
@@ -248,7 +250,7 @@ def seg_to_masks(
     )
 
 
-ToMasksFunc = Callable[[List[Frame], str, BDDConfig, int], None]
+ToMasksFunc = Callable[[List[Frame], str, BDDConfig, int, GetCatIdFunc], None]
 semseg_to_masks: ToMasksFunc = partial(
     seg_to_masks, mode="sem_seg", back_color=IGNORE_LABEL, closed=True
 )
@@ -268,6 +270,7 @@ def insseg_to_bitmasks(
     out_base: str,
     config: BDDConfig,
     nproc: int = 4,
+    get_cat_id_func: GetCatIdFunc = get_bdd100k_category_id,
 ) -> None:
     """Converting instance segmentation poly2d to bitmasks."""
     os.makedirs(out_base, exist_ok=True)
@@ -312,9 +315,7 @@ def insseg_to_bitmasks(
         for label in labels_:
             if label.poly2d is None:
                 continue
-            ignore, category_id = get_bdd100k_category_id(
-                label.category, config
-            )
+            ignore, category_id = get_cat_id_func(label.category, config)
             if ignore:
                 continue
 
@@ -332,6 +333,7 @@ def segtrack_to_bitmasks(
     out_base: str,
     config: BDDConfig,
     nproc: int = 4,
+    get_cat_id_func: GetCatIdFunc = get_bdd100k_category_id,
 ) -> None:
     """Converting segmentation tracking poly2d to bitmasks."""
     frames_list = group_and_sort(frames)
@@ -383,9 +385,7 @@ def segtrack_to_bitmasks(
             for label in labels_:
                 if label.poly2d is None:
                     continue
-                ignore, category_id = get_bdd100k_category_id(
-                    label.category, config
-                )
+                ignore, category_id = get_cat_id_func(label.category, config)
                 if ignore:
                     continue
 
@@ -422,15 +422,21 @@ def main() -> None:
         ins_seg=insseg_to_bitmasks,
         seg_track=segtrack_to_bitmasks,
     )
+
     dataset = load(args.input, args.nproc)
-    frames, bdd_cfg = dataset.frames, dataset.config
     if args.config is not None:
-        bdd_cfg = load_bdd_config(args.config)
+        config = load_bdd_config(args.config)
+    elif dataset.config is not None:
+        config = BDDConfig(**dataset.config.dict())
+    if config is None:
+        config = load_bdd_config(args.mode)
+
     convert_funcs[args.mode](
-        frames,
+        dataset.frames,
         args.output,
-        bdd_cfg,
+        config,
         args.nproc,
+        get_bdd100k_category_id,
     )
 
     logger.info("Finished!")

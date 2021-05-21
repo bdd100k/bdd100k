@@ -4,13 +4,9 @@ import argparse
 
 from scalabel.eval.detect import evaluate_det
 from scalabel.eval.mot import acc_single_video_mot, evaluate_track
-from scalabel.label.io import group_and_sort, load, load_label_config
+from scalabel.label.io import group_and_sort, load
 
-from ..common.utils import (
-    DEFAULT_LABEL_CONFIG,
-    group_and_sort_files,
-    list_files,
-)
+from ..common.utils import group_and_sort_files, list_files, load_bdd_config
 from .ins_seg import evaluate_ins_seg
 from .lane import evaluate_lane_marking
 from .mots import acc_single_video_mots
@@ -43,7 +39,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         "-c",
-        default=DEFAULT_LABEL_CONFIG,
+        default=None,
         help="path to the config file",
     )
     parser.add_argument(
@@ -84,7 +80,10 @@ def parse_args() -> argparse.Namespace:
 def run() -> None:
     """Main."""
     args = parse_args()
-    config = load_label_config(args.config)
+    if args.config is not None:
+        config = load_bdd_config(args.config)
+    elif args.task in ["det", "ins_seg", "box_track", "seg_track"]:
+        config = load_bdd_config(args.task)
 
     if args.task == "drivable":
         evaluate_drivable(args.gt, args.result)
@@ -104,7 +103,7 @@ def run() -> None:
             args.gt,
             args.result,
             args.score_file,
-            args.config,
+            config,
             args.out_dir,
             args.nproc,
         )

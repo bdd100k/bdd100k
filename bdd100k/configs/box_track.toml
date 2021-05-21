@@ -7,6 +7,13 @@ ignore_as_class = false
 "other vehicle" = "car"
 "trailer" = "truck"
 
+[name_mapping]
+bike = "bicycle"
+caravan = "car"
+motor = "motorcycle"
+person = "pedestrian"
+van = "car"
+
 [image_size]
 height = 720
 width = 1280
@@ -45,9 +52,3 @@ name = "bike"
 
     [[categories.subcategories]]
     name = "bicycle"
-
-[[categories]]
-name = "traffic light"
-
-[[categories]]
-name = "traffic sign"

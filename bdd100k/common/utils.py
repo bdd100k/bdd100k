@@ -1,20 +1,17 @@
 """Util functions."""
 
+import inspect
 import os
 import os.path as osp
 from itertools import groupby
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, cast
 
 from scalabel.common.io import load_config
-from scalabel.label.to_coco import get_instance_id
+from scalabel.label.to_coco import GetCatIdFunc, get_instance_id
 from scalabel.label.typing import Label
 from scalabel.label.utils import get_leaf_categories
 
 from .typing import BDDConfig
-
-DEFAULT_LABEL_CONFIG = osp.join(
-    osp.dirname(osp.abspath(__file__)), "configs.toml"
-)
 
 
 def list_files(
@@ -68,14 +65,18 @@ def get_bdd100k_iscrowd(label: Label, ignore: bool) -> int:
     return int(crowd or ignore)
 
 
-def load_bdd_config(filepath: str) -> BDDConfig:
-    """Load label configuration from a config file (toml / yaml)."""
-    cfg = load_config(filepath)
-    config = BDDConfig(**cfg)
-    return config
+def load_bdd_config(task: str) -> BDDConfig:
+    """Load a task-specific config."""
+    cfg_path = osp.join(
+        osp.split(osp.dirname(osp.abspath(inspect.stack()[1][1])))[0],
+        "configs",
+        task + ".toml",
+    )
+    config = load_config(cfg_path)
+    return BDDConfig(**config)
 
 
-def get_bdd100k_category_id(
+def _get_bdd100k_category_id(
     category_name: str, config: BDDConfig
 ) -> Tuple[bool, int]:
     """Get category id from category name and MetaConfig.
@@ -86,6 +87,12 @@ def get_bdd100k_category_id(
     leaf_cat_names = [cat.name for cat in leaf_cats]
     if config.ignore_as_class:
         leaf_cat_names.append("ignore")
+
+    if (
+        config.name_mapping is not None
+        and category_name in config.name_mapping
+    ):
+        category_name = config.name_mapping[category_name]
 
     if category_name not in leaf_cat_names:
         if config.remove_ignore:
@@ -99,3 +106,6 @@ def get_bdd100k_category_id(
             category_name = config.ignore_mapping[category_name]
     category_id = leaf_cat_names.index(category_name) + 1
     return False, category_id
+
+
+get_bdd100k_category_id = cast((GetCatIdFunc), _get_bdd100k_category_id)
