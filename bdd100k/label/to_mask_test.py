@@ -12,6 +12,7 @@ from scalabel.label.typing import Frame, Label
 from bdd100k.common.typing import BDDConfig
 
 from ..common.typing import BDDConfig
+from ..common.utils import DEFAULT_LABEL_CONFIG, load_bdd_config
 from .to_mask import (
     insseg_to_bitmasks,
     segtrack_to_bitmasks,
@@ -49,7 +50,8 @@ class TestToMasks(unittest.TestCase):
         cur_dir = os.path.dirname(os.path.abspath(__file__))
 
         dataset = load("{}/testcases/example_annotation.json".format(cur_dir))
-        frames, config = dataset.frames, dataset.config
+        frames = dataset.frames
+        config = load_bdd_config(DEFAULT_LABEL_CONFIG)
         convert_func(frames, self.test_out, config, 1)
         output_path = os.path.join(self.test_out, output_name)
         mask = np.asarray(Image.open(output_path))
@@ -71,7 +73,7 @@ class TestToMasks(unittest.TestCase):
     def test_insseg_to_bitmasks(self) -> None:
         """Test case for instance segmentation to bitmasks."""
         self.task_specific_test(
-            "insseg_bitmask.png",
+            "bitmasks/quasi-video/insseg_bitmask.png",
             "b1c81faa-3df17267-0000001.png",
             insseg_to_bitmasks,
         )
@@ -79,7 +81,7 @@ class TestToMasks(unittest.TestCase):
     def test_segtrack_to_bitmasks(self) -> None:
         """Test case for instance segmentation to bitmasks."""
         self.task_specific_test(
-            "segtrack_bitmask.png",
+            "bitmasks/quasi-video/segtrack_bitmask.png",
             "b1c81faa-3df17267/b1c81faa-3df17267-0000001.png",
             segtrack_to_bitmasks,
         )

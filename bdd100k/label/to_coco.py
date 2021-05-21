@@ -160,10 +160,11 @@ def bitmasks_loader(mask_name: str) -> Tuple[List[InstanceType], ImageSize]:
 
 
 def bitmask2coco_wo_ids(
-    image: ImgType, image_id: int, mask_mode: str = "rle"
+    image: ImgType, image_id: int, mask_base: str, mask_mode: str = "rle"
 ) -> List[AnnType]:
     """Convert bitmasks annotations of an image to RLEs or polygons."""
-    instances, img_shape = bitmasks_loader(image["file_name"])
+    mask_name = os.path.join(mask_base, image["file_name"])
+    instances, img_shape = bitmasks_loader(mask_name)
     image["height"] = img_shape.height
     image["width"] = img_shape.width
 
@@ -184,6 +185,7 @@ def bitmask2coco_wo_ids(
 
 
 def bitmask2coco_wo_ids_parallel(
+    mask_base: str,
     images: List[ImgType],
     image_ids: List[int],
     mask_mode: str = "rle",
@@ -194,7 +196,9 @@ def bitmask2coco_wo_ids_parallel(
 
     with Pool(nproc) as pool:
         annotations_list = pool.starmap(
-            partial(bitmask2coco_wo_ids, mask_mode=mask_mode),
+            partial(
+                bitmask2coco_wo_ids, mask_base=mask_base, mask_mode=mask_mode
+            ),
             tqdm(
                 zip(images, image_ids),
                 total=len(image_ids),
@@ -273,9 +277,10 @@ def bitmask2coco_ins_seg(
     nproc: int = 4,
 ) -> GtType:
     """Converting BDD100K Instance Segmentation Set to COCO format."""
+    files = list_files(mask_base, suffix=".png")
+
     images: List[ImgType] = []
     image_ids: List[int] = []
-    files = list_files(mask_base, suffix=".png")
 
     logger.info("Collecting bitmasks...")
 
@@ -290,7 +295,7 @@ def bitmask2coco_ins_seg(
         image_ids.append(image_id)
 
     annotations = bitmask2coco_wo_ids_parallel(
-        images, image_ids, mask_mode, nproc
+        mask_base, images, image_ids, mask_mode, nproc
     )
     return GtType(
         type="instances",
@@ -334,7 +339,7 @@ def bitmask2coco_seg_track(
             image_ids.append(image_id)
 
     annotations = bitmask2coco_wo_ids_parallel(
-        images, image_ids, mask_mode, nproc
+        mask_base, images, image_ids, mask_mode, nproc
     )
     return GtType(
         type="instances",
