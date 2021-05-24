@@ -1,4 +1,3 @@
-# TODO: distinguish det and another tasks
 remove_ignore = false
 ignore_as_class = false
 
@@ -14,41 +13,42 @@ motor = "motorcycle"
 person = "pedestrian"
 van = "car"
 
-[image_size]
-height = 720
-width = 1280
+[config]
+    [config.image_size]
+    height = 720
+    width = 1280
 
-[[attributes]]
-name = "crowd"
-type = "switch"
-tag = "c"
+    [[config.attributes]]
+    name = "crowd"
+    type = "switch"
+    tag = "c"
 
-[[categories]]
-name = "human"
-    [[categories.subcategories]]
-    name = "pedestrian"
+    [[config.categories]]
+    name = "human"
+        [[config.categories.subcategories]]
+        name = "pedestrian"
 
-    [[categories.subcategories]]
-    name = "rider"
+        [[config.categories.subcategories]]
+        name = "rider"
 
-[[categories]]
-name = "vehicle"
-   [[categories.subcategories]]
-    name = "car"
+    [[config.categories]]
+    name = "vehicle"
+        [[config.categories.subcategories]]
+            name = "car"
 
-   [[categories.subcategories]]
-    name = "truck"
+        [[config.categories.subcategories]]
+            name = "truck"
 
-   [[categories.subcategories]]
-    name = "bus"
+        [[config.categories.subcategories]]
+            name = "bus"
 
-    [[categories.subcategories]]
-    name = "train"
+        [[config.categories.subcategories]]
+        name = "train"
 
-[[categories]]
-name = "bike"
-    [[categories.subcategories]]
-    name = "motorcycle"
+    [[config.categories]]
+    name = "bike"
+        [[config.categories.subcategories]]
+        name = "motorcycle"
 
-    [[categories.subcategories]]
-    name = "bicycle"
+        [[config.categories.subcategories]]
+        name = "bicycle"

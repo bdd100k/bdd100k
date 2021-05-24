@@ -7,9 +7,8 @@ from typing import Callable, List
 import numpy as np
 from PIL import Image
 from scalabel.label.io import load
-from scalabel.label.typing import Frame, Label
+from scalabel.label.typing import Config, Frame, Label
 
-from ..common.typing import BDDConfig
 from ..common.utils import load_bdd_config
 from .to_mask import (
     insseg_to_bitmasks,
@@ -28,7 +27,7 @@ class TestUtilFunctions(unittest.TestCase):
             id="tmp",
             attributes=dict(truncated=True, crowd=False),
         )
-        color = set_instance_color(label, 15, 300, False)
+        color = set_instance_color(label, 15, 300)
         gt_color = np.array([15, 8, 1, 44])
         self.assertTrue((color == gt_color).all())
 
@@ -43,15 +42,15 @@ class TestToMasks(unittest.TestCase):
         task_name: str,
         file_name: str,
         output_name: str,
-        convert_func: Callable[[List[Frame], str, BDDConfig, int], None],
+        convert_func: Callable[[List[Frame], str, Config, int], None],
     ) -> None:
         """General test function for different tasks."""
         cur_dir = os.path.dirname(os.path.abspath(__file__))
 
         dataset = load("{}/testcases/example_annotation.json".format(cur_dir))
         frames = dataset.frames
-        config = load_bdd_config(task_name)
-        convert_func(frames, self.test_out, config, 1)
+        bdd100k_config = load_bdd_config(task_name)
+        convert_func(frames, self.test_out, bdd100k_config.config, 1)
         output_path = os.path.join(self.test_out, output_name)
         mask = np.asarray(Image.open(output_path))
 

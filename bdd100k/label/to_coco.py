@@ -28,25 +28,28 @@ from PIL import Image
 from scalabel.label.coco_typing import AnnType, GtType, ImgType, VidType
 from scalabel.label.io import group_and_sort, load
 from scalabel.label.to_coco import (
-    GetCatIdFunc,
     scalabel2coco_box_track,
     scalabel2coco_detection,
     set_seg_object_geometry,
 )
 from scalabel.label.transforms import get_coco_categories, mask_to_bbox
 from scalabel.label.typing import Config, Frame, ImageSize
+from scalabel.label.utils import (
+    check_crowd,
+    check_ignored,
+    get_leaf_categories,
+)
 from tqdm import tqdm
 
 from ..common.logger import logger
-from ..common.typing import BDDConfig, InstanceType
+from ..common.typing import BDD100KConfig, InstanceType
 from ..common.utils import (
-    get_bdd100k_category_id,
     get_bdd100k_instance_id,
-    get_bdd100k_iscrowd,
     group_and_sort_files,
     list_files,
     load_bdd_config,
 )
+from .to_scalabel import bdd100k_to_scalabel
 
 
 def parse_args() -> argparse.Namespace:
@@ -352,10 +355,9 @@ def bitmask2coco_seg_track(
 def bdd100k2coco_ins_seg(
     mask_base: str,
     frames: List[Frame],
-    config: BDDConfig,
+    config: Config,
     mask_mode: str = "rle",
     nproc: int = 4,
-    get_cat_id_func: GetCatIdFunc = get_bdd100k_category_id,
 ) -> GtType:
     """Converting BDD100K Instance Segmentation Set to COCO format."""
     image_id, ann_id = 0, 0
@@ -366,6 +368,9 @@ def bdd100k2coco_ins_seg(
     category_ids_list: List[List[int]] = []
     instance_ids_list: List[List[int]] = []
     annotations_list: List[List[AnnType]] = []
+
+    categories = get_leaf_categories(config.categories)
+    cat_name2id = {cat.name: i + 1 for i, cat in enumerate(categories)}
 
     logger.info("Collecting annotations...")
 
@@ -402,18 +407,19 @@ def bdd100k2coco_ins_seg(
         for label in image_anns.labels:
             if label.poly2d is None:
                 continue
-            ignore, category_id = get_cat_id_func(label.category, config)
-            if ignore:
+            if label.category not in cat_name2id:
                 continue
 
             ann_id += 1
             instance_id += 1
+            category_id = cat_name2id[label.category]
             annotation = AnnType(
                 id=ann_id,
                 image_id=image_id,
                 category_id=category_id,
                 scalabel_id=label.id,
-                iscrowd=get_bdd100k_iscrowd(label, ignore),
+                iscrowd=int(check_crowd(label) or check_ignored(label)),
+                ignore=0,
             )
 
             category_ids.append(category_id)
@@ -444,10 +450,9 @@ def bdd100k2coco_ins_seg(
 def bdd100k2coco_seg_track(
     mask_base: str,
     frames: List[Frame],
-    config: BDDConfig,
+    config: Config,
     mask_mode: str = "rle",
     nproc: int = 4,
-    get_cat_id_func: GetCatIdFunc = get_bdd100k_category_id,
 ) -> GtType:
     """Converting BDD100K Segmentation Tracking Set to COCO format."""
     video_id, image_id, ann_id = 0, 0, 0
@@ -460,6 +465,11 @@ def bdd100k2coco_seg_track(
     category_ids_list: List[List[int]] = []
     instance_ids_list: List[List[int]] = []
     annotations_list: List[List[AnnType]] = []
+
+    categories = get_leaf_categories(config.categories)
+    cat_name2id = {cat.name: i + 1 for i, cat in enumerate(categories)}
+
+    logger.info("Collecting annotations...")
 
     for video_anns in tqdm(frames_list):
         global_instance_id: int = 1
@@ -505,21 +515,22 @@ def bdd100k2coco_seg_track(
             for label in image_anns.labels:
                 if label.poly2d is None:
                     continue
-                ignore, category_id = get_cat_id_func(label.category, config)
-                if ignore:
+                if label.category not in cat_name2id:
                     continue
 
                 ann_id += 1
                 instance_id, global_instance_id = get_bdd100k_instance_id(
                     instance_id_maps, global_instance_id, label.id
                 )
+                category_id = cat_name2id[label.category]
                 annotation = AnnType(
                     id=ann_id,
                     image_id=image_id,
-                    category_id=category_id,
                     instance_id=instance_id,
+                    category_id=category_id,
                     scalabel_id=label.id,
-                    iscrowd=get_bdd100k_iscrowd(label, ignore),
+                    iscrowd=int(check_crowd(label) or check_ignored(label)),
+                    ignore=0,
                 )
 
                 category_ids.append(category_id)
@@ -560,14 +571,12 @@ def main() -> None:
             seg_track=bitmask2coco_seg_track,
         )[args.mode]
 
-        if args.config is not None:
-            config = load_bdd_config(args.config)
-        else:
-            config = load_bdd_config(args.mode)
+        cfg_path = args.config if args.config is not None else args.mode
+        bdd100k_config = load_bdd_config(cfg_path)
         logger.info("Start format converting...")
         coco = convert_function(
             args.input,
-            config,
+            bdd100k_config.config,
             args.mask_mode,
             args.nproc,
         )
@@ -591,18 +600,15 @@ def main() -> None:
         logger.info("Loading annotations...")
         dataset = load(args.input, args.nproc)
         if args.config is not None:
-            config = load_bdd_config(args.config)
+            bdd100k_config = load_bdd_config(args.config)
         elif dataset.config is not None:
-            config = BDDConfig(**dataset.config.dict())
-        if config is None:
-            config = load_bdd_config(args.mode)
+            bdd100k_config = BDD100KConfig(config=dataset.config)
+        if bdd100k_config is None:
+            bdd100k_config = load_bdd_config(args.mode)
 
         logger.info("Start format converting...")
-        coco = convert_func(
-            frames=dataset.frames,
-            config=config,
-            get_cat_id_func=get_bdd100k_category_id,
-        )
+        frames = bdd100k_to_scalabel(dataset.frames, bdd100k_config)
+        coco = convert_func(frames=frames, config=bdd100k_config.config)
 
     logger.info("Saving converted annotations to disk...")
     with open(args.output, "w") as f:

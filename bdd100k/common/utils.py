@@ -4,14 +4,14 @@ import inspect
 import os
 import os.path as osp
 from itertools import groupby
-from typing import Dict, List, Tuple, cast
+from typing import Dict, List, Tuple
 
 from scalabel.common.io import load_config
-from scalabel.label.to_coco import GetCatIdFunc, get_instance_id
+from scalabel.label.to_coco import get_instance_id
 from scalabel.label.typing import Label
-from scalabel.label.utils import get_leaf_categories
+from scalabel.label.utils import check_crowd, check_ignored
 
-from .typing import BDDConfig
+from .typing import BDD100KConfig
 
 
 def list_files(
@@ -55,57 +55,27 @@ def get_bdd100k_instance_id(
     return get_instance_id(instance_id_maps, global_instance_id, scalabel_id)
 
 
-def get_bdd100k_iscrowd(label: Label, ignore: bool) -> int:
-    """Set attributes for the ann dict in BDD100K."""
+def check_bdd100k_crowd(label: Label) -> bool:
+    """Check crowd attribute for BDD100K."""
     if label.id == "-1":
-        return 1
-    if label.attributes is None:
-        return 0
-    crowd = label.attributes.get("crowd", False)
-    return int(crowd or ignore)
+        return True
+    return check_crowd(label)
 
 
-def load_bdd_config(task: str) -> BDDConfig:
+def check_bdd100k_ignored(label: Label) -> bool:
+    """Check ignored attribute for BDD100K."""
+    if label.id == "-1":
+        return True
+    return check_ignored(label)
+
+
+def load_bdd_config(cfg_path: str) -> BDD100KConfig:
     """Load a task-specific config."""
-    cfg_path = osp.join(
-        osp.split(osp.dirname(osp.abspath(inspect.stack()[1][1])))[0],
-        "configs",
-        task + ".toml",
-    )
+    if not cfg_path.endswith("toml"):
+        cfg_path = osp.join(
+            osp.split(osp.dirname(osp.abspath(inspect.stack()[1][1])))[0],
+            "configs",
+            cfg_path + ".toml",
+        )
     config = load_config(cfg_path)
-    return BDDConfig(**config)
-
-
-def _get_bdd100k_category_id(
-    category_name: str, config: BDDConfig
-) -> Tuple[bool, int]:
-    """Get category id from category name and MetaConfig.
-
-    The returned boolean item means whether this instance should be ignored.
-    """
-    leaf_cats = get_leaf_categories(config.categories)
-    leaf_cat_names = [cat.name for cat in leaf_cats]
-    if config.ignore_as_class:
-        leaf_cat_names.append("ignore")
-
-    if (
-        config.name_mapping is not None
-        and category_name in config.name_mapping
-    ):
-        category_name = config.name_mapping[category_name]
-
-    if category_name not in leaf_cat_names:
-        if config.remove_ignore:
-            return True, 0
-
-        if config.ignore_as_class:
-            category_name = "ignore"
-        else:
-            assert config.ignore_mapping is not None
-            assert category_name in config.ignore_mapping
-            category_name = config.ignore_mapping[category_name]
-    category_id = leaf_cat_names.index(category_name) + 1
-    return False, category_id
-
-
-get_bdd100k_category_id = cast((GetCatIdFunc), _get_bdd100k_category_id)
+    return BDD100KConfig(**config)

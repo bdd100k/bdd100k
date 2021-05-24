@@ -19,8 +19,10 @@ class TestBDD100KInsSegEval(unittest.TestCase):
         gt_base = "{}/testcases/ins_seg/gt".format(cur_dir)
         pred_base = "{}/testcases/ins_seg/pred".format(cur_dir)
         pred_json = "{}/testcases/ins_seg/pred.json".format(cur_dir)
-        config = load_bdd_config("ins_seg")
-        result = evaluate_ins_seg(gt_base, pred_base, pred_json, config)
+        bdd100k_config = load_bdd_config("ins_seg")
+        result = evaluate_ins_seg(
+            gt_base, pred_base, pred_json, bdd100k_config.config
+        )
         overall_reference = {
             "AP": 0.686056105610561,
             "AP_50": 0.8968646864686468,

@@ -26,20 +26,21 @@ import matplotlib.pyplot as plt  # type: ignore
 import numpy as np
 from PIL import Image
 from scalabel.label.io import group_and_sort, load
-from scalabel.label.to_coco import GetCatIdFunc
 from scalabel.label.transforms import poly_to_patch
-from scalabel.label.typing import Frame, ImageSize, Label, Poly2D
+from scalabel.label.typing import Config, Frame, ImageSize, Label, Poly2D
+from scalabel.label.utils import (
+    check_crowd,
+    check_ignored,
+    get_leaf_categories,
+)
 from tqdm import tqdm
 
 from ..common.logger import logger
-from ..common.typing import BDDConfig
-from ..common.utils import (
-    get_bdd100k_category_id,
-    get_bdd100k_instance_id,
-    load_bdd_config,
-)
+from ..common.typing import BDD100KConfig
+from ..common.utils import get_bdd100k_instance_id, load_bdd_config
 from .label import drivables, labels
 from .to_coco import parse_args
+from .to_scalabel import bdd100k_to_scalabel
 
 IGNORE_LABEL = 255
 LANE_DIRECTION_MAP = {"parallel": 0, "vertical": 1}
@@ -108,7 +109,7 @@ def frame_to_mask(
 
 
 def set_instance_color(
-    label: Label, category_id: int, ann_id: int, category_ignore: bool
+    label: Label, category_id: int, ann_id: int
 ) -> np.ndarray:
     """Set the color for an instance given its attributes and ID."""
     attributes = label.attributes
@@ -117,8 +118,8 @@ def set_instance_color(
     else:
         truncated = int(attributes.get("truncated", False))
         occluded = int(attributes.get("occluded", False))
-        crowd = int(attributes.get("crowd", False))
-        ignore = int(category_ignore)
+        crowd = int(check_crowd(label))
+        ignore = int(check_ignored(label))
     color = np.array(
         [
             category_id & 255,
@@ -176,7 +177,7 @@ def frames_to_masks(
 def seg_to_masks(
     frames: List[Frame],
     out_base: str,
-    config: BDDConfig,
+    config: Config,
     nproc: int = 4,
     mode: str = "sem_seg",
     back_color: int = IGNORE_LABEL,
@@ -249,7 +250,7 @@ def seg_to_masks(
     )
 
 
-ToMasksFunc = Callable[[List[Frame], str, BDDConfig, int], None]
+ToMasksFunc = Callable[[List[Frame], str, Config, int], None]
 semseg_to_masks: ToMasksFunc = partial(
     seg_to_masks, mode="sem_seg", back_color=IGNORE_LABEL, closed=True
 )
@@ -267,9 +268,8 @@ lanemark_to_masks: ToMasksFunc = partial(
 def insseg_to_bitmasks(
     frames: List[Frame],
     out_base: str,
-    config: BDDConfig,
+    config: Config,
     nproc: int = 4,
-    get_cat_id_func: GetCatIdFunc = get_bdd100k_category_id,
 ) -> None:
     """Converting instance segmentation poly2d to bitmasks."""
     os.makedirs(out_base, exist_ok=True)
@@ -279,6 +279,9 @@ def insseg_to_bitmasks(
     shapes: List[ImageSize] = []
     colors_list: List[List[np.ndarray]] = []
     poly2ds_list: List[List[List[Poly2D]]] = []
+
+    categories = get_leaf_categories(config.categories)
+    cat_name2id = {cat.name: i + 1 for i, cat in enumerate(categories)}
 
     logger.info("Preparing annotations for InsSeg to Bitmasks")
 
@@ -314,12 +317,12 @@ def insseg_to_bitmasks(
         for label in labels_:
             if label.poly2d is None:
                 continue
-            ignore, category_id = get_cat_id_func(label.category, config)
-            if ignore:
+            if label.category not in cat_name2id:
                 continue
 
             ann_id += 1
-            color = set_instance_color(label, category_id, ann_id, ignore)
+            category_id = cat_name2id[label.category]
+            color = set_instance_color(label, category_id, ann_id)
             colors.append(color)
             poly2ds.append(label.poly2d)
 
@@ -330,9 +333,8 @@ def insseg_to_bitmasks(
 def segtrack_to_bitmasks(
     frames: List[Frame],
     out_base: str,
-    config: BDDConfig,
+    config: Config,
     nproc: int = 4,
-    get_cat_id_func: GetCatIdFunc = get_bdd100k_category_id,
 ) -> None:
     """Converting segmentation tracking poly2d to bitmasks."""
     frames_list = group_and_sort(frames)
@@ -342,6 +344,9 @@ def segtrack_to_bitmasks(
     shapes: List[ImageSize] = []
     colors_list: List[List[np.ndarray]] = []
     poly2ds_list: List[List[List[Poly2D]]] = []
+
+    categories = get_leaf_categories(config.categories)
+    cat_name2id = {cat.name: i + 1 for i, cat in enumerate(categories)}
 
     logger.info("Preparing annotations for SegTrack to Bitmasks")
 
@@ -384,17 +389,14 @@ def segtrack_to_bitmasks(
             for label in labels_:
                 if label.poly2d is None:
                     continue
-                ignore, category_id = get_cat_id_func(label.category, config)
-                if ignore:
+                if label.category not in cat_name2id:
                     continue
 
                 instance_id, global_instance_id = get_bdd100k_instance_id(
                     instance_id_maps, global_instance_id, label.id
                 )
-
-                color = set_instance_color(
-                    label, category_id, instance_id, ignore
-                )
+                category_id = cat_name2id[label.category]
+                color = set_instance_color(label, category_id, instance_id)
                 colors.append(color)
                 poly2ds.append(label.poly2d)
 
@@ -418,26 +420,22 @@ def main() -> None:
         sem_seg=semseg_to_masks,
         drivable=drivable_to_masks,
         lane_mark=lanemark_to_masks,
-        ins_seg=partial(
-            insseg_to_bitmasks, get_cat_id_func=get_bdd100k_category_id
-        ),
-        seg_track=partial(
-            segtrack_to_bitmasks, get_cat_id_func=get_bdd100k_category_id
-        ),
+        ins_seg=insseg_to_bitmasks,
+        seg_track=segtrack_to_bitmasks,
     )
 
     dataset = load(args.input, args.nproc)
     if args.config is not None:
-        config = load_bdd_config(args.config)
+        bdd100k_config = load_bdd_config(args.config)
     elif dataset.config is not None:
-        config = BDDConfig(**dataset.config.dict())
-    if config is None:
-        config = load_bdd_config(args.mode)
+        bdd100k_config = BDD100KConfig(config=dataset.config)
+    if bdd100k_config is None:
+        bdd100k_config = load_bdd_config(args.mode)
 
     convert_funcs[args.mode](
-        dataset.frames,
+        bdd100k_to_scalabel(dataset.frames, bdd100k_config),
         args.output,
-        config,
+        bdd100k_config.config,
         args.nproc,
     )
 

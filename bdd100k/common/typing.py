@@ -4,6 +4,7 @@ import sys
 from typing import Dict, List, Optional
 
 import numpy as np
+from pydantic import BaseModel
 from scalabel.label.typing import Config
 
 if sys.version_info >= (3, 8):
@@ -26,9 +27,10 @@ class InstanceType(TypedDict, total=False):
     area: float
 
 
-class BDDConfig(Config):  # pylint: disable=too-few-public-methods
+class BDD100KConfig(BaseModel):
     """Extend metadata for BDD100K."""
 
+    config: Config
     remove_ignore: bool = False
     ignore_as_class: bool = False
     ignore_mapping: Optional[Dict[str, str]]

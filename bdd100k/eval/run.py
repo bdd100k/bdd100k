@@ -7,6 +7,7 @@ from scalabel.eval.mot import acc_single_video_mot, evaluate_track
 from scalabel.label.io import group_and_sort, load
 
 from ..common.utils import group_and_sort_files, list_files, load_bdd_config
+from ..label.to_scalabel import bdd100k_to_scalabel
 from .ins_seg import evaluate_ins_seg
 from .lane import evaluate_lane_marking
 from .mots import acc_single_video_mots
@@ -81,9 +82,9 @@ def run() -> None:
     """Main."""
     args = parse_args()
     if args.config is not None:
-        config = load_bdd_config(args.config)
+        bdd100k_config = load_bdd_config(args.config)
     elif args.task in ["det", "ins_seg", "box_track", "seg_track"]:
-        config = load_bdd_config(args.task)
+        bdd100k_config = load_bdd_config(args.task)
 
     if args.task == "drivable":
         evaluate_drivable(args.gt, args.result, args.nproc)
@@ -93,9 +94,13 @@ def run() -> None:
         evaluate_segmentation(args.gt, args.result, args.nproc)
     elif args.task == "det":
         evaluate_det(
-            load(args.gt, args.nproc).frames,
-            load(args.result, args.nproc).frames,
-            config,
+            bdd100k_to_scalabel(
+                load(args.gt, args.nproc).frames, bdd100k_config
+            ),
+            bdd100k_to_scalabel(
+                load(args.result, args.nproc).frames, bdd100k_config
+            ),
+            bdd100k_config.config,
             args.out_dir,
         )
     elif args.task == "ins_seg":
@@ -103,16 +108,24 @@ def run() -> None:
             args.gt,
             args.result,
             args.score_file,
-            config,
+            bdd100k_config.config,
             args.out_dir,
             args.nproc,
         )
     elif args.task == "box_track":
         evaluate_track(
             acc_single_video_mot,
-            gts=group_and_sort(load(args.gt, args.nproc).frames),
-            results=group_and_sort(load(args.result, args.nproc).frames),
-            config=config,
+            gts=group_and_sort(
+                bdd100k_to_scalabel(
+                    load(args.gt, args.nproc).frames, bdd100k_config
+                )
+            ),
+            results=group_and_sort(
+                bdd100k_to_scalabel(
+                    load(args.result, args.nproc).frames, bdd100k_config
+                )
+            ),
+            config=bdd100k_config.config,
             iou_thr=args.iou_thr,
             ignore_iof_thr=args.ignore_iof_thr,
             nproc=args.nproc,
@@ -126,7 +139,7 @@ def run() -> None:
             results=group_and_sort_files(
                 list_files(args.result, ".png", with_prefix=True)
             ),
-            config=config,
+            config=bdd100k_config.config,
             iou_thr=args.iou_thr,
             ignore_iof_thr=args.ignore_iof_thr,
             nproc=args.nproc,
