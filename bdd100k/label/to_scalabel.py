@@ -51,11 +51,12 @@ def bdd100k_to_scalabel(
     categories = get_leaf_categories(bdd100k_config.scalabel.categories)
     cat_name2id = {cat.name: i + 1 for i, cat in enumerate(categories)}
     for image_anns in tqdm(frames):
-        for i in reversed(range(len(image_anns.labels))):
-            label = deal_bdd100k_category(
-                image_anns.labels[i], bdd100k_config, cat_name2id
-            )
-            if label is None:
-                image_anns.labels.pop(i)
+        if image_anns.labels is not None:
+            for i in reversed(range(len(image_anns.labels))):
+                label = deal_bdd100k_category(
+                    image_anns.labels[i], bdd100k_config, cat_name2id
+                )
+                if label is None:
+                    image_anns.labels.pop(i)
 
     return frames

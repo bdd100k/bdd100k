@@ -21,11 +21,13 @@ class TestBDD100KToScalabel(unittest.TestCase):
         frames = dataset.frames
         bdd100k_config = load_bdd100k_config("box_track")
         new_frames = bdd100k_to_scalabel(copy.deepcopy(frames), bdd100k_config)
+        self.assertEqual(len(new_frames), 2)
         labels = new_frames[0].labels
         assert labels is not None
         self.assertEqual(labels[0].category, "pedestrian")
         assert labels[0].attributes is not None
         self.assertTrue(labels[0].attributes[IGNORED])
+        self.assertEqual(new_frames[1].labels, None)
 
         bdd100k_config.remove_ignore = True
         new_frames = bdd100k_to_scalabel(frames, bdd100k_config)
