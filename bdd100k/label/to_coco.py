@@ -1,20 +1,4 @@
-"""Convert BDD100K to COCO format.
-
-The annotation files in BDD100K format has additional annotations
-('other person', 'other vehicle' and 'trail') besides the considered
-categories ('car', 'pedestrian', 'truck', etc.) to indicate the uncertain
-regions. Given the different handlings of these additional classes, we
-provide three options to process the labels when converting them into COCO
-format.
-1. Ignore the labels. This is the default setting and is often used for
-evaluation. CocoAPIs have native support for ignored annotations.
-https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocotools/cocoeval.py#L370
-2. Remove the annotations from the label file. By adding the
-flag `--remove-ignore`, the script will remove all the ignored annotations.
-3. Use `ignore` as a separate class and the user can decide how to utilize
-the annotations in `ignored` class. To achieve this, add the flag
-`--ignore-as-class`.
-"""
+"""Convert BDD100K to COCO format."""
 
 import argparse
 import json
@@ -120,24 +104,24 @@ def bitmasks_loader(mask_name: str) -> Tuple[List[InstanceType], ImageSize]:
     """Parse instances from the bitmask."""
     if mask_name.endswith(".jpg"):
         mask_name = mask_name.replace(".jpg", ".png")
-    bitmask = np.asarray(Image.open(mask_name)).astype(np.int32)
+    bitmask = np.asarray(Image.open(mask_name)).astype(np.uint32)
     category_map = bitmask[:, :, 0]
     attributes_map = bitmask[:, :, 1]
     instance_map = (bitmask[:, :, 2] << 8) + bitmask[:, :, 3]
+    indentity_map = (
+        (category_map << 24) + (attributes_map << 16) + instance_map
+    )
 
     instances: List[InstanceType] = []
 
-    # 0 is for the background
-    instance_ids = np.sort(np.unique(instance_map[instance_map >= 1]))
-    for instance_id in instance_ids:
-        mask_inds_i = instance_map == instance_id
-        attributes_i = np.unique(attributes_map[mask_inds_i])
-        category_ids_i = np.unique(category_map[mask_inds_i])
-
-        assert attributes_i.shape[0] == 1
-        assert category_ids_i.shape[0] == 1
-        attribute = attributes_i[0]
-        category_id = category_ids_i[0]
+    identities = np.unique(indentity_map)
+    for identity in identities:
+        mask_inds_i = indentity_map == identity
+        category_id = (identity >> 24) & 255
+        attribute = (identity >> 16) & 255
+        instance_id = identity & 65535
+        if instance_id == 0:
+            continue
 
         mask = mask_inds_i.astype(np.int32)
         bbox = mask_to_bbox(mask)
@@ -149,7 +133,7 @@ def bitmasks_loader(mask_name: str) -> Tuple[List[InstanceType], ImageSize]:
             truncated=bool(attribute & (1 << 3)),
             occluded=bool(attribute & (1 << 2)),
             crowd=bool(attribute & (1 << 1)),
-            ignore=bool(attribute & (1 << 0)),
+            ignored=bool(attribute & (1 << 0)),
             mask=mask,
             bbox=bbox,
             area=area,

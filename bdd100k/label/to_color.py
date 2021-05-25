@@ -1,20 +1,4 @@
-"""Convert poly2d to mask/bitmask.
-
-The annotation files in BDD100K format has additional annotations
-('other person', 'other vehicle' and 'trail') besides the considered
-categories ('car', 'pedestrian', 'truck', etc.) to indicate the uncertain
-regions. Given the different handlings of these additional classes, we
-provide three options to process the labels when converting them into COCO
-format.
-1. Ignore the labels. This is the default setting and is often used for
-evaluation. CocoAPIs have native support for ignored annotations.
-https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocotools/cocoeval.py#L370
-2. Remove the annotations from the label file. By adding the
-flag `--remove-ignore`, the script will remove all the ignored annotations.
-3. Use `ignore` as a separate class and the user can decide how to utilize
-the annotations in `ignored` class. To achieve this, add the flag
-`--ignore-as-class`.
-"""
+"""Convert poly2d to mask/bitmask."""
 
 import argparse
 import os
@@ -44,7 +28,14 @@ def parse_args() -> argparse.Namespace:
         "-m",
         "--mode",
         default="det",
-        choices=["sem_seg", "drivable", "lane_mark", "ins_seg", "seg_track"],
+        choices=[
+            "sem_seg",
+            "drivable",
+            "lane_mark",
+            "ins_seg",
+            "seg_track",
+            "panoptic",
+        ],
         help="conversion mode.",
     )
     parser.add_argument(
@@ -59,7 +50,7 @@ def parse_args() -> argparse.Namespace:
 def mask_to_color(bitmask_file: str, colormap_file: str, mode: str) -> None:
     """Convert mask/bitmask to colormap for one image."""
     bitmask = Image.open(bitmask_file)
-    if mode in ["ins_seg", "seg_track"]:
+    if mode in ["ins_seg", "seg_track", "panoptic"]:
         bitmask = bitmask.split()[3]
     elif mode == "lane_mark":
         array = np.asarray(bitmask)

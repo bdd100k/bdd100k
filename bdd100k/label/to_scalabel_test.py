@@ -27,7 +27,7 @@ class TestBDD100KToScalabel(unittest.TestCase):
         assert labels[0].attributes is not None
         self.assertTrue(labels[0].attributes[IGNORED])
 
-        bdd100k_config.remove_ignore = True
+        bdd100k_config.remove_ignored = True
         new_frames = bdd100k_to_scalabel(frames, bdd100k_config)
         labels = new_frames[0].labels
         assert labels is not None

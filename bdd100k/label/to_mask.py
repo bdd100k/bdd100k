@@ -1,20 +1,4 @@
-"""Convert poly2d to mask/bitmask.
-
-The annotation files in BDD100K format has additional annotations
-('other person', 'other vehicle' and 'trail') besides the considered
-categories ('car', 'pedestrian', 'truck', etc.) to indicate the uncertain
-regions. Given the different handlings of these additional classes, we
-provide three options to process the labels when converting them into COCO
-format.
-1. Ignore the labels. This is the default setting and is often used for
-evaluation. CocoAPIs have native support for ignored annotations.
-https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocotools/cocoeval.py#L370
-2. Remove the annotations from the label file. By adding the
-flag `--remove-ignore`, the script will remove all the ignored annotations.
-3. Use `ignore` as a separate class and the user can decide how to utilize
-the annotations in `ignored` class. To achieve this, add the flag
-`--ignore-as-class`.
-"""
+"""Convert poly2d to mask/bitmask."""
 
 import os
 from functools import partial
@@ -38,11 +22,12 @@ from tqdm import tqdm
 from ..common.logger import logger
 from ..common.typing import BDD100KConfig
 from ..common.utils import get_bdd100k_instance_id, load_bdd100k_config
-from .label import drivables, labels
+from .label import drivables, labels, lane_categories
 from .to_coco import parse_args
 from .to_scalabel import bdd100k_to_scalabel
 
 IGNORE_LABEL = 255
+STUFF_NUM = 30
 LANE_DIRECTION_MAP = {"parallel": 0, "vertical": 1}
 LANE_STYLE_MAP = {"solid": 0, "dashed": 1}
 
@@ -114,16 +99,16 @@ def set_instance_color(
     """Set the color for an instance given its attributes and ID."""
     attributes = label.attributes
     if attributes is None:
-        truncated, occluded, crowd, ignore = 0, 0, 0, 0
+        truncated, occluded, crowd, ignored = 0, 0, 0, 0
     else:
         truncated = int(attributes.get("truncated", False))
         occluded = int(attributes.get("occluded", False))
         crowd = int(check_crowd(label))
-        ignore = int(check_ignored(label))
+        ignored = int(check_ignored(label))
     color = np.array(
         [
             category_id & 255,
-            (truncated << 3) + (occluded << 2) + (crowd << 1) + ignore,
+            (truncated << 3) + (occluded << 2) + (crowd << 1) + ignored,
             ann_id >> 8,
             ann_id & 255,
         ],
@@ -192,7 +177,9 @@ def seg_to_masks(
     colors_list: List[List[np.ndarray]] = []
     poly2ds_list: List[List[List[Poly2D]]] = []
 
-    categories = dict(sem_seg=labels, drivable=drivables)[mode]
+    categories = dict(
+        sem_seg=labels, drivable=drivables, lane_mark=lane_categories
+    )[mode]
     cat_name2id = {
         cat.name: cat.trainId
         for cat in categories
@@ -404,6 +391,76 @@ def segtrack_to_bitmasks(
     frames_to_masks(nproc, out_paths, shapes, colors_list, poly2ds_list)
 
 
+def panseg_to_bitmasks(
+    frames: List[Frame],
+    out_base: str,
+    config: Config,
+    nproc: int = 4,
+) -> None:
+    """Converting panoptic segmentation poly2d to bitmasks."""
+    os.makedirs(out_base, exist_ok=True)
+    img_shape = config.image_size
+
+    out_paths: List[str] = []
+    shapes: List[ImageSize] = []
+    colors_list: List[List[np.ndarray]] = []
+    poly2ds_list: List[List[List[Poly2D]]] = []
+    cat_name2id = {cat.name: cat.trainId for cat in labels}
+
+    logger.info("Preparing annotations for InsSeg to Bitmasks")
+
+    for image_anns in tqdm(frames):
+        cur_ann_id = STUFF_NUM
+
+        # Bitmask in .png format
+        image_name = image_anns.name.replace(".jpg", ".png")
+        image_name = os.path.split(image_name)[-1]
+        out_path = os.path.join(out_base, image_name)
+        out_paths.append(out_path)
+
+        if img_shape is None:
+            if image_anns.size is not None:
+                img_shape = image_anns.size
+            else:
+                raise ValueError("Image shape not defined!")
+        shapes.append(img_shape)
+
+        colors: List[np.ndarray] = []
+        poly2ds: List[List[Poly2D]] = []
+        colors_list.append(colors)
+        poly2ds_list.append(poly2ds)
+
+        labels_ = image_anns.labels
+        if labels_ is None or len(labels_) == 0:
+            continue
+
+        # Scores higher, rendering later
+        if labels_[0].score is not None:
+            labels_ = sorted(labels_, key=lambda label: float(label.score))
+
+        for label in labels_:
+            if label.poly2d is None:
+                continue
+            if label.category not in cat_name2id:
+                continue
+
+            category_id = cat_name2id[label.category]
+            if category_id == 0:
+                continue
+            if category_id <= STUFF_NUM:
+                ann_id = category_id
+            else:
+                cur_ann_id += 1
+                ann_id = cur_ann_id
+
+            color = set_instance_color(label, category_id, ann_id)
+            colors.append(color)
+            poly2ds.append(label.poly2d)
+
+    logger.info("Start conversion for PanSeg to Bitmasks")
+    frames_to_masks(nproc, out_paths, shapes, colors_list, poly2ds_list)
+
+
 def main() -> None:
     """Main function."""
     args = parse_args()
@@ -411,6 +468,7 @@ def main() -> None:
         "sem_seg",
         "drivable",
         "lane_mark",
+        "panoptic",
         "ins_seg",
         "seg_track",
     ]
