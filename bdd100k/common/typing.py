@@ -30,7 +30,7 @@ class InstanceType(TypedDict, total=False):
 class BDD100KConfig(BaseModel):
     """Extend metadata for BDD100K."""
 
-    config: Config
+    scalabel: Config
     remove_ignore: bool = False
     ignore_as_class: bool = False
     ignore_mapping: Optional[Dict[str, str]]

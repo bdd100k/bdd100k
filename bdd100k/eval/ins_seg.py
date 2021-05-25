@@ -274,7 +274,7 @@ def evaluate_ins_seg(
         ann_base: path to the ground truth bitmasks folder.
         pred_base: path to the prediciton bitmasks folder.
         pred_score_file: path tothe prediction scores.
-        config: BDDConfig instance.
+        config: Config instance.
         out_dir: output_directory.
         nproc: number of processes.
 

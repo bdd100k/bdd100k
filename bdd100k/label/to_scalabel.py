@@ -48,7 +48,7 @@ def bdd100k_to_scalabel(
     frames: List[Frame], bdd100k_config: BDD100KConfig
 ) -> List[Frame]:
     """Converting BDD100K to Scalabel format."""
-    categories = get_leaf_categories(bdd100k_config.config.categories)
+    categories = get_leaf_categories(bdd100k_config.scalabel.categories)
     cat_name2id = {cat.name: i + 1 for i, cat in enumerate(categories)}
     for image_anns in tqdm(frames):
         for i in reversed(range(len(image_anns.labels))):

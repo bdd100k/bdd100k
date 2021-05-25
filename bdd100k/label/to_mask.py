@@ -435,7 +435,7 @@ def main() -> None:
     convert_funcs[args.mode](
         bdd100k_to_scalabel(dataset.frames, bdd100k_config),
         args.output,
-        bdd100k_config.config,
+        bdd100k_config.scalabel,
         args.nproc,
     )
 

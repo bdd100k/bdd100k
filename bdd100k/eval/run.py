@@ -104,7 +104,7 @@ def run() -> None:
             bdd100k_to_scalabel(
                 load(args.result, args.nproc).frames, bdd100k_config
             ),
-            bdd100k_config.config,
+            bdd100k_config.scalabel,
             args.out_dir,
         )
     elif args.task == "ins_seg":
@@ -112,7 +112,7 @@ def run() -> None:
             args.gt,
             args.result,
             args.score_file,
-            bdd100k_config.config,
+            bdd100k_config.scalabel,
             args.out_dir,
             args.nproc,
         )
@@ -129,7 +129,7 @@ def run() -> None:
                     load(args.result, args.nproc).frames, bdd100k_config
                 )
             ),
-            config=bdd100k_config.config,
+            config=bdd100k_config.scalabel,
             iou_thr=args.iou_thr,
             ignore_iof_thr=args.ignore_iof_thr,
             nproc=args.nproc,
@@ -143,7 +143,7 @@ def run() -> None:
             results=group_and_sort_files(
                 list_files(args.result, ".png", with_prefix=True)
             ),
-            config=bdd100k_config.config,
+            config=bdd100k_config.scalabel,
             iou_thr=args.iou_thr,
             ignore_iof_thr=args.ignore_iof_thr,
             nproc=args.nproc,

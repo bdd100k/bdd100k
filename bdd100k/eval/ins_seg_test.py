@@ -21,7 +21,7 @@ class TestBDD100KInsSegEval(unittest.TestCase):
         pred_json = "{}/testcases/ins_seg/pred.json".format(cur_dir)
         bdd100k_config = load_bdd100k_config("ins_seg")
         result = evaluate_ins_seg(
-            gt_base, pred_base, pred_json, bdd100k_config.config
+            gt_base, pred_base, pred_json, bdd100k_config.scalabel
         )
         overall_reference = {
             "AP": 0.686056105610561,
