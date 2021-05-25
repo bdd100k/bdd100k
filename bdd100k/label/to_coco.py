@@ -603,7 +603,7 @@ def main() -> None:
             bdd100k_config = load_bdd100k_config(args.config)
         elif dataset.config is not None:
             bdd100k_config = BDD100KConfig(config=dataset.config)
-        if bdd100k_config is None:
+        else:
             bdd100k_config = load_bdd100k_config(args.mode)
 
         logger.info("Start format converting...")
