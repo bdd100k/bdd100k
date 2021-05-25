@@ -1,6 +1,5 @@
 """Util functions."""
 
-import inspect
 import os
 import os.path as osp
 from itertools import groupby
@@ -73,7 +72,7 @@ def load_bdd100k_config(cfg_path: str) -> BDD100KConfig:
     """Load a task-specific config."""
     if not cfg_path.endswith("toml"):
         cfg_path = osp.join(
-            osp.split(osp.dirname(osp.abspath(inspect.stack()[1][1])))[0],
+            osp.split(osp.dirname(osp.abspath(__file__)))[0],
             "configs",
             cfg_path + ".toml",
         )
