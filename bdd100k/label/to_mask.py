@@ -37,7 +37,7 @@ from tqdm import tqdm
 
 from ..common.logger import logger
 from ..common.typing import BDD100KConfig
-from ..common.utils import get_bdd100k_instance_id, load_bdd_config
+from ..common.utils import get_bdd100k_instance_id, load_bdd100k_config
 from .label import drivables, labels
 from .to_coco import parse_args
 from .to_scalabel import bdd100k_to_scalabel
@@ -426,11 +426,11 @@ def main() -> None:
 
     dataset = load(args.input, args.nproc)
     if args.config is not None:
-        bdd100k_config = load_bdd_config(args.config)
+        bdd100k_config = load_bdd100k_config(args.config)
     elif dataset.config is not None:
         bdd100k_config = BDD100KConfig(config=dataset.config)
     if bdd100k_config is None:
-        bdd100k_config = load_bdd_config(args.mode)
+        bdd100k_config = load_bdd100k_config(args.mode)
 
     convert_funcs[args.mode](
         bdd100k_to_scalabel(dataset.frames, bdd100k_config),

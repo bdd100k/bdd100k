@@ -2,7 +2,7 @@
 import os
 import unittest
 
-from ..common.utils import load_bdd_config
+from ..common.utils import load_bdd100k_config
 from .to_coco import (
     bitmask2coco_ins_seg,
     bitmask2coco_seg_track,
@@ -38,7 +38,7 @@ class TestBitmasks2COCO(unittest.TestCase):
     def test_bitmask2coco_ins_seg(self) -> None:
         """Check the correctness of bitmask2coco_ins_seg."""
         mask_dir = "./testcases/bitmasks/quasi-video"
-        bdd100k_config = load_bdd_config("ins_seg")
+        bdd100k_config = load_bdd100k_config("ins_seg")
         coco = bitmask2coco_ins_seg(mask_dir, bdd100k_config.config)
         self.assertEqual(len(coco), 4)
         self.assertEqual(len(coco["images"]), 2)
@@ -48,7 +48,7 @@ class TestBitmasks2COCO(unittest.TestCase):
     def test_bitmask2coco_seg_track(self) -> None:
         """Check the correctness of bitmask2coco_seg_track."""
         mask_dir = "./testcases/bitmasks"
-        bdd100k_config = load_bdd_config("seg_track")
+        bdd100k_config = load_bdd100k_config("seg_track")
         coco = bitmask2coco_seg_track(mask_dir, bdd100k_config.config)
         self.assertEqual(len(coco), 5)
         self.assertEqual(len(coco["images"]), 2)

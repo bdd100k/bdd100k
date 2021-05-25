@@ -69,7 +69,7 @@ def check_bdd100k_ignored(label: Label) -> bool:
     return check_ignored(label)
 
 
-def load_bdd_config(cfg_path: str) -> BDD100KConfig:
+def load_bdd100k_config(cfg_path: str) -> BDD100KConfig:
     """Load a task-specific config."""
     if not cfg_path.endswith("toml"):
         cfg_path = osp.join(

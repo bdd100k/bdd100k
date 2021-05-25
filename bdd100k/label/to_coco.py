@@ -47,7 +47,7 @@ from ..common.utils import (
     get_bdd100k_instance_id,
     group_and_sort_files,
     list_files,
-    load_bdd_config,
+    load_bdd100k_config,
 )
 from .to_scalabel import bdd100k_to_scalabel
 
@@ -572,7 +572,7 @@ def main() -> None:
         )[args.mode]
 
         cfg_path = args.config if args.config is not None else args.mode
-        bdd100k_config = load_bdd_config(cfg_path)
+        bdd100k_config = load_bdd100k_config(cfg_path)
         logger.info("Start format converting...")
         coco = convert_function(
             args.input,
@@ -600,11 +600,11 @@ def main() -> None:
         logger.info("Loading annotations...")
         dataset = load(args.input, args.nproc)
         if args.config is not None:
-            bdd100k_config = load_bdd_config(args.config)
+            bdd100k_config = load_bdd100k_config(args.config)
         elif dataset.config is not None:
             bdd100k_config = BDD100KConfig(config=dataset.config)
         if bdd100k_config is None:
-            bdd100k_config = load_bdd_config(args.mode)
+            bdd100k_config = load_bdd100k_config(args.mode)
 
         logger.info("Start format converting...")
         frames = bdd100k_to_scalabel(dataset.frames, bdd100k_config)

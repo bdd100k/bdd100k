@@ -6,7 +6,11 @@ from scalabel.eval.detect import evaluate_det
 from scalabel.eval.mot import acc_single_video_mot, evaluate_track
 from scalabel.label.io import group_and_sort, load
 
-from ..common.utils import group_and_sort_files, list_files, load_bdd_config
+from ..common.utils import (
+    group_and_sort_files,
+    list_files,
+    load_bdd100k_config,
+)
 from ..label.to_scalabel import bdd100k_to_scalabel
 from .ins_seg import evaluate_ins_seg
 from .lane import evaluate_lane_marking
@@ -82,9 +86,9 @@ def run() -> None:
     """Main."""
     args = parse_args()
     if args.config is not None:
-        bdd100k_config = load_bdd_config(args.config)
+        bdd100k_config = load_bdd100k_config(args.config)
     elif args.task in ["det", "ins_seg", "box_track", "seg_track"]:
-        bdd100k_config = load_bdd_config(args.task)
+        bdd100k_config = load_bdd100k_config(args.task)
 
     if args.task == "drivable":
         evaluate_drivable(args.gt, args.result, args.nproc)

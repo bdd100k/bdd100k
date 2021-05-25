@@ -9,7 +9,7 @@ from PIL import Image
 from scalabel.label.io import load
 from scalabel.label.typing import Config, Frame, Label
 
-from ..common.utils import load_bdd_config
+from ..common.utils import load_bdd100k_config
 from .to_mask import (
     insseg_to_bitmasks,
     segtrack_to_bitmasks,
@@ -49,7 +49,7 @@ class TestToMasks(unittest.TestCase):
 
         dataset = load("{}/testcases/example_annotation.json".format(cur_dir))
         frames = dataset.frames
-        bdd100k_config = load_bdd_config(task_name)
+        bdd100k_config = load_bdd100k_config(task_name)
         convert_func(frames, self.test_out, bdd100k_config.config, 1)
         output_path = os.path.join(self.test_out, output_name)
         mask = np.asarray(Image.open(output_path))

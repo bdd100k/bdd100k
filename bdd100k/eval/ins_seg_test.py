@@ -6,7 +6,7 @@ import unittest
 import numpy as np
 from PIL import Image
 
-from ..common.utils import load_bdd_config
+from ..common.utils import load_bdd100k_config
 from .ins_seg import evaluate_ins_seg
 
 
@@ -19,7 +19,7 @@ class TestBDD100KInsSegEval(unittest.TestCase):
         gt_base = "{}/testcases/ins_seg/gt".format(cur_dir)
         pred_base = "{}/testcases/ins_seg/pred".format(cur_dir)
         pred_json = "{}/testcases/ins_seg/pred.json".format(cur_dir)
-        bdd100k_config = load_bdd_config("ins_seg")
+        bdd100k_config = load_bdd100k_config("ins_seg")
         result = evaluate_ins_seg(
             gt_base, pred_base, pred_json, bdd100k_config.config
         )

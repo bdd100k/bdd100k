@@ -6,7 +6,11 @@ import numpy as np
 from PIL import Image
 from scalabel.eval.mot import evaluate_track
 
-from ..common.utils import group_and_sort_files, list_files, load_bdd_config
+from ..common.utils import (
+    group_and_sort_files,
+    list_files,
+    load_bdd100k_config,
+)
 from .mots import acc_single_video_mots, mask_intersection_rate, parse_bitmasks
 
 
@@ -44,7 +48,7 @@ class TestEvaluteMOTS(unittest.TestCase):
         results = group_and_sort_files(
             list_files(b_path, ".png", with_prefix=True)
         )
-        bdd100k_config = load_bdd_config("seg_track")
+        bdd100k_config = load_bdd100k_config("seg_track")
         res = evaluate_track(
             acc_single_video_mots, gts, results, bdd100k_config.config, nproc=1
         )
