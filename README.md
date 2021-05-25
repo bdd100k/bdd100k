@@ -7,7 +7,7 @@ BDD100K is a diverse driving dataset for heterogeneous multitask learning.
 [**Homepage**](https://www.bdd100k.com/) |
 [**Paper**](https://arxiv.org/abs/1805.04687) |
 [**Doc**](https://doc.bdd100k.com) |
-[**Questions**](https://groups.google.com/d/forum/bdd100k-discuss)
+[**Questions**](https://github.com/bdd100k/bdd100k/discussions)
 
 ![teaser](doc/images/teaser.gif)
 
