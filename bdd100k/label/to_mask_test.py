@@ -50,7 +50,7 @@ class TestToMasks(unittest.TestCase):
         dataset = load("{}/testcases/example_annotation.json".format(cur_dir))
         frames = dataset.frames
         bdd100k_config = load_bdd100k_config(task_name)
-        convert_func(frames, self.test_out, bdd100k_config.config, 1)
+        convert_func(frames, self.test_out, bdd100k_config.scalabel, 1)
         output_path = os.path.join(self.test_out, output_name)
         mask = np.asarray(Image.open(output_path))
 

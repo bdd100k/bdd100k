@@ -50,7 +50,11 @@ class TestEvaluteMOTS(unittest.TestCase):
         )
         bdd100k_config = load_bdd100k_config("seg_track")
         res = evaluate_track(
-            acc_single_video_mots, gts, results, bdd100k_config.config, nproc=1
+            acc_single_video_mots,
+            gts,
+            results,
+            bdd100k_config.scalabel,
+            nproc=1,
         )
         self.assertAlmostEqual(res["pedestrian"]["MOTA"], 2 / 3)
         self.assertAlmostEqual(res["pedestrian"]["MOTP"], 3 / 4)

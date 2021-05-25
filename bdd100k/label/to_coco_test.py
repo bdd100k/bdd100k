@@ -39,7 +39,7 @@ class TestBitmasks2COCO(unittest.TestCase):
         """Check the correctness of bitmask2coco_ins_seg."""
         mask_dir = "./testcases/bitmasks/quasi-video"
         bdd100k_config = load_bdd100k_config("ins_seg")
-        coco = bitmask2coco_ins_seg(mask_dir, bdd100k_config.config)
+        coco = bitmask2coco_ins_seg(mask_dir, bdd100k_config.scalabel)
         self.assertEqual(len(coco), 4)
         self.assertEqual(len(coco["images"]), 2)
         self.assertEqual(coco["images"][0]["id"], 1)
@@ -49,7 +49,7 @@ class TestBitmasks2COCO(unittest.TestCase):
         """Check the correctness of bitmask2coco_seg_track."""
         mask_dir = "./testcases/bitmasks"
         bdd100k_config = load_bdd100k_config("seg_track")
-        coco = bitmask2coco_seg_track(mask_dir, bdd100k_config.config)
+        coco = bitmask2coco_seg_track(mask_dir, bdd100k_config.scalabel)
         self.assertEqual(len(coco), 5)
         self.assertEqual(len(coco["images"]), 2)
         self.assertEqual(coco["images"][0]["id"], 1)

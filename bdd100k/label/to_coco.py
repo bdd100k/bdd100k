@@ -576,7 +576,7 @@ def main() -> None:
         logger.info("Start format converting...")
         coco = convert_function(
             args.input,
-            bdd100k_config.config,
+            bdd100k_config.scalabel,
             args.mask_mode,
             args.nproc,
         )
@@ -608,7 +608,7 @@ def main() -> None:
 
         logger.info("Start format converting...")
         frames = bdd100k_to_scalabel(dataset.frames, bdd100k_config)
-        coco = convert_func(frames=frames, config=bdd100k_config.config)
+        coco = convert_func(frames=frames, config=bdd100k_config.scalabel)
 
     logger.info("Saving converted annotations to disk...")
     with open(args.output, "w") as f:
