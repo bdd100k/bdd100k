@@ -599,12 +599,11 @@ def main() -> None:
 
         logger.info("Loading annotations...")
         dataset = load(args.input, args.nproc)
-        bdd100k_config = None
         if args.config is not None:
             bdd100k_config = load_bdd100k_config(args.config)
         elif dataset.config is not None:
             bdd100k_config = BDD100KConfig(config=dataset.config)
-        if bdd100k_config is None:
+        else:
             bdd100k_config = load_bdd100k_config(args.mode)
 
         logger.info("Start format converting...")
