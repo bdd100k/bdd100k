@@ -1,0 +1,7 @@
+[config]
+    [config.image_size]
+    height = 720
+    width = 1280
+
+    [[config.categories]]
+    name = "None"

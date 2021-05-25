@@ -1,16 +1,17 @@
 """Util functions."""
 
+import inspect
 import os
 import os.path as osp
 from itertools import groupby
 from typing import Dict, List, Tuple
 
-from scalabel.label.to_coco import get_instance_id, get_object_attributes
+from scalabel.common.io import load_config
+from scalabel.label.to_coco import get_instance_id
 from scalabel.label.typing import Label
+from scalabel.label.utils import check_crowd, check_ignored
 
-DEFAULT_COCO_CONFIG = osp.join(
-    osp.dirname(osp.abspath(__file__)), "configs.toml"
-)
+from .typing import BDD100KConfig
 
 
 def list_files(
@@ -54,10 +55,27 @@ def get_bdd100k_instance_id(
     return get_instance_id(instance_id_maps, global_instance_id, scalabel_id)
 
 
-def get_bdd100k_object_attributes(
-    label: Label, ignore: bool
-) -> Tuple[int, int]:
-    """Set attributes for the ann dict in BDD100K."""
+def check_bdd100k_crowd(label: Label) -> bool:
+    """Check crowd attribute for BDD100K."""
     if label.id == "-1":
-        ignore = True
-    return get_object_attributes(label, ignore)
+        return True
+    return check_crowd(label)
+
+
+def check_bdd100k_ignored(label: Label) -> bool:
+    """Check ignored attribute for BDD100K."""
+    if label.id == "-1":
+        return True
+    return check_ignored(label)
+
+
+def load_bdd100k_config(cfg_path: str) -> BDD100KConfig:
+    """Load a task-specific config."""
+    if not cfg_path.endswith("toml"):
+        cfg_path = osp.join(
+            osp.split(osp.dirname(osp.abspath(inspect.stack()[1][1])))[0],
+            "configs",
+            cfg_path + ".toml",
+        )
+    config = load_config(cfg_path)
+    return BDD100KConfig(**config)

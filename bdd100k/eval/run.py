@@ -2,17 +2,18 @@
 
 import argparse
 
+from scalabel.eval.detect import evaluate_det
+from scalabel.eval.mot import acc_single_video_mot, evaluate_track
 from scalabel.label.io import group_and_sort, load
 
 from ..common.utils import (
-    DEFAULT_COCO_CONFIG,
     group_and_sort_files,
     list_files,
+    load_bdd100k_config,
 )
-from .detect import evaluate_det
+from ..label.to_scalabel import bdd100k_to_scalabel
 from .ins_seg import evaluate_ins_seg
 from .lane import evaluate_lane_marking
-from .mot import acc_single_video_mot, evaluate_track
 from .mots import acc_single_video_mots
 from .seg import evaluate_drivable, evaluate_segmentation
 
@@ -43,17 +44,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         "-c",
-        default=DEFAULT_COCO_CONFIG,
+        default=None,
         help="path to the config file",
     )
     parser.add_argument(
-        "--mot-iou-thr",
+        "--iou-thr",
         type=float,
         default=0.5,
         help="iou threshold for mot evaluation",
     )
     parser.add_argument(
-        "--mot-ignore-iof-thr",
+        "--ignore-iof-thr",
         type=float,
         default=0.5,
         help="ignore iof threshold for mot evaluation",
@@ -68,7 +69,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--out-dir", type=str, default=".", help="Path to store output files"
     )
-    # Flags for instance segmentatoin
+    # Flags for instance segmentation
     parser.add_argument(
         "--score-file",
         type=str,
@@ -84,6 +85,10 @@ def parse_args() -> argparse.Namespace:
 def run() -> None:
     """Main."""
     args = parse_args()
+    if args.config is not None:
+        bdd100k_config = load_bdd100k_config(args.config)
+    elif args.task in ["det", "ins_seg", "box_track", "seg_track"]:
+        bdd100k_config = load_bdd100k_config(args.task)
 
     if args.task == "drivable":
         evaluate_drivable(args.gt, args.result, args.nproc)
@@ -93,24 +98,40 @@ def run() -> None:
         evaluate_segmentation(args.gt, args.result, args.nproc)
     elif args.task == "det":
         evaluate_det(
-            args.gt, args.result, args.config, args.out_dir, args.nproc
+            bdd100k_to_scalabel(
+                load(args.gt, args.nproc).frames, bdd100k_config
+            ),
+            bdd100k_to_scalabel(
+                load(args.result, args.nproc).frames, bdd100k_config
+            ),
+            bdd100k_config.config,
+            args.out_dir,
         )
     elif args.task == "ins_seg":
         evaluate_ins_seg(
             args.gt,
             args.result,
             args.score_file,
-            args.config,
+            bdd100k_config.config,
             args.out_dir,
             args.nproc,
         )
     elif args.task == "box_track":
         evaluate_track(
             acc_single_video_mot,
-            gts=group_and_sort(load(args.gt, args.nproc)),
-            results=group_and_sort(load(args.result, args.nproc)),
-            iou_thr=args.mot_iou_thr,
-            ignore_iof_thr=args.mot_ignore_iof_thr,
+            gts=group_and_sort(
+                bdd100k_to_scalabel(
+                    load(args.gt, args.nproc).frames, bdd100k_config
+                )
+            ),
+            results=group_and_sort(
+                bdd100k_to_scalabel(
+                    load(args.result, args.nproc).frames, bdd100k_config
+                )
+            ),
+            config=bdd100k_config.config,
+            iou_thr=args.iou_thr,
+            ignore_iof_thr=args.ignore_iof_thr,
             nproc=args.nproc,
         )
     elif args.task == "seg_track":
@@ -122,8 +143,9 @@ def run() -> None:
             results=group_and_sort_files(
                 list_files(args.result, ".png", with_prefix=True)
             ),
-            iou_thr=args.mot_iou_thr,
-            ignore_iof_thr=args.mot_ignore_iof_thr,
+            config=bdd100k_config.config,
+            iou_thr=args.iou_thr,
+            ignore_iof_thr=args.ignore_iof_thr,
             nproc=args.nproc,
         )
 

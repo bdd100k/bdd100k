@@ -25,25 +25,31 @@ import matplotlib  # type: ignore
 import matplotlib.pyplot as plt  # type: ignore
 import numpy as np
 from PIL import Image
-from scalabel.label.io import group_and_sort
-from scalabel.label.to_coco import load_coco_config, process_category
+from scalabel.label.io import group_and_sort, load
 from scalabel.label.transforms import poly_to_patch
-from scalabel.label.typing import Frame, Label, Poly2D
+from scalabel.label.typing import Config, Frame, ImageSize, Label, Poly2D
+from scalabel.label.utils import (
+    check_crowd,
+    check_ignored,
+    get_leaf_categories,
+)
 from tqdm import tqdm
 
 from ..common.logger import logger
-from ..common.utils import DEFAULT_COCO_CONFIG, get_bdd100k_instance_id
+from ..common.typing import BDD100KConfig
+from ..common.utils import get_bdd100k_instance_id, load_bdd100k_config
 from .label import drivables, labels
-from .to_coco import parse_args, start_converting
+from .to_coco import parse_args
+from .to_scalabel import bdd100k_to_scalabel
 
 IGNORE_LABEL = 255
-SHAPE = np.array([720, 1280])
 LANE_DIRECTION_MAP = {"parallel": 0, "vertical": 1}
 LANE_STYLE_MAP = {"solid": 0, "dashed": 1}
 
 
 def frame_to_mask(
     out_path: str,
+    shape: ImageSize,
     colors: List[np.ndarray],
     poly2ds: List[List[Poly2D]],
     with_instances: bool = True,
@@ -52,11 +58,12 @@ def frame_to_mask(
 ) -> None:
     """Converting a frame of poly2ds to mask/bitmask."""
     assert len(colors) == len(poly2ds)
+    height, width = shape.height, shape.width
 
     if with_instances:
-        img = np.ones([*SHAPE, 4], dtype=np.uint8) * back_color
+        img = np.ones([height, width, 4], dtype=np.uint8) * back_color
     else:
-        img = np.ones([*SHAPE, 1], dtype=np.uint8) * back_color
+        img = np.ones([height, width, 1], dtype=np.uint8) * back_color
 
     if len(colors) == 0:
         pil_img = Image.fromarray(img.squeeze())
@@ -64,11 +71,11 @@ def frame_to_mask(
 
     matplotlib.use("Agg")
     fig = plt.figure(facecolor="0")
-    fig.set_size_inches(SHAPE[::-1] / fig.get_dpi())
+    fig.set_size_inches((width / fig.get_dpi()), height / fig.get_dpi())
     ax = fig.add_axes([0, 0, 1, 1])
     ax.axis("off")
-    ax.set_xlim(0, SHAPE[1])
-    ax.set_ylim(0, SHAPE[0])
+    ax.set_xlim(0, width)
+    ax.set_ylim(0, height)
     ax.set_facecolor((0, 0, 0, 0))
     ax.invert_yaxis()
 
@@ -90,7 +97,7 @@ def frame_to_mask(
 
     fig.canvas.draw()
     out = np.frombuffer(fig.canvas.tostring_rgb(), np.uint8)
-    out = out.reshape((*SHAPE, -1)).astype(np.int32)
+    out = out.reshape((height, width, -1)).astype(np.int32)
     out = (out[..., 0] << 8) + out[..., 1]
     plt.close()
 
@@ -102,7 +109,7 @@ def frame_to_mask(
 
 
 def set_instance_color(
-    label: Label, category_id: int, ann_id: int, category_ignored: bool
+    label: Label, category_id: int, ann_id: int
 ) -> np.ndarray:
     """Set the color for an instance given its attributes and ID."""
     attributes = label.attributes
@@ -111,8 +118,8 @@ def set_instance_color(
     else:
         truncated = int(attributes.get("truncated", False))
         occluded = int(attributes.get("occluded", False))
-        crowd = int(attributes.get("crowd", False))
-        ignore = int(category_ignored)
+        crowd = int(check_crowd(label))
+        ignore = int(check_ignored(label))
     color = np.array(
         [
             category_id & 255,
@@ -144,6 +151,7 @@ def set_lane_color(label: Label, category_id: int) -> np.ndarray:
 def frames_to_masks(
     nproc: int,
     out_paths: List[str],
+    shapes: List[ImageSize],
     colors_list: List[List[np.ndarray]],
     poly2ds_list: List[List[List[Poly2D]]],
     with_instances: bool = True,
@@ -156,11 +164,11 @@ def frames_to_masks(
             partial(
                 frame_to_mask,
                 with_instances=with_instances,
-                closed=closed,
                 back_color=back_color,
+                closed=closed,
             ),
             tqdm(
-                zip(out_paths, colors_list, poly2ds_list),
+                zip(out_paths, shapes, colors_list, poly2ds_list),
                 total=len(out_paths),
             ),
         )
@@ -169,8 +177,7 @@ def frames_to_masks(
 def seg_to_masks(
     frames: List[Frame],
     out_base: str,
-    ignore_as_class: bool = False,  # pylint: disable=unused-argument
-    remove_ignore: bool = False,  # pylint: disable=unused-argument
+    config: Config,
     nproc: int = 4,
     mode: str = "sem_seg",
     back_color: int = IGNORE_LABEL,
@@ -178,14 +185,18 @@ def seg_to_masks(
 ) -> None:
     """Converting segmentation poly2d to 1-channel masks."""
     os.makedirs(out_base, exist_ok=True)
+    img_shape = config.image_size
 
     out_paths: List[str] = []
+    shapes: List[ImageSize] = []
     colors_list: List[List[np.ndarray]] = []
     poly2ds_list: List[List[List[Poly2D]]] = []
 
     categories = dict(sem_seg=labels, drivable=drivables)[mode]
     cat_name2id = {
-        cat.name: cat.trainId for cat in categories if cat.trainId != 255
+        cat.name: cat.trainId
+        for cat in categories
+        if cat.trainId != IGNORE_LABEL
     }
 
     logger.info("Preparing annotations for Semseg to Bitmasks")
@@ -196,6 +207,13 @@ def seg_to_masks(
         image_name = os.path.split(image_name)[-1]
         out_path = os.path.join(out_base, image_name)
         out_paths.append(out_path)
+
+        if img_shape is None:
+            if image_anns.size is not None:
+                img_shape = image_anns.size
+            else:
+                raise ValueError("Image shape not defined!")
+        shapes.append(img_shape)
 
         colors: List[np.ndarray] = []
         poly2ds: List[List[Poly2D]] = []
@@ -223,6 +241,7 @@ def seg_to_masks(
     frames_to_masks(
         nproc,
         out_paths,
+        shapes,
         colors_list,
         poly2ds_list,
         with_instances=False,
@@ -231,7 +250,7 @@ def seg_to_masks(
     )
 
 
-ToMasksFunc = Callable[[List[Frame], str, bool, bool, int], None]
+ToMasksFunc = Callable[[List[Frame], str, Config, int], None]
 semseg_to_masks: ToMasksFunc = partial(
     seg_to_masks, mode="sem_seg", back_color=IGNORE_LABEL, closed=True
 )
@@ -249,22 +268,20 @@ lanemark_to_masks: ToMasksFunc = partial(
 def insseg_to_bitmasks(
     frames: List[Frame],
     out_base: str,
-    ignore_as_class: bool = False,
-    remove_ignore: bool = False,
+    config: Config,
     nproc: int = 4,
 ) -> None:
     """Converting instance segmentation poly2d to bitmasks."""
     os.makedirs(out_base, exist_ok=True)
-
-    categories, name_mapping, ignore_mapping = load_coco_config(
-        mode="track",
-        filepath=DEFAULT_COCO_CONFIG,
-        ignore_as_class=ignore_as_class,
-    )
+    img_shape = config.image_size
 
     out_paths: List[str] = []
+    shapes: List[ImageSize] = []
     colors_list: List[List[np.ndarray]] = []
     poly2ds_list: List[List[List[Poly2D]]] = []
+
+    categories = get_leaf_categories(config.categories)
+    cat_name2id = {cat.name: i + 1 for i, cat in enumerate(categories)}
 
     logger.info("Preparing annotations for InsSeg to Bitmasks")
 
@@ -276,6 +293,13 @@ def insseg_to_bitmasks(
         image_name = os.path.split(image_name)[-1]
         out_path = os.path.join(out_base, image_name)
         out_paths.append(out_path)
+
+        if img_shape is None:
+            if image_anns.size is not None:
+                img_shape = image_anns.size
+            else:
+                raise ValueError("Image shape not defined!")
+        shapes.append(img_shape)
 
         colors: List[np.ndarray] = []
         poly2ds: List[List[Poly2D]] = []
@@ -293,46 +317,36 @@ def insseg_to_bitmasks(
         for label in labels_:
             if label.poly2d is None:
                 continue
-
-            category_ignored, category_id = process_category(
-                label.category,
-                categories,
-                name_mapping,
-                ignore_mapping,
-                ignore_as_class=ignore_as_class,
-            )
-            if remove_ignore and category_ignored:
+            if label.category not in cat_name2id:
                 continue
 
             ann_id += 1
-            color = set_instance_color(
-                label, category_id, ann_id, category_ignored
-            )
+            category_id = cat_name2id[label.category]
+            color = set_instance_color(label, category_id, ann_id)
             colors.append(color)
             poly2ds.append(label.poly2d)
 
     logger.info("Start conversion for InsSeg to Bitmasks")
-    frames_to_masks(nproc, out_paths, colors_list, poly2ds_list)
+    frames_to_masks(nproc, out_paths, shapes, colors_list, poly2ds_list)
 
 
 def segtrack_to_bitmasks(
     frames: List[Frame],
     out_base: str,
-    ignore_as_class: bool = False,
-    remove_ignore: bool = False,
+    config: Config,
     nproc: int = 4,
 ) -> None:
     """Converting segmentation tracking poly2d to bitmasks."""
     frames_list = group_and_sort(frames)
-    categories, name_mapping, ignore_mapping = load_coco_config(
-        mode="track",
-        filepath=DEFAULT_COCO_CONFIG,
-        ignore_as_class=ignore_as_class,
-    )
+    img_shape = config.image_size
 
     out_paths: List[str] = []
+    shapes: List[ImageSize] = []
     colors_list: List[List[np.ndarray]] = []
     poly2ds_list: List[List[List[Poly2D]]] = []
+
+    categories = get_leaf_categories(config.categories)
+    cat_name2id = {cat.name: i + 1 for i, cat in enumerate(categories)}
 
     logger.info("Preparing annotations for SegTrack to Bitmasks")
 
@@ -352,6 +366,13 @@ def segtrack_to_bitmasks(
             out_path = os.path.join(out_dir, image_name)
             out_paths.append(out_path)
 
+            if img_shape is None:
+                if image_anns.size is not None:
+                    img_shape = image_anns.size
+                else:
+                    raise ValueError("Image shape not defined!")
+            shapes.append(img_shape)
+
             colors: List[np.ndarray] = []
             poly2ds: List[List[Poly2D]] = []
             colors_list.append(colors)
@@ -368,29 +389,19 @@ def segtrack_to_bitmasks(
             for label in labels_:
                 if label.poly2d is None:
                     continue
-
-                category_ignored, category_id = process_category(
-                    label.category,
-                    categories,
-                    name_mapping,
-                    ignore_mapping,
-                    ignore_as_class=ignore_as_class,
-                )
-                if category_ignored and remove_ignore:
+                if label.category not in cat_name2id:
                     continue
 
                 instance_id, global_instance_id = get_bdd100k_instance_id(
-                    instance_id_maps, global_instance_id, str(label.id)
+                    instance_id_maps, global_instance_id, label.id
                 )
-
-                color = set_instance_color(
-                    label, category_id, instance_id, category_ignored
-                )
+                category_id = cat_name2id[label.category]
+                color = set_instance_color(label, category_id, instance_id)
                 colors.append(color)
                 poly2ds.append(label.poly2d)
 
     logger.info("Start Conversion for SegTrack to Bitmasks")
-    frames_to_masks(nproc, out_paths, colors_list, poly2ds_list)
+    frames_to_masks(nproc, out_paths, shapes, colors_list, poly2ds_list)
 
 
 def main() -> None:
@@ -403,7 +414,6 @@ def main() -> None:
         "ins_seg",
         "seg_track",
     ]
-    frames = start_converting(args)
     os.environ["QT_QPA_PLATFORM"] = "offscreen"  # matplotlib offscreen render
 
     convert_funcs: Dict[str, ToMasksFunc] = dict(
@@ -413,11 +423,19 @@ def main() -> None:
         ins_seg=insseg_to_bitmasks,
         seg_track=segtrack_to_bitmasks,
     )
+
+    dataset = load(args.input, args.nproc)
+    if args.config is not None:
+        bdd100k_config = load_bdd100k_config(args.config)
+    elif dataset.config is not None:
+        bdd100k_config = BDD100KConfig(config=dataset.config)
+    if bdd100k_config is None:
+        bdd100k_config = load_bdd100k_config(args.mode)
+
     convert_funcs[args.mode](
-        frames,
+        bdd100k_to_scalabel(dataset.frames, bdd100k_config),
         args.output,
-        args.ignore_as_class,
-        args.remove_ignore,
+        bdd100k_config.config,
         args.nproc,
     )
 

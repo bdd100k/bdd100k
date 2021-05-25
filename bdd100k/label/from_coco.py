@@ -8,9 +8,9 @@ def parse_arguments() -> argparse.Namespace:
     """Parse the arguments."""
     parser = argparse.ArgumentParser(description="coco to bdd100k")
     parser.add_argument(
-        "--label",
-        "-l",
-        help="path to coco label file",
+        "--input",
+        "-i",
+        help="path to the input coco label file",
     )
     parser.add_argument(
         "--output",

@@ -4,9 +4,13 @@ import unittest
 
 import numpy as np
 from PIL import Image
+from scalabel.eval.mot import evaluate_track
 
-from ..common.utils import group_and_sort_files, list_files
-from .mot import evaluate_track
+from ..common.utils import (
+    group_and_sort_files,
+    list_files,
+    load_bdd100k_config,
+)
 from .mots import acc_single_video_mots, mask_intersection_rate, parse_bitmasks
 
 
@@ -44,8 +48,10 @@ class TestEvaluteMOTS(unittest.TestCase):
         results = group_and_sort_files(
             list_files(b_path, ".png", with_prefix=True)
         )
-
-        res = evaluate_track(acc_single_video_mots, gts, results, nproc=1)
+        bdd100k_config = load_bdd100k_config("seg_track")
+        res = evaluate_track(
+            acc_single_video_mots, gts, results, bdd100k_config.config, nproc=1
+        )
         self.assertAlmostEqual(res["pedestrian"]["MOTA"], 2 / 3)
         self.assertAlmostEqual(res["pedestrian"]["MOTP"], 3 / 4)
         self.assertAlmostEqual(res["pedestrian"]["IDF1"], 4 / 5)

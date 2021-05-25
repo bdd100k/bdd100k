@@ -7,8 +7,9 @@ from typing import Callable, List
 import numpy as np
 from PIL import Image
 from scalabel.label.io import load
-from scalabel.label.typing import Frame, Label
+from scalabel.label.typing import Config, Frame, Label
 
+from ..common.utils import load_bdd100k_config
 from .to_mask import (
     insseg_to_bitmasks,
     segtrack_to_bitmasks,
@@ -26,7 +27,7 @@ class TestUtilFunctions(unittest.TestCase):
             id="tmp",
             attributes=dict(truncated=True, crowd=False),
         )
-        color = set_instance_color(label, 15, 300, False)
+        color = set_instance_color(label, 15, 300)
         gt_color = np.array([15, 8, 1, 44])
         self.assertTrue((color == gt_color).all())
 
@@ -38,15 +39,18 @@ class TestToMasks(unittest.TestCase):
 
     def task_specific_test(
         self,
+        task_name: str,
         file_name: str,
         output_name: str,
-        convert_func: Callable[[List[Frame], str, bool, bool, int], None],
+        convert_func: Callable[[List[Frame], str, Config, int], None],
     ) -> None:
         """General test function for different tasks."""
         cur_dir = os.path.dirname(os.path.abspath(__file__))
 
-        labels = load("{}/testcases/example_annotation.json".format(cur_dir))
-        convert_func(labels, self.test_out, False, False, 1)
+        dataset = load("{}/testcases/example_annotation.json".format(cur_dir))
+        frames = dataset.frames
+        bdd100k_config = load_bdd100k_config(task_name)
+        convert_func(frames, self.test_out, bdd100k_config.config, 1)
         output_path = os.path.join(self.test_out, output_name)
         mask = np.asarray(Image.open(output_path))
 
@@ -59,6 +63,7 @@ class TestToMasks(unittest.TestCase):
     def test_semseg_to_masks(self) -> None:
         """Test case for semantic segmentation to bitmasks."""
         self.task_specific_test(
+            "sem_seg",
             "semseg_mask.png",
             "b1c81faa-3df17267-0000001.png",
             semseg_to_masks,
@@ -67,7 +72,8 @@ class TestToMasks(unittest.TestCase):
     def test_insseg_to_bitmasks(self) -> None:
         """Test case for instance segmentation to bitmasks."""
         self.task_specific_test(
-            "insseg_bitmask.png",
+            "ins_seg",
+            "bitmasks/quasi-video/insseg_bitmask.png",
             "b1c81faa-3df17267-0000001.png",
             insseg_to_bitmasks,
         )
@@ -75,7 +81,8 @@ class TestToMasks(unittest.TestCase):
     def test_segtrack_to_bitmasks(self) -> None:
         """Test case for instance segmentation to bitmasks."""
         self.task_specific_test(
-            "segtrack_bitmask.png",
+            "seg_track",
+            "bitmasks/quasi-video/segtrack_bitmask.png",
             "b1c81faa-3df17267/b1c81faa-3df17267-0000001.png",
             segtrack_to_bitmasks,
         )

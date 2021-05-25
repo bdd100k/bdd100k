@@ -1,14 +1,16 @@
 """BDD100K tracking evaluation with CLEAR MOT metrics."""
 import os
-from typing import List, Tuple
+from typing import Callable, List, Tuple
 
 import motmetrics as mm
 import numpy as np
 from PIL import Image
 
-from .mot import CLASSES
-
 MAX_DET = 100
+
+Files = List[str]
+FilesList = List[Files]
+FilesFunc = Callable[[Files, Files, float, float], List[mm.MOTAccumulator]]
 
 
 def parse_bitmasks(
@@ -74,15 +76,16 @@ def mask_intersection_rate(
     return ious, iofs
 
 
-def acc_single_video_mots(
+def acc_single_video_mots(  # pylint: disable=unused-argument
     gts: List[str],
     results: List[str],
+    classes: List[str],
     iou_thr: float = 0.5,
     ignore_iof_thr: float = 0.5,
 ) -> List[mm.MOTAccumulator]:
     """Accumulate results for one video."""
     assert len(gts) == len(results)
-    num_classes = len(CLASSES)
+    num_classes = len(classes)
 
     accs = [mm.MOTAccumulator(auto_id=True) for _ in range(num_classes)]
     for gt, result in zip(gts, results):
