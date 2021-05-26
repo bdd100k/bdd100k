@@ -35,7 +35,7 @@ setuptools.setup(
         "pandas",
         "pillow",
         "pycocotools",
-        "scalabel @ git+https://github.com/scalabel/scalabel",
+        "scalabel @ git+git://github.com/scalabel/scalabel.git",
         "scikit-image",
         "toml",
         "tqdm",
