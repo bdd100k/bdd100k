@@ -19,7 +19,7 @@ def parse_args() -> argparse.Namespace:
     """Parse arguments."""
     parser = argparse.ArgumentParser(description="masks/bitmasks to colormaps")
     parser.add_argument(
-        "-l", "--label", help="path to the directory of masks/bitmasks."
+        "-i", "--input", help="path to the directory of masks/bitmasks."
     )
     parser.add_argument(
         "-o", "--output", help="path to save generated colormaps."
@@ -33,8 +33,8 @@ def parse_args() -> argparse.Namespace:
             "drivable",
             "lane_mark",
             "ins_seg",
+            "pan_seg",
             "seg_track",
-            "panoptic",
         ],
         help="conversion mode.",
     )
@@ -50,7 +50,7 @@ def parse_args() -> argparse.Namespace:
 def mask_to_color(bitmask_file: str, colormap_file: str, mode: str) -> None:
     """Convert mask/bitmask to colormap for one image."""
     bitmask = Image.open(bitmask_file)
-    if mode in ["ins_seg", "seg_track", "panoptic"]:
+    if mode in ["ins_seg", "pan_seg", "seg_track"]:
         bitmask = bitmask.split()[3]
     elif mode == "lane_mark":
         array = np.asarray(bitmask)
@@ -144,7 +144,7 @@ def main() -> None:
         if args.mode == "seg_track"
         else image_dataset_to_colormap
     )
-    colormap_func(args.label, args.output, args.mode, args.nproc)
+    colormap_func(args.input, args.output, args.mode, args.nproc)
 
 
 if __name__ == "__main__":

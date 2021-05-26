@@ -1,3 +1,5 @@
+"""Convert COCO panoptic segmentation format from BDD100K bitmasks."""
+
 import argparse
 import json
 import os
@@ -6,7 +8,7 @@ from multiprocessing import Pool
 
 import numpy as np
 from PIL import Image
-from scalabel.label.coco_typing import PnpGtType, PnpAnnType
+from scalabel.label.coco_typing import PnpAnnType, PnpGtType
 from tqdm import tqdm
 
 from ..common.logger import logger
@@ -14,7 +16,9 @@ from ..common.logger import logger
 
 def parse_args() -> argparse.Namespace:
     """Parse arguments."""
-    parser = argparse.ArgumentParser(description="bdd100k to coco format")
+    parser = argparse.ArgumentParser(
+        description="coco panoptic format to bdd100k bitmasks"
+    )
     parser.add_argument("-i", "--input", help="path to the json file.")
     parser.add_argument(
         "-o",
@@ -29,18 +33,18 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "-pb",
-        "--panoptic-base",
-        help="Path to the panoptic segmentation mask folder.",
+        "--pan-mask-base",
+        help="Path to the input panoptic segmentation mask folder.",
     )
     return parser.parse_args()
 
 
-def panoptic2bitmask(
-    annotation: PnpAnnType, panoptic_base: str, mask_base: str
+def panseg2bitmask(
+    annotation: PnpAnnType, pan_mask_base: str, mask_base: str
 ) -> None:
-    """Convert coco panoptic annotations of an image to BDD100K format."""
-    panoptic_name = os.path.join(panoptic_base, annotation["file_name"])
-    pan_fmt = np.array(Image.open(panoptic_name), dtype=np.uint32)
+    """Convert COCO panoptic annotations of an image to BDD100K format."""
+    pan_name = os.path.join(pan_mask_base, annotation["file_name"])
+    pan_fmt = np.array(Image.open(pan_name), dtype=np.uint32)
     instance_map = pan_fmt[..., 0] + (pan_fmt[..., 1] << 8)
 
     height, width = pan_fmt.shape[:2]
@@ -50,8 +54,8 @@ def panoptic2bitmask(
 
     for segm_info in annotation["segments_info"]:
         instance_id = segm_info["id"]
-        category_id = segm_info["category_id"]
         cur_mask = instance_map == instance_id
+        category_id = segm_info["category_id"]
         bitmask[..., 0] = (
             bitmask[..., 0] * (1 - cur_mask) + category_id * cur_mask
         )
@@ -65,23 +69,23 @@ def panoptic2bitmask(
     bitmask.save(mask_name)
 
 
-def coco_panoptic_seg2bitmask(
-    coco_panoptic: PnpGtType,
-    panoptic_base: str,
+def coco_pan_seg2bitmask(
+    coco_pan_seg: PnpGtType,
+    pan_mask_base: str,
     mask_base: str,
     nproc: int = 4,
 ) -> None:
-    """Converting COCO panoptic segmentation to BDD100K format."""
+    """Converting COCO panoptic segmentation dataset to BDD100K format."""
     logger.info("Converting annotations...")
 
     with Pool(nproc) as pool:
         pool.map(
             partial(
-                panoptic2bitmask,
-                panoptic_base=panoptic_base,
+                panseg2bitmask,
+                pan_mask_base=pan_mask_base,
                 mask_base=mask_base,
             ),
-            tqdm(coco_panoptic["annotations"]),
+            tqdm(coco_pan_seg["annotations"]),
         )
 
 
@@ -89,11 +93,11 @@ def main() -> None:
     """Main function."""
     args = parse_args()
     with open(args.input) as fp:
-        coco_panoptic = json.load(fp)
+        coco_pan_seg = json.load(fp)
 
     logger.info("Start format converting...")
-    coco_panoptic_seg2bitmask(
-        coco_panoptic, args.panoptic_base, args.output, args.nproc
+    coco_pan_seg2bitmask(
+        coco_pan_seg, args.pan_mask_base, args.output, args.nproc
     )
     logger.info("Finished!")
 

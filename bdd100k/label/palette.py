@@ -11,7 +11,7 @@ PALETTES: Dict[str, List[int]] = {}
 
 def get_palette(mode: str) -> List[int]:
     """Generate mapping for the required task."""
-    if mode in ["ins_seg", "panoptic"]:
+    if mode in ["ins_seg", "pan_seg"]:
         palette = (np.random.rand(768) * 255).astype(np.uint8).tolist()
         palette[:3] = [0, 0, 0]
         if mode == "ins_seg":
