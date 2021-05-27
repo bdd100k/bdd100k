@@ -15,6 +15,7 @@ from ..label.to_scalabel import bdd100k_to_scalabel
 from .ins_seg import evaluate_ins_seg
 from .lane import evaluate_lane_marking
 from .mots import acc_single_video_mots
+from .pan_seg import evaluate_pan_seg
 from .seg import evaluate_drivable, evaluate_segmentation
 
 
@@ -28,6 +29,7 @@ def parse_args() -> argparse.Namespace:
             "det",
             "sem_seg",
             "ins_seg",
+            "pan_seg",
             "drivable",
             "lane_mark",
             "box_track",
@@ -114,6 +116,12 @@ def run() -> None:
             args.score_file,
             bdd100k_config.scalabel,
             args.out_dir,
+            args.nproc,
+        )
+    elif args.task == "pan_seg":
+        evaluate_pan_seg(
+            list_files(args.gt, ".png", with_prefix=True),
+            list_files(args.result, ".png", with_prefix=True),
             args.nproc,
         )
     elif args.task == "box_track":
