@@ -12,6 +12,7 @@ from scalabel.label.typing import Config, Frame, Label
 from ..common.utils import load_bdd100k_config
 from .to_mask import (
     insseg_to_bitmasks,
+    panseg_to_bitmasks,
     segtrack_to_bitmasks,
     semseg_to_masks,
     set_instance_color,
@@ -47,8 +48,15 @@ class TestToMasks(unittest.TestCase):
         """General test function for different tasks."""
         cur_dir = os.path.dirname(os.path.abspath(__file__))
 
-        dataset = load("{}/testcases/example_annotation.json".format(cur_dir))
-        frames = dataset.frames
+        if task_name == "pan_seg":
+            json_path = (
+                "{}/testcases/panseg_bdd100k/panseg_bdd100k.json".format(
+                    cur_dir
+                )
+            )
+        else:
+            json_path = "{}/testcases/example_annotation.json".format(cur_dir)
+        frames = load(json_path).frames
         bdd100k_config = load_bdd100k_config(task_name)
         convert_func(frames, self.test_out, bdd100k_config.scalabel, 1)
         output_path = os.path.join(self.test_out, output_name)
@@ -76,6 +84,15 @@ class TestToMasks(unittest.TestCase):
             "bitmasks/quasi-video/insseg_bitmask.png",
             "b1c81faa-3df17267-0000001.png",
             insseg_to_bitmasks,
+        )
+
+    def test_panseg_to_bitmasks(self) -> None:
+        """Test case for panoptic segmentation to bitmasks."""
+        self.task_specific_test(
+            "pan_seg",
+            "panseg_bdd100k/panseg_mask.png",
+            "panseg_mask.png",
+            panseg_to_bitmasks,
         )
 
     def test_segtrack_to_bitmasks(self) -> None:

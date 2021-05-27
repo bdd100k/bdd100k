@@ -23,17 +23,17 @@ def deal_bdd100k_category(
         category_name = bdd100k_config.name_mapping[category_name]
 
     if category_name not in cat_name2id:
-        if bdd100k_config.remove_ignore:
+        if bdd100k_config.remove_ignored:
             result = None
-        elif bdd100k_config.ignore_as_class:
+        elif bdd100k_config.ignored_as_class:
             assert IGNORED in cat_name2id
             category_name = IGNORED
             label.category = category_name
             result = label
         else:
-            assert bdd100k_config.ignore_mapping is not None
-            assert category_name in bdd100k_config.ignore_mapping
-            category_name = bdd100k_config.ignore_mapping[category_name]
+            assert bdd100k_config.ignored_mapping is not None
+            assert category_name in bdd100k_config.ignored_mapping
+            category_name = bdd100k_config.ignored_mapping[category_name]
             if label.attributes is None:
                 label.attributes = dict()
             label.attributes[IGNORED] = True

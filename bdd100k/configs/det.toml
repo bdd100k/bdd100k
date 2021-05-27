@@ -1,7 +1,7 @@
-remove_ignore = false
-ignore_as_class = false
+remove_ignored = false
+ignored_as_class = false
 
-[ignore_mapping]
+[ignored_mapping]
 "other person" = "pedestrian"
 "other vehicle" = "car"
 "trailer" = "truck"

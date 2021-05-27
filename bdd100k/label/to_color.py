@@ -1,20 +1,4 @@
-"""Convert poly2d to mask/bitmask.
-
-The annotation files in BDD100K format has additional annotations
-('other person', 'other vehicle' and 'trail') besides the considered
-categories ('car', 'pedestrian', 'truck', etc.) to indicate the uncertain
-regions. Given the different handlings of these additional classes, we
-provide three options to process the labels when converting them into COCO
-format.
-1. Ignore the labels. This is the default setting and is often used for
-evaluation. CocoAPIs have native support for ignored annotations.
-https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocotools/cocoeval.py#L370
-2. Remove the annotations from the label file. By adding the
-flag `--remove-ignore`, the script will remove all the ignored annotations.
-3. Use `ignore` as a separate class and the user can decide how to utilize
-the annotations in `ignored` class. To achieve this, add the flag
-`--ignore-as-class`.
-"""
+"""Convert poly2d to mask/bitmask."""
 
 import argparse
 import os
@@ -35,7 +19,7 @@ def parse_args() -> argparse.Namespace:
     """Parse arguments."""
     parser = argparse.ArgumentParser(description="masks/bitmasks to colormaps")
     parser.add_argument(
-        "-l", "--label", help="path to the directory of masks/bitmasks."
+        "-i", "--input", help="path to the directory of masks/bitmasks."
     )
     parser.add_argument(
         "-o", "--output", help="path to save generated colormaps."
@@ -44,7 +28,14 @@ def parse_args() -> argparse.Namespace:
         "-m",
         "--mode",
         default="det",
-        choices=["sem_seg", "drivable", "lane_mark", "ins_seg", "seg_track"],
+        choices=[
+            "sem_seg",
+            "drivable",
+            "lane_mark",
+            "ins_seg",
+            "pan_seg",
+            "seg_track",
+        ],
         help="conversion mode.",
     )
     parser.add_argument(
@@ -59,7 +50,7 @@ def parse_args() -> argparse.Namespace:
 def mask_to_color(bitmask_file: str, colormap_file: str, mode: str) -> None:
     """Convert mask/bitmask to colormap for one image."""
     bitmask = Image.open(bitmask_file)
-    if mode in ["ins_seg", "seg_track"]:
+    if mode in ["ins_seg", "pan_seg", "seg_track"]:
         bitmask = bitmask.split()[3]
     elif mode == "lane_mark":
         array = np.asarray(bitmask)
@@ -153,7 +144,7 @@ def main() -> None:
         if args.mode == "seg_track"
         else image_dataset_to_colormap
     )
-    colormap_func(args.label, args.output, args.mode, args.nproc)
+    colormap_func(args.input, args.output, args.mode, args.nproc)
 
 
 if __name__ == "__main__":

@@ -1,20 +1,4 @@
-"""Convert BDD100K to COCO format.
-
-The annotation files in BDD100K format has additional annotations
-('other person', 'other vehicle' and 'trail') besides the considered
-categories ('car', 'pedestrian', 'truck', etc.) to indicate the uncertain
-regions. Given the different handlings of these additional classes, we
-provide three options to process the labels when converting them into COCO
-format.
-1. Ignore the labels. This is the default setting and is often used for
-evaluation. CocoAPIs have native support for ignored annotations.
-https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocotools/cocoeval.py#L370
-2. Remove the annotations from the label file. By adding the
-flag `--remove-ignore`, the script will remove all the ignored annotations.
-3. Use `ignore` as a separate class and the user can decide how to utilize
-the annotations in `ignored` class. To achieve this, add the flag
-`--ignore-as-class`.
-"""
+"""Convert BDD100K to COCO format."""
 
 import argparse
 import json
@@ -77,6 +61,7 @@ def parse_args() -> argparse.Namespace:
             "sem_seg",
             "drivable",
             "lane_mark",
+            "pan_seg",
             "ins_seg",
             "box_track",
             "seg_track",
@@ -120,24 +105,24 @@ def bitmasks_loader(mask_name: str) -> Tuple[List[InstanceType], ImageSize]:
     """Parse instances from the bitmask."""
     if mask_name.endswith(".jpg"):
         mask_name = mask_name.replace(".jpg", ".png")
-    bitmask = np.asarray(Image.open(mask_name)).astype(np.int32)
+    bitmask = np.asarray(Image.open(mask_name)).astype(np.uint32)
     category_map = bitmask[:, :, 0]
     attributes_map = bitmask[:, :, 1]
     instance_map = (bitmask[:, :, 2] << 8) + bitmask[:, :, 3]
+    indentity_map = (
+        (category_map << 24) + (attributes_map << 16) + instance_map
+    )
 
     instances: List[InstanceType] = []
 
-    # 0 is for the background
-    instance_ids = np.sort(np.unique(instance_map[instance_map >= 1]))
-    for instance_id in instance_ids:
-        mask_inds_i = instance_map == instance_id
-        attributes_i = np.unique(attributes_map[mask_inds_i])
-        category_ids_i = np.unique(category_map[mask_inds_i])
-
-        assert attributes_i.shape[0] == 1
-        assert category_ids_i.shape[0] == 1
-        attribute = attributes_i[0]
-        category_id = category_ids_i[0]
+    identities = np.unique(indentity_map)
+    for identity in identities:
+        mask_inds_i = indentity_map == identity
+        category_id = (identity >> 24) & 255
+        attribute = (identity >> 16) & 255
+        instance_id = identity & 65535
+        if category_id == 0:
+            continue
 
         mask = mask_inds_i.astype(np.int32)
         bbox = mask_to_bbox(mask)
@@ -149,20 +134,21 @@ def bitmasks_loader(mask_name: str) -> Tuple[List[InstanceType], ImageSize]:
             truncated=bool(attribute & (1 << 3)),
             occluded=bool(attribute & (1 << 2)),
             crowd=bool(attribute & (1 << 1)),
-            ignore=bool(attribute & (1 << 0)),
+            ignored=bool(attribute & (1 << 0)),
             mask=mask,
             bbox=bbox,
             area=area,
         )
         instances.append(instance)
 
+    instances = sorted(instances, key=lambda instance: instance["instance_id"])
     img_shape = ImageSize(height=bitmask.shape[0], width=bitmask.shape[1])
 
     return (instances, img_shape)
 
 
 def bitmask2coco_wo_ids(
-    image: ImgType, image_id: int, mask_base: str, mask_mode: str = "rle"
+    image: ImgType, mask_base: str, mask_mode: str = "rle"
 ) -> List[AnnType]:
     """Convert bitmasks annotations of an image to RLEs or polygons."""
     mask_name = os.path.join(mask_base, image["file_name"])
@@ -174,7 +160,7 @@ def bitmask2coco_wo_ids(
     for instance in instances:
         annotation = AnnType(
             id=0,  # set further
-            image_id=image_id,
+            image_id=image["id"],
             category_id=instance["category_id"],
             instance_id=instance["instance_id"],
             iscrowd=instance["crowd"],
@@ -189,7 +175,6 @@ def bitmask2coco_wo_ids(
 def bitmask2coco_wo_ids_parallel(
     mask_base: str,
     images: List[ImgType],
-    image_ids: List[int],
     mask_mode: str = "rle",
     nproc: int = 4,
 ) -> List[AnnType]:
@@ -197,14 +182,11 @@ def bitmask2coco_wo_ids_parallel(
     logger.info("Converting annotations...")
 
     with Pool(nproc) as pool:
-        annotations_list = pool.starmap(
+        annotations_list = pool.map(
             partial(
                 bitmask2coco_wo_ids, mask_base=mask_base, mask_mode=mask_mode
             ),
-            tqdm(
-                zip(images, image_ids),
-                total=len(image_ids),
-            ),
+            tqdm(images),
         )
     annotations: List[AnnType] = []
     for anns in annotations_list:
@@ -280,9 +262,7 @@ def bitmask2coco_ins_seg(
 ) -> GtType:
     """Converting BDD100K Instance Segmentation Set to COCO format."""
     files = list_files(mask_base, suffix=".png")
-
     images: List[ImgType] = []
-    image_ids: List[int] = []
 
     logger.info("Collecting bitmasks...")
 
@@ -294,10 +274,9 @@ def bitmask2coco_ins_seg(
             file_name=file_.replace(".png", ".jpg"),
         )
         images.append(image)
-        image_ids.append(image_id)
 
     annotations = bitmask2coco_wo_ids_parallel(
-        mask_base, images, image_ids, mask_mode, nproc
+        mask_base, images, mask_mode, nproc
     )
     return GtType(
         type="instances",
@@ -316,7 +295,6 @@ def bitmask2coco_seg_track(
     """Converting BDD100K Instance Segmentation Set to COCO format."""
     videos: List[VidType] = []
     images: List[ImgType] = []
-    image_ids: List[int] = []
     all_files = list_files(mask_base, suffix=".png")
     files_list = group_and_sort_files(all_files)
 
@@ -338,10 +316,9 @@ def bitmask2coco_seg_track(
                 file_name=file_.replace(".png", ".jpg"),
             )
             images.append(image)
-            image_ids.append(image_id)
 
     annotations = bitmask2coco_wo_ids_parallel(
-        mask_base, images, image_ids, mask_mode, nproc
+        mask_base, images, mask_mode, nproc
     )
     return GtType(
         type="instances",
