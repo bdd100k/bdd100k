@@ -96,6 +96,34 @@ You can evaluate your algorithm with public annotations by running
 
 
 
+Panoptic Segmentation
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+We use the same metrics as COCO panoptic segmentation.
+PQ, RQ and SQ are computed for things, stuffs and all.
+
+Submission format
+^^^^^^^^^^^^^^^^^^^^^^
+
+To evaluate your algorithms on the BDD100K detection benchmark, you may prepare predictions in bitmask format,
+which is illustrated in :ref:`Panoptic Segmentaiton Bitmask <bitmask>`.
+To be evaluated on the Codalab server, the submission file needs to be a zipped folder.
+
+[1] `Kirillov, A., He, K., Girshick, R., Rother, C., & Dollár, P. (2019). Panoptic segmentation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (pp. 9404-9413).`_
+
+Run Evaluation on Your Own
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can evaluate your algorithm with public annotations by running 
+::
+    
+    python3 -m bdd100k.eval.run -t pan_seg -g ${gt_path} -r ${res_path}
+
+- `gt_path`: the path to ground-truch bitmask images folder.
+- `res_path`: the path to the results bitmask images folder.
+
+
+
 Semantic Segmentation
 ~~~~~~~~~~~~~~~~~~~~~~~~
 

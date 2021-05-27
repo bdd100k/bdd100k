@@ -69,6 +69,58 @@ Meanwhile, for the semantic segmentation task, 19 classes are evaluated, they ar
 **255** is used for "unknown" category, and will not be evaluated.
 
 
+Panoptic Segmentation
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Meanwhile, for the instance segmentation task, 19 classes are evaluated, they are:
+::
+
+    0: unlabeled
+    1: dynamic
+    2: ego vehicle
+    3: ground
+    4: static
+    5: parking
+    6: rail track
+    7: road
+    8: sidewalk
+    9: bridge
+    10: building
+    11: fence
+    12: garage
+    13: guard rail
+    14: tunnel
+    15: wall
+    16: banner
+    17: billboard
+    18: lane divider
+    19: parking sign
+    20: pole
+    21: polegroup
+    22: street light
+    23: traffic cone
+    24: traffic device
+    25: traffic light
+    26: traffic sign
+    27: traffic sign frame
+    28: terrain
+    29: vegetation
+    30: sky
+    31: person
+    32: rider
+    33: bicycle
+    34: bus
+    35: car
+    36: caravan
+    37: motorcycle
+    38: trailer
+    39: train
+    40: truck
+
+classes 1-30 are **stuffs**, 31-40 are things.
+`category_id` ranges from **0** for the panoptic segmentation task.
+
+
 Drivable Area
 ^^^^^^^^^^^^^^^^^^^^^^^
 For the drivable area task, 3 classes are evaluated, they are:
@@ -176,7 +228,7 @@ Most importantly, the **5**-th bit is to indicate whether this pixel belongs to 
 Instance Segmentation Format
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We provide labels for **instance segmentation** and **segmentation tracking** in both JSON and **bitmask** formats.
+We provide labels for **instance segmentation**, **panoptic segmentation** and **segmentation tracking** in both JSON and **bitmask** formats.
 Note that ``poly2d`` used in JSONs is not of the same format as COCO. Instead, the ``poly2d`` field stores a Bezier Curve with vertices and control points.
 In the bitmask format, labels for each image are stored in an **RGBA** png file.
 
