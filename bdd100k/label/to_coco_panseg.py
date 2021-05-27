@@ -10,10 +10,10 @@ import numpy as np
 from PIL import Image
 from scalabel.label.coco_typing import (
     ImgType,
-    PnpAnnType,
-    PnpCatType,
-    PnpGtType,
-    PnpSegType,
+    PanopticAnnType,
+    PanopticCatType,
+    PanopticGtType,
+    PanopticSegType,
 )
 from tqdm import tqdm
 
@@ -62,7 +62,7 @@ def bitmask2pan_mask(mask_name: str, pan_name: str) -> None:
     pan_mask.save(pan_name)
 
 
-def bitmask2pan_json(image: ImgType, mask_name: str) -> PnpAnnType:
+def bitmask2pan_json(image: ImgType, mask_name: str) -> PanopticAnnType:
     """Convert bitmask into panoptic segmentation json."""
     instances, img_shape = bitmasks_loader(mask_name)
     image["height"] = img_shape.height
@@ -70,11 +70,11 @@ def bitmask2pan_json(image: ImgType, mask_name: str) -> PnpAnnType:
 
     cat_id_to_idx: Dict[int, int] = dict()
 
-    segments_info: List[PnpSegType] = []
+    segments_info: List[PanopticSegType] = []
     for instance in instances:
         category_id = instance["category_id"]
         if category_id not in cat_id_to_idx:
-            segment_info = PnpSegType(
+            segment_info = PanopticSegType(
                 id=instance["instance_id"],
                 category_id=category_id,
                 area=instance["area"],
@@ -88,7 +88,7 @@ def bitmask2pan_json(image: ImgType, mask_name: str) -> PnpAnnType:
             segment_info = segments_info[cat_id_to_idx[category_id]]
             segment_info["area"] += instance["area"]
             segment_info["iscrowd"] = 0
-    annotation = PnpAnnType(
+    annotation = PanopticAnnType(
         image_id=image["id"],
         file_name=image["file_name"].replace(".jpg", ".png"),
         segments_info=segments_info,
@@ -101,7 +101,7 @@ def bitmask2panseg_parallel(
     pan_mask_base: str,
     images: List[ImgType],
     nproc: int = 4,
-) -> List[PnpAnnType]:
+) -> List[PanopticAnnType]:
     """Execute the bitmask conversion in parallel."""
     logger.info("Converting annotations...")
 
@@ -128,7 +128,7 @@ def bitmask2coco_pan_seg(
     mask_base: str,
     pan_mask_base: str,
     nproc: int = 4,
-) -> PnpGtType:
+) -> PanopticGtType:
     """Converting BDD100K Instance Segmentation Set to COCO format."""
     files = list_files(mask_base, suffix=".png")
     images: List[ImgType] = []
@@ -144,8 +144,8 @@ def bitmask2coco_pan_seg(
     annotations = bitmask2panseg_parallel(
         mask_base, pan_mask_base, images, nproc
     )
-    categories: List[PnpCatType] = [
-        PnpCatType(
+    categories: List[PanopticCatType] = [
+        PanopticCatType(
             id=label.id,
             name=label.name,
             supercategory=label.category,
@@ -154,7 +154,7 @@ def bitmask2coco_pan_seg(
         )
         for label in labels
     ]
-    return PnpGtType(
+    return PanopticGtType(
         categories=categories,
         images=images,
         annotations=annotations,

@@ -8,7 +8,7 @@ from multiprocessing import Pool
 
 import numpy as np
 from PIL import Image
-from scalabel.label.coco_typing import PnpAnnType, PnpGtType
+from scalabel.label.coco_typing import PanopticAnnType, PanopticGtType
 from tqdm import tqdm
 
 from ..common.logger import logger
@@ -40,7 +40,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def panseg2bitmask(
-    annotation: PnpAnnType, pan_mask_base: str, mask_base: str
+    annotation: PanopticAnnType, pan_mask_base: str, mask_base: str
 ) -> None:
     """Convert COCO panoptic annotations of an image to BDD100K format."""
     pan_name = os.path.join(pan_mask_base, annotation["file_name"])
@@ -70,7 +70,7 @@ def panseg2bitmask(
 
 
 def coco_pan_seg2bitmask(
-    coco_pan_seg: PnpGtType,
+    coco_pan_seg: PanopticGtType,
     pan_mask_base: str,
     mask_base: str,
     nproc: int = 4,

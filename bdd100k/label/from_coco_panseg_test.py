@@ -6,7 +6,7 @@ import unittest
 
 import numpy as np
 from PIL import Image
-from scalabel.label.coco_typing import PnpAnnType
+from scalabel.label.coco_typing import PanopticAnnType
 
 from .from_coco_panseg import panseg2bitmask
 
@@ -23,7 +23,7 @@ class TestFromCocoPanSeg(unittest.TestCase):
             self.cur_dir
         )
         with open(json_name) as fp:
-            annotation: PnpAnnType = json.load(fp)
+            annotation: PanopticAnnType = json.load(fp)
         pan_mask_base = "{}/testcases/panseg_coco".format(self.cur_dir)
         mask_base = self.test_out
 
