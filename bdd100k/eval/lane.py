@@ -135,7 +135,8 @@ def get_lane_class(
     assert 0 <= value < (1 << 8)
     assert 0 <= offset < 8
     assert 0 < width <= 8
-    return (((byte >> offset) & ((1 << width) - 1)) == value).astype(bool)  # type: ignore # pylint: disable=line-too-long
+    lane_cls = (((byte >> offset) & ((1 << width) - 1)) == value).astype(bool)
+    return lane_cls  # type: ignore
 
 
 def lane_class_func(
