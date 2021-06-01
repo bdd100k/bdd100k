@@ -98,8 +98,8 @@ def acc_single_video_mots(  # pylint: disable=unused-argument
         pred_masks, pred_ids, pred_attrs, pred_cats = parse_bitmasks(res_masks)
         ious, iofs = mask_intersection_rate(gt_masks, pred_masks)
 
-        gt_valids = np.logical_not((gt_attrs & 3).astype(np.bool8))
-        pred_valids = np.logical_not((pred_attrs & 3).astype(np.bool8))
+        gt_valids = np.logical_not((gt_attrs & 3).astype(bool))
+        pred_valids = np.logical_not((pred_attrs & 3).astype(bool))
         for i in range(num_classes):
             # cats starts from 1 and i starts from 0
             gt_inds = (gt_cats == i + 1) * gt_valids
@@ -120,7 +120,7 @@ def acc_single_video_mots(  # pylint: disable=unused-argument
             gt_invalid = np.logical_not(gt_valids)
             if (gt_invalid).any():
                 # 1. assign gt and preds
-                fps = np.ones(pred_ids_c.shape[0]).astype(np.bool8)
+                fps = np.ones(pred_ids_c.shape[0]).astype(bool)
                 le, ri = mm.lap.linear_sum_assignment(distances)
                 for m, n in zip(le, ri):
                     if np.isfinite(distances[m, n]):

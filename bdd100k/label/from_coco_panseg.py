@@ -65,8 +65,8 @@ def panseg2bitmask(
         )
 
     mask_name = os.path.join(mask_base, annotation["file_name"])
-    bitmask = Image.fromarray(bitmask)
-    bitmask.save(mask_name)
+    pil_bitmask = Image.fromarray(bitmask)
+    pil_bitmask.save(mask_name)
 
 
 def coco_pan_seg2bitmask(
