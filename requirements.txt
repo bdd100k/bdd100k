@@ -7,7 +7,7 @@ joblib
 matplotlib
 motmetrics
 mypy
-numpy==1.19.5
+numpy
 pandas
 pillow
 pycocotools

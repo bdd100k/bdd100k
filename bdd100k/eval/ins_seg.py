@@ -52,11 +52,7 @@ def parse_res_bitmasks(
         assert category_ids_i.shape[0] == 1
         category_ids.append(category_ids_i[0])
 
-    ann_ids = np.array(ann_ids)
-    scores = np.array(scores)
-    category_ids = np.array(category_ids)
-
-    return [masks, ann_ids, scores, category_ids]
+    return [masks, np.array(ann_ids), np.array(scores), np.array(category_ids)]
 
 
 def get_mask_areas(masks: np.ndarray) -> np.ndarray:
@@ -157,8 +153,8 @@ class BDDInsSegEval(COCOeval):  # type: ignore
         gt_bitmask = np.asarray(Image.open(gt_path))
         gt_masks, _, gt_attrs, gt_cat_ids = parse_bitmasks(gt_bitmask)
         gt_areas = get_mask_areas(gt_masks)
-        gt_crowds = np.logical_not((gt_attrs & 2).astype(np.bool8))
-        gt_ignores = np.logical_not((gt_attrs & 1).astype(np.bool8))
+        gt_crowds = np.logical_not((gt_attrs & 2).astype(bool))
+        gt_ignores = np.logical_not((gt_attrs & 1).astype(bool))
 
         dt_path = os.path.join(self.dt_base, img_name)
         dt_bitmask = np.asarray(Image.open(dt_path))

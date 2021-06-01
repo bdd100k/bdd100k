@@ -115,8 +115,8 @@ def pq_per_image(gt_path: str, pred_path: str) -> PQStat:
     gt_masks, gt_ids, gt_attrs, gt_cats = parse_bitmasks(gt_masks)
     pred_masks, pred_ids, pred_attrs, pred_cats = parse_bitmasks(pred_masks)
 
-    gt_valids = np.logical_not((gt_attrs & 3).astype(np.bool8))
-    pred_valids = np.logical_not((pred_attrs & 3).astype(np.bool8))
+    gt_valids = np.logical_not((gt_attrs & 3).astype(bool))
+    pred_valids = np.logical_not((pred_attrs & 3).astype(bool))
 
     ious, iofs = mask_intersection_rate(gt_masks, pred_masks)
     cat_equals = gt_cats.reshape(-1, 1) == pred_cats.reshape(1, -1)

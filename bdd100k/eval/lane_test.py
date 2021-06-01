@@ -43,8 +43,8 @@ class TestEvalLanePerThreshold(unittest.TestCase):
 
     def test_two_parallel_lines(self) -> None:
         """Check the correctness of the function in general cases."""
-        a = np.zeros((10, 10), dtype=np.bool)
-        b = np.zeros((10, 10), dtype=np.bool)
+        a = np.zeros((10, 10), dtype=bool)
+        b = np.zeros((10, 10), dtype=bool)
         a[3, 3:7] = True
         b[7, 3:7] = True
 
@@ -55,8 +55,8 @@ class TestEvalLanePerThreshold(unittest.TestCase):
 
     def test_two_vertical_lines(self) -> None:
         """Check the correctness of the function in general cases."""
-        a = np.zeros((10, 10), dtype=np.bool)
-        b = np.zeros((10, 10), dtype=np.bool)
+        a = np.zeros((10, 10), dtype=bool)
+        b = np.zeros((10, 10), dtype=bool)
         a[3, 3:6] = True
         b[5:8, 7] = True
 
@@ -67,8 +67,8 @@ class TestEvalLanePerThreshold(unittest.TestCase):
 
     def test_two_vertical_border_lines(self) -> None:
         """Check the correctness of the function in general cases."""
-        a = np.zeros((10, 10), dtype=np.bool)
-        b = np.zeros((10, 10), dtype=np.bool)
+        a = np.zeros((10, 10), dtype=bool)
+        b = np.zeros((10, 10), dtype=bool)
         a[1:6, 1:4] = True
         b[4:7, 3:8] = True
 
