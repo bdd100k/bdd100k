@@ -202,7 +202,7 @@ Semantic Segmentation Format
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We provide labels for **semantic segmentation** and **drivable area** in both JSON and **mask** formats.
-The mask format save the ground-truch of each image into an one-channel png (8 bits per pixel).
+The mask format save the ground-truth of each image into an one-channel png (8 bits per pixel).
 The value of each pixel represents its category. 255 usually means "ignore".
 
 
@@ -319,7 +319,7 @@ For the first choice, use this command:
 
 - `mask_base`: the path to the bitmasks
 
-If you only have Bitmasks in hand and don't use the `scalabel_id` field, you can use this comman:
+If you only have Bitmasks in hand and don't use the `scalabel_id` field, you can use this command:
 
 ::
    
