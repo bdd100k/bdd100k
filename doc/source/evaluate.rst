@@ -109,7 +109,7 @@ To evaluate your algorithms on the BDD100K detection benchmark, you may prepare 
 which is illustrated in :ref:`Panoptic Segmentaiton Bitmask <bitmask>`.
 To be evaluated on the Codalab server, the submission file needs to be a zipped folder.
 
-[1] `Kirillov, A., He, K., Girshick, R., Rother, C., & Dollár, P. (2019). Panoptic segmentation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (pp. 9404-9413).<https://arxiv.org/abs/1801.00868>`_
+[1] `Kirillov, A., He, K., Girshick, R., Rother, C., & Dollár, P. (2019). Panoptic segmentation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (pp. 9404-9413). <https://arxiv.org/abs/1801.00868>`_
 
 Run Evaluation on Your Own
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
