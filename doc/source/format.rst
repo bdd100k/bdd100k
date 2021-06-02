@@ -272,7 +272,7 @@ Currently, for conversion of segmentation, only the ``polygon`` format is suppor
 Available arguments:
 ::
     
-    python3 -m bdd100k.label.from_coco -l ${input_file} -o ${out_path}  
+    python3 -m bdd100k.label.from_coco -i ${input_file} -o ${out_path}  
 
 
 to_mask
@@ -281,7 +281,7 @@ to_mask
 You can run the conversion from poly2d to masks/bitmasks by this command:
 ::
     
-    python3 -m bdd100k.label.to_mask -m sem_seg|ins_seg|seg_track -l ${in_path} -o ${out_path} [--nproc ${process_num}]
+    python3 -m bdd100k.label.to_mask -m sem_seg|ins_seg|seg_track -i ${in_path} -o ${out_path} [--nproc ${process_num}]
 
 - `process_num`: the number of processes used for the conversion. Default as 4.
 
@@ -294,7 +294,7 @@ to_color
 You can run the conversion from masks/bitmasks to colormaps by this command:
 ::
     
-    python3 -m bdd100k.label.to_color -m sem_seg|ins_seg|seg_track -l ${in_path} -o ${out_path} [--nproc ${process_num}]
+    python3 -m bdd100k.label.to_color -m sem_seg|ins_seg|seg_track -i ${in_path} -o ${out_path} [--nproc ${process_num}]
 
 - `process_num`: the number of processes used for the conversion. Default as 4.
 
@@ -308,14 +308,14 @@ Available arguments:
 
 ::
    
-    python3 -m bdd100k.label.to_coco -m det|box_track -l ${in_path} -o ${out_path}  
+    python3 -m bdd100k.label.to_coco -m det|box_track -i ${in_path} -o ${out_path}  
 
 For instance segmentation and segmentation tracking, converting from "JOSN + Bitmasks" and from "Bitmask" are both supported.
 For the first choice, use this command:
 
 ::
    
-    python3 -m bdd100k.label.to_coco -m ins_seg|seg_track -l ${in_path} -o ${out_path} -mb ${mask_base}
+    python3 -m bdd100k.label.to_coco -m ins_seg|seg_track -i ${in_path} -o ${out_path} -mb ${mask_base}
 
 - `mask_base`: the path to the bitmasks
 
@@ -323,6 +323,6 @@ If you only have Bitmasks in hand and don't use the `scalabel_id` field, you can
 
 ::
    
-    python3 -m bdd100k.label.to_coco -m ins_seg|seg_track -l ${mask_base} -o ${out_path}
+    python3 -m bdd100k.label.to_coco -m ins_seg|seg_track --only-mask -i ${mask_base} -o ${out_path}
 
 - `mask_base`: the path to the bitmasks
