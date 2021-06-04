@@ -69,6 +69,58 @@ Meanwhile, for the semantic segmentation task, 19 classes are evaluated, they ar
 **255** is used for "unknown" category, and will not be evaluated.
 
 
+Panoptic Segmentation
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Meanwhile, for the instance segmentation task, 19 classes are evaluated, they are:
+::
+
+    0: unlabeled
+    1: dynamic
+    2: ego vehicle
+    3: ground
+    4: static
+    5: parking
+    6: rail track
+    7: road
+    8: sidewalk
+    9: bridge
+    10: building
+    11: fence
+    12: garage
+    13: guard rail
+    14: tunnel
+    15: wall
+    16: banner
+    17: billboard
+    18: lane divider
+    19: parking sign
+    20: pole
+    21: polegroup
+    22: street light
+    23: traffic cone
+    24: traffic device
+    25: traffic light
+    26: traffic sign
+    27: traffic sign frame
+    28: terrain
+    29: vegetation
+    30: sky
+    31: person
+    32: rider
+    33: bicycle
+    34: bus
+    35: car
+    36: caravan
+    37: motorcycle
+    38: trailer
+    39: train
+    40: truck
+
+classes 1-30 are **stuffs**, 31-40 are things.
+`category_id` ranges from **0** for the panoptic segmentation task.
+
+
 Drivable Area
 ^^^^^^^^^^^^^^^^^^^^^^^
 For the drivable area task, 3 classes are evaluated, they are:
@@ -150,7 +202,7 @@ Semantic Segmentation Format
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We provide labels for **semantic segmentation** and **drivable area** in both JSON and **mask** formats.
-The mask format save the ground-truch of each image into an one-channel png (8 bits per pixel).
+The mask format save the ground-truth of each image into an one-channel png (8 bits per pixel).
 The value of each pixel represents its category. 255 usually means "ignore".
 
 
@@ -176,7 +228,7 @@ Most importantly, the **5**-th bit is to indicate whether this pixel belongs to 
 Instance Segmentation Format
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We provide labels for **instance segmentation** and **segmentation tracking** in both JSON and **bitmask** formats.
+We provide labels for **instance segmentation**, **panoptic segmentation** and **segmentation tracking** in both JSON and **bitmask** formats.
 Note that ``poly2d`` used in JSONs is not of the same format as COCO. Instead, the ``poly2d`` field stores a Bezier Curve with vertices and control points.
 In the bitmask format, labels for each image are stored in an **RGBA** png file.
 
@@ -220,7 +272,7 @@ Currently, for conversion of segmentation, only the ``polygon`` format is suppor
 Available arguments:
 ::
     
-    python3 -m bdd100k.label.from_coco -l ${input_file} -o ${out_path}  
+    python3 -m bdd100k.label.from_coco -i ${input_file} -o ${out_path}  
 
 
 to_mask
@@ -229,7 +281,7 @@ to_mask
 You can run the conversion from poly2d to masks/bitmasks by this command:
 ::
     
-    python3 -m bdd100k.label.to_mask -m sem_seg|ins_seg|seg_track -l ${in_path} -o ${out_path} [--nproc ${process_num}]
+    python3 -m bdd100k.label.to_mask -m sem_seg|ins_seg|seg_track -i ${in_path} -o ${out_path} [--nproc ${process_num}]
 
 - `process_num`: the number of processes used for the conversion. Default as 4.
 
@@ -242,7 +294,7 @@ to_color
 You can run the conversion from masks/bitmasks to colormaps by this command:
 ::
     
-    python3 -m bdd100k.label.to_color -m sem_seg|ins_seg|seg_track -l ${in_path} -o ${out_path} [--nproc ${process_num}]
+    python3 -m bdd100k.label.to_color -m sem_seg|ins_seg|seg_track -i ${in_path} -o ${out_path} [--nproc ${process_num}]
 
 - `process_num`: the number of processes used for the conversion. Default as 4.
 
@@ -256,21 +308,21 @@ Available arguments:
 
 ::
    
-    python3 -m bdd100k.label.to_coco -m det|box_track -l ${in_path} -o ${out_path}  
+    python3 -m bdd100k.label.to_coco -m det|box_track -i ${in_path} -o ${out_path}  
 
 For instance segmentation and segmentation tracking, converting from "JOSN + Bitmasks" and from "Bitmask" are both supported.
 For the first choice, use this command:
 
 ::
    
-    python3 -m bdd100k.label.to_coco -m ins_seg|seg_track -l ${in_path} -o ${out_path} -mb ${mask_base}
+    python3 -m bdd100k.label.to_coco -m ins_seg|seg_track -i ${in_path} -o ${out_path} -mb ${mask_base}
 
 - `mask_base`: the path to the bitmasks
 
-If you only have Bitmasks in hand and don't use the `scalabel_id` field, you can use this comman:
+If you only have Bitmasks in hand and don't use the `scalabel_id` field, you can use this command:
 
 ::
    
-    python3 -m bdd100k.label.to_coco -m ins_seg|seg_track -l ${mask_base} -o ${out_path}
+    python3 -m bdd100k.label.to_coco -m ins_seg|seg_track --only-mask -i ${mask_base} -o ${out_path}
 
 - `mask_base`: the path to the bitmasks

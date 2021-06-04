@@ -197,6 +197,35 @@ The bitmask format is explained at: :ref:`Instance Segmentation Format <bitmask>
                     - ins_seg_val.json
 
 
+Panoptic Segmentation
+~~~~~~~~~~~~~~~~~~~~~~
+
+Bitmasks, colormaps and original json files for panoptic segmentation.
+The bitmask format is explained at: :ref:`Panoptic Segmentation Format <bitmask>`.
+
++------+----------------------------------+
+| Size | 363MB                            |
++------+----------------------------------+
+| md5  | fc37642ae024ffb223182ef01238d007 |
++------+----------------------------------+
+
+
+:: 
+
+    - bdd100k
+        - labels
+            - pan_seg
+                - bitmasks
+                    - train
+                    - val
+                - colormaps
+                    - train
+                    - val
+                - polygons
+                    - pan_seg_train.json
+                    - pan_seg_val.json
+
+
 MOT 2020 Labels
 ~~~~~~~~~~~~~~~~
 
