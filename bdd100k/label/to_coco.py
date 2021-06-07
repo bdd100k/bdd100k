@@ -69,13 +69,6 @@ def parse_args() -> argparse.Namespace:
         help="conversion mode.",
     )
     parser.add_argument(
-        "-mm",
-        "--mask-mode",
-        default="rle",
-        choices=["rle", "polygon"],
-        help="conversion mode: rle or polygon.",
-    )
-    parser.add_argument(
         "--nproc",
         type=int,
         default=4,
@@ -147,9 +140,7 @@ def bitmasks_loader(mask_name: str) -> Tuple[List[InstanceType], ImageSize]:
     return (instances, img_shape)
 
 
-def bitmask2coco_wo_ids(
-    image: ImgType, mask_base: str, mask_mode: str = "rle"
-) -> List[AnnType]:
+def bitmask2coco_wo_ids(image: ImgType, mask_base: str) -> List[AnnType]:
     """Convert bitmasks annotations of an image to RLEs or polygons."""
     mask_name = os.path.join(mask_base, image["file_name"])
     instances, img_shape = bitmasks_loader(mask_name)
@@ -165,27 +156,20 @@ def bitmask2coco_wo_ids(
             instance_id=instance["instance_id"],
             iscrowd=instance["crowd"],
         )
-        annotation = set_seg_object_geometry(
-            annotation, instance["mask"], mask_mode
-        )
+        annotation = set_seg_object_geometry(annotation, instance["mask"])
         annotations.append(annotation)
     return annotations
 
 
 def bitmask2coco_wo_ids_parallel(
-    mask_base: str,
-    images: List[ImgType],
-    mask_mode: str = "rle",
-    nproc: int = 4,
+    mask_base: str, images: List[ImgType], nproc: int = 4
 ) -> List[AnnType]:
     """Execute the bitmask conversion in parallel."""
     logger.info("Converting annotations...")
 
     with Pool(nproc) as pool:
         annotations_list = pool.map(
-            partial(
-                bitmask2coco_wo_ids, mask_base=mask_base, mask_mode=mask_mode
-            ),
+            partial(bitmask2coco_wo_ids, mask_base=mask_base),
             tqdm(images),
         )
     annotations: List[AnnType] = []
@@ -204,7 +188,6 @@ def bitmask2coco_with_ids(
     mask_name: str,
     category_ids: List[int],
     instance_ids: List[int],
-    mask_mode: str = "rle",
 ) -> List[AnnType]:
     """Convert bitmasks annotations of an image to RLEs or polygons."""
     bitmask = np.asarray(Image.open(mask_name)).astype(np.int32)
@@ -216,7 +199,7 @@ def bitmask2coco_with_ids(
         mask = np.logical_and(
             category_map == category_id, instance_map == instance_id
         )
-        annotation = set_seg_object_geometry(annotation, mask, mask_mode)
+        annotation = set_seg_object_geometry(annotation, mask)
     annotations = [
         ann for ann in annotations if "bbox" in ann and "segmentation" in ann
     ]
@@ -228,7 +211,6 @@ def bitmask2coco_with_ids_parallel(
     mask_names: List[str],
     category_ids_list: List[List[int]],
     instance_ids_list: List[List[int]],
-    mask_mode: str = "rle",
     nproc: int = 4,
 ) -> List[AnnType]:
     """Execute the bitmask conversion in parallel."""
@@ -236,7 +218,7 @@ def bitmask2coco_with_ids_parallel(
 
     with Pool(nproc) as pool:
         annotations_list = pool.starmap(
-            partial(bitmask2coco_with_ids, mask_mode=mask_mode),
+            bitmask2coco_with_ids,
             tqdm(
                 zip(
                     annotations_list,
@@ -255,10 +237,7 @@ def bitmask2coco_with_ids_parallel(
 
 
 def bitmask2coco_ins_seg(
-    mask_base: str,
-    config: Config,
-    mask_mode: str = "rle",
-    nproc: int = 4,
+    mask_base: str, config: Config, nproc: int = 4
 ) -> GtType:
     """Converting BDD100K Instance Segmentation Set to COCO format."""
     files = list_files(mask_base, suffix=".png")
@@ -275,9 +254,7 @@ def bitmask2coco_ins_seg(
         )
         images.append(image)
 
-    annotations = bitmask2coco_wo_ids_parallel(
-        mask_base, images, mask_mode, nproc
-    )
+    annotations = bitmask2coco_wo_ids_parallel(mask_base, images, nproc)
     return GtType(
         type="instances",
         categories=get_coco_categories(config),
@@ -287,10 +264,7 @@ def bitmask2coco_ins_seg(
 
 
 def bitmask2coco_seg_track(
-    mask_base: str,
-    config: Config,
-    mask_mode: str = "rle",
-    nproc: int = 4,
+    mask_base: str, config: Config, nproc: int = 4
 ) -> GtType:
     """Converting BDD100K Instance Segmentation Set to COCO format."""
     videos: List[VidType] = []
@@ -317,9 +291,7 @@ def bitmask2coco_seg_track(
             )
             images.append(image)
 
-    annotations = bitmask2coco_wo_ids_parallel(
-        mask_base, images, mask_mode, nproc
-    )
+    annotations = bitmask2coco_wo_ids_parallel(mask_base, images, nproc)
     return GtType(
         type="instances",
         categories=get_coco_categories(config),
@@ -330,11 +302,7 @@ def bitmask2coco_seg_track(
 
 
 def bdd100k2coco_ins_seg(
-    mask_base: str,
-    frames: List[Frame],
-    config: Config,
-    mask_mode: str = "rle",
-    nproc: int = 4,
+    mask_base: str, frames: List[Frame], config: Config, nproc: int = 4
 ) -> GtType:
     """Converting BDD100K Instance Segmentation Set to COCO format."""
     image_id, ann_id = 0, 0
@@ -412,7 +380,6 @@ def bdd100k2coco_ins_seg(
         mask_names,
         category_ids_list,
         instance_ids_list,
-        mask_mode,
         nproc,
     )
 
@@ -425,11 +392,7 @@ def bdd100k2coco_ins_seg(
 
 
 def bdd100k2coco_seg_track(
-    mask_base: str,
-    frames: List[Frame],
-    config: Config,
-    mask_mode: str = "rle",
-    nproc: int = 4,
+    mask_base: str, frames: List[Frame], config: Config, nproc: int = 4
 ) -> GtType:
     """Converting BDD100K Segmentation Tracking Set to COCO format."""
     video_id, image_id, ann_id = 0, 0, 0
@@ -523,7 +486,6 @@ def bdd100k2coco_seg_track(
         mask_names,
         category_ids_list,
         instance_ids_list,
-        mask_mode,
         nproc,
     )
 
@@ -552,10 +514,7 @@ def main() -> None:
         bdd100k_config = load_bdd100k_config(cfg_path)
         logger.info("Start format converting...")
         coco = convert_function(
-            args.input,
-            bdd100k_config.scalabel,
-            args.mask_mode,
-            args.nproc,
+            args.input, bdd100k_config.scalabel, args.nproc
         )
     else:
         if args.mode in ["det", "box_track"]:
@@ -570,7 +529,6 @@ def main() -> None:
                     seg_track=bdd100k2coco_seg_track,
                 )[args.mode],
                 mask_base=args.mask_base,
-                mask_mode=args.mask_mode,
                 nproc=args.nproc,
             )
 
