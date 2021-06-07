@@ -19,7 +19,7 @@ def fast_hist(
 ) -> np.ndarray:
     """Compute the histogram."""
     k = (groundtruth >= 0) & (groundtruth < size)
-    return np.bincount(  # type: ignore
+    return np.bincount(
         size * groundtruth[k].astype(int) + prediction[k], minlength=size ** 2
     ).reshape(size, size)
 
@@ -28,7 +28,7 @@ def per_class_iu(hist: np.ndarray) -> np.ndarray:
     """Calculate per class iou."""
     ious = np.diag(hist) / (hist.sum(1) + hist.sum(0) - np.diag(hist))
     ious[np.isnan(ious)] = 0
-    return ious  # type: ignore
+    return ious
 
 
 def per_image_hist(
