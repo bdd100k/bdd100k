@@ -3,13 +3,9 @@ Data Download
 
 The BDD100K data and annotations can be obtained at
 https://bdd-data.berkeley.edu/. You can simply log in and download the data in
-your browser after agreeing to :ref:`BDD100K license<license>`. You will see a
-list of downloading buttons:
-
-.. figure:: ../media/images/download_buttons.png
-   :alt: Downloading buttons
-
-The files behinds the buttons are described below.
+your browser after agreeing to :ref:`BDD100K license<license>`. On the downloading portal, you will see a
+list of downloading buttons with the name corresponding to the subsections on this page. 
+The files behind the buttons are described below.
 
 Videos
 ~~~~~~
