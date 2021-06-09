@@ -103,3 +103,12 @@ def evaluate_drivable(
     return evaluate_segmentation(
         gt_dir, result_dir, mode="drivable", nproc=nproc
     )
+
+
+def evaluate_sem_seg(
+    gt_dir: str, result_dir: str, nproc: int = 4
+) -> Dict[str, float]:
+    """Evaluate semantic segmentation."""
+    return evaluate_segmentation(
+        gt_dir, result_dir, mode="sem_seg", nproc=nproc
+    )

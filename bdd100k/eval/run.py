@@ -16,7 +16,7 @@ from .ins_seg import evaluate_ins_seg
 from .lane import evaluate_lane_marking
 from .mots import acc_single_video_mots
 from .pan_seg import evaluate_pan_seg
-from .seg import evaluate_drivable, evaluate_segmentation
+from .seg import evaluate_drivable, evaluate_sem_seg
 
 
 def parse_args() -> argparse.Namespace:
@@ -97,7 +97,7 @@ def run() -> None:
     elif args.task == "lane_mark":
         evaluate_lane_marking(args.gt, args.result, [1, 2, 5, 10], args.nproc)
     elif args.task == "sem_seg":
-        evaluate_segmentation(args.gt, args.result, args.nproc)
+        evaluate_sem_seg(args.gt, args.result, args.nproc)
     elif args.task == "det":
         evaluate_det(
             bdd100k_to_scalabel(
