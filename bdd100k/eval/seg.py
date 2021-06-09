@@ -57,14 +57,14 @@ def per_image_hist(
 
 
 def evaluate_segmentation(
-    gts: List[str],
-    results: List[str],
+    gt_paths: List[str],
+    pred_paths: List[str],
     mode: str = "sem_seg",
     nproc: int = 4,
 ) -> Dict[str, float]:
     """Evaluate segmentation IoU from input folders."""
     assert mode in ["sem_seg", "drivable"]
-    logger.info("Found %d results", len(gts))
+    logger.info("Found %d results", len(gt_paths))
     label_defs = {
         "sem_seg": labels,
         "drivable": drivables,
@@ -75,22 +75,22 @@ def evaluate_segmentation(
         "drivable": len(drivables),  # `background` as `ignored`
     }[mode]
 
-    res_map: Dict[str, str] = {
-        osp.splitext(osp.split(res_path)[-1])[0]: res_path
-        for res_path in results
+    pred_map: Dict[str, str] = {
+        osp.splitext(osp.split(pred_path)[-1])[0]: pred_path
+        for pred_path in pred_paths
     }
     sorted_results: List[str] = []
-    for gt_path in gts:
+    for gt_path in gt_paths:
         gt_name = osp.splitext(osp.split(gt_path)[-1])[0]
-        if gt_name in res_map:
-            sorted_results.append(res_map[gt_name])
+        if gt_name in pred_map:
+            sorted_results.append(pred_map[gt_name])
         else:
             sorted_results.append("")
 
     with Pool(nproc) as pool:
         hist_and_gt_id_sets = pool.starmap(
             partial(per_image_hist, num_classes=num_classes),
-            tqdm(zip(gts, sorted_results), total=len(gts)),
+            tqdm(zip(gt_paths, sorted_results), total=len(gt_paths)),
         )
     hist = np.zeros((num_classes, num_classes))
     gt_id_set = set()
@@ -111,14 +111,18 @@ def evaluate_segmentation(
 
 
 def evaluate_drivable(
-    gts: List[str], results: List[str], nproc: int = 4
+    gt_paths: List[str], pred_paths: List[str], nproc: int = 4
 ) -> Dict[str, float]:
     """Evaluate drivable area."""
-    return evaluate_segmentation(gts, results, mode="drivable", nproc=nproc)
+    return evaluate_segmentation(
+        gt_paths, pred_paths, mode="drivable", nproc=nproc
+    )
 
 
 def evaluate_sem_seg(
-    gts: List[str], results: List[str], nproc: int = 4
+    gt_paths: List[str], pred_paths: List[str], nproc: int = 4
 ) -> Dict[str, float]:
     """Evaluate semantic segmentation."""
-    return evaluate_segmentation(gts, results, mode="sem_seg", nproc=nproc)
+    return evaluate_segmentation(
+        gt_paths, pred_paths, mode="sem_seg", nproc=nproc
+    )
