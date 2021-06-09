@@ -41,6 +41,7 @@ setuptools.setup(
         "tqdm",
         "tabulate",
         "tqdm",
+        "types-tabulate",
     ],
     package_data={
         "bdd100k": [
