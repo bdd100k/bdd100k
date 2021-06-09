@@ -59,6 +59,25 @@ def per_image_hist(
     return hist, gt_id_set
 
 
+def reorder_preds(gt_paths: List[str], pred_paths: List[str]) -> List[str]:
+    """Reorder the order of predictions given groundtruths."""
+    pred_map: Dict[str, str] = {
+        osp.splitext(osp.split(pred_path)[-1])[0]: pred_path
+        for pred_path in pred_paths
+    }
+    sorted_results: List[str] = []
+    miss_num = 0
+    for gt_path in gt_paths:
+        gt_name = osp.splitext(osp.split(gt_path)[-1])[0]
+        if gt_name in pred_map:
+            sorted_results.append(pred_map[gt_name])
+        else:
+            sorted_results.append("")
+            miss_num += 1
+    logger.info("%s images are missed in the prediction.", miss_num)
+    return sorted_results
+
+
 def evaluate_segmentation(
     gt_paths: List[str],
     pred_paths: List[str],
@@ -78,20 +97,7 @@ def evaluate_segmentation(
         "drivable": len(drivables),  # `background` as `ignored`
     }[mode]
 
-    pred_map: Dict[str, str] = {
-        osp.splitext(osp.split(pred_path)[-1])[0]: pred_path
-        for pred_path in pred_paths
-    }
-    sorted_results: List[str] = []
-    miss_num = 0
-    for gt_path in gt_paths:
-        gt_name = osp.splitext(osp.split(gt_path)[-1])[0]
-        if gt_name in pred_map:
-            sorted_results.append(pred_map[gt_name])
-        else:
-            sorted_results.append("")
-            miss_num += 1
-    logger.info("%s images are missed in the prediction.", miss_num)
+    sorted_results = reorder_preds(gt_paths, pred_paths)
 
     with Pool(nproc) as pool:
         hist_and_gt_id_sets = pool.starmap(

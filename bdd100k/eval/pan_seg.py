@@ -32,7 +32,6 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 ############################################################################
 """
-import os.path as osp
 import time
 from collections import defaultdict
 from multiprocessing import Pool
@@ -43,9 +42,9 @@ from PIL import Image
 from scalabel.label.coco_typing import PanopticCatType
 from tqdm import tqdm
 
-from ..common.logger import logger
 from ..label.label import labels
 from .mots import mask_intersection_rate, parse_bitmasks
+from .seg import reorder_preds
 
 
 class PQStatCat:
@@ -157,22 +156,7 @@ def evaluate_pan_seg(
 ) -> Dict[str, float]:
     """Evaluate panoptic segmentation with BDD100K format."""
     start_time = time.time()
-
-    pred_map: Dict[str, str] = {
-        osp.splitext(osp.split(pred_path)[-1])[0]: pred_path
-        for pred_path in pred_paths
-    }
-    sorted_results: List[str] = []
-    miss_num = 0
-    for gt_path in gt_paths:
-        gt_name = osp.splitext(osp.split(gt_path)[-1])[0]
-        if gt_name in pred_map:
-            sorted_results.append(pred_map[gt_name])
-        else:
-            sorted_results.append("")
-        miss_num += 1
-    logger.info("%s images are missed in the prediction.", miss_num)
-
+    sorted_results = reorder_preds(gt_paths, pred_paths)
     with Pool(nproc) as pool:
         pq_stats = pool.starmap(
             pq_per_image,
