@@ -91,7 +91,7 @@ def evaluate_segmentation(
         else:
             sorted_results.append("")
             miss_num += 1
-    logger.info("{} images are missed in the prediction.".format(miss_num))
+    logger.info("%s images are missed in the prediction.", miss_num)
 
     with Pool(nproc) as pool:
         hist_and_gt_id_sets = pool.starmap(

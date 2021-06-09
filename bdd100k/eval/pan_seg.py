@@ -32,7 +32,7 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 ############################################################################
 """
-import os
+import os.path as osp
 import time
 from collections import defaultdict
 from multiprocessing import Pool
@@ -43,6 +43,7 @@ from PIL import Image
 from scalabel.label.coco_typing import PanopticCatType
 from tqdm import tqdm
 
+from ..common.logger import logger
 from ..label.label import labels
 from .mots import mask_intersection_rate, parse_bitmasks
 
@@ -107,11 +108,16 @@ class PQStat:
         return dict(PQ=0, SQ=0, RQ=0, N=0)
 
 
-def pq_per_image(gt_path: str, pred_path: str) -> PQStat:
+def pq_per_image(gt_path: str, pred_path: str = "") -> PQStat:
     """Calculate PQStar for each image."""
-    assert os.path.split(gt_path)[-1] == os.path.split(pred_path)[-1]
     gt_masks = np.asarray(Image.open(gt_path))
-    pred_masks = np.asarray(Image.open(pred_path))
+    if not pred_path:
+        pred_masks = np.zeros_like(gt_masks)
+        pred_masks[:, :, 3] = 1
+        pred_masks[:, :, 1] = 3
+    else:
+        pred_masks = np.asarray(Image.open(pred_path))
+
     gt_masks, gt_ids, gt_attrs, gt_cats = parse_bitmasks(gt_masks)
     pred_masks, pred_ids, pred_attrs, pred_cats = parse_bitmasks(pred_masks)
 
@@ -151,9 +157,26 @@ def evaluate_pan_seg(
 ) -> Dict[str, float]:
     """Evaluate panoptic segmentation with BDD100K format."""
     start_time = time.time()
+
+    pred_map: Dict[str, str] = {
+        osp.splitext(osp.split(pred_path)[-1])[0]: pred_path
+        for pred_path in pred_paths
+    }
+    sorted_results: List[str] = []
+    miss_num = 0
+    for gt_path in gt_paths:
+        gt_name = osp.splitext(osp.split(gt_path)[-1])[0]
+        if gt_name in pred_map:
+            sorted_results.append(pred_map[gt_name])
+        else:
+            sorted_results.append("")
+        miss_num += 1
+    logger.info("%s images are missed in the prediction.", miss_num)
+
     with Pool(nproc) as pool:
         pq_stats = pool.starmap(
-            pq_per_image, tqdm(zip(gt_paths, pred_paths), total=len(gt_paths))
+            pq_per_image,
+            tqdm(zip(gt_paths, sorted_results), total=len(gt_paths)),
         )
     pq_stat = PQStat()
     for pq_stat_ in pq_stats:
