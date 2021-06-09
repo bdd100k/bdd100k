@@ -40,16 +40,16 @@ The GPS/IMU information recorded along with the videos
 | md5  | 043811ff34b2fca6d50f37d263a65c93 |
 +------+----------------------------------+
 
-Images
-~~~~~~~
 
-It has two subfolders. 1) 100K labeled key frame images extracted from the
-videos at 10th second 2) 10K key frames for full-frame semantic segmentation.
+100K Images
+~~~~~~~~~~~~
+
+Images for object detection, drivable area, lane marking
 
 +------+----------------------------------+
-| Size | 6.5GB                            |
+| Size | 5.3GB                            |
 +------+----------------------------------+
-| md5  | b538e3731a132e28dae37f18c442c51e |
+| md5  | 5a0359c86a0b8713adab1eee9a3041cb |
 +------+----------------------------------+
 
 :: 
@@ -60,10 +60,27 @@ videos at 10th second 2) 10K key frames for full-frame semantic segmentation.
                 - train
                 - val
                 - test
+
+10K Images
+~~~~~~~~~~~~
+
+Images for semantic segmentation, instance segmentation and panoptic segmentation
+
++------+----------------------------------+
+| Size | 1.1GB                            |
++------+----------------------------------+
+| md5  | 08f26aecceda982568063d3d5873378e |
++------+----------------------------------+
+
+:: 
+
+    - bdd100k
+        - images
             - 10k
                 - train
                 - val
                 - test
+
 
 Labels
 ~~~~~~~
