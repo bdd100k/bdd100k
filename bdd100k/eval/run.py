@@ -93,11 +93,19 @@ def run() -> None:
         bdd100k_config = load_bdd100k_config(args.task)
 
     if args.task == "drivable":
-        evaluate_drivable(args.gt, args.result, args.nproc)
+        evaluate_drivable(
+            list_files(args.gt, ".png", with_prefix=True),
+            list_files(args.result, ".png", with_prefix=True),
+            args.nproc,
+        )
     elif args.task == "lane_mark":
         evaluate_lane_marking(args.gt, args.result, [1, 2, 5, 10], args.nproc)
     elif args.task == "sem_seg":
-        evaluate_sem_seg(args.gt, args.result, args.nproc)
+        evaluate_sem_seg(
+            list_files(args.gt, ".png", with_prefix=True),
+            list_files(args.result, ".png", with_prefix=True),
+            args.nproc,
+        )
     elif args.task == "det":
         evaluate_det(
             bdd100k_to_scalabel(

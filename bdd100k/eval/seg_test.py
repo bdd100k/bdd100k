@@ -3,6 +3,7 @@ import os
 
 import numpy as np
 
+from ..common.utils import list_files
 from .seg import evaluate_segmentation, fast_hist
 
 
@@ -24,7 +25,10 @@ def test_ious_miou() -> None:
     a_dir = "{}/testcases/seg/gt".format(cur_dir)
     b_dir = "{}/testcases/seg/pred".format(cur_dir)
 
-    ious = evaluate_segmentation(a_dir, b_dir)
+    ious = evaluate_segmentation(
+        list_files(a_dir, ".png", with_prefix=True),
+        list_files(b_dir, ".png", with_prefix=True),
+    )
     gt_ious = dict(
         miou=61.73469388,
         road=94.89795918,
