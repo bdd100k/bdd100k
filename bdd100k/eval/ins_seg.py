@@ -18,8 +18,8 @@ from scalabel.label.transforms import get_coco_categories
 from scalabel.label.typing import Config
 from tqdm import tqdm
 
+from ..common.bitmask import bitmask_intersection_rate, parse_bitmasks
 from ..common.utils import list_files
-from .mots import mask_intersection_rate, parse_bitmasks
 
 
 def parse_res_bitmasks(
@@ -163,7 +163,7 @@ class BDDInsSegEval(COCOeval):  # type: ignore
         )
         dt_areas = get_mask_areas(dt_masks)
 
-        ious, _ = mask_intersection_rate(dt_masks, gt_masks)
+        ious, _ = bitmask_intersection_rate(dt_masks, gt_masks)
         return dict(
             ind=img_ind,
             ious=ious,

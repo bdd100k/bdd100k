@@ -5,7 +5,6 @@ When compute IoUs, this ignored class is considered.
 However, IoU(ignored) doesn't influence mIoU.
 """
 
-import os.path as osp
 from functools import partial
 from multiprocessing import Pool
 from typing import Dict, List, Set, Tuple
@@ -15,6 +14,7 @@ from PIL import Image
 from tqdm import tqdm
 
 from ..common.logger import logger
+from ..common.utils import reorder_preds
 from ..label.label import drivables, labels
 from ..label.to_mask import IGNORE_LABEL
 
@@ -57,25 +57,6 @@ def per_image_hist(
         pred = np.asarray(Image.open(pred_path, "r"), dtype=np.uint8)
     hist = fast_hist(gt.flatten(), pred.flatten(), num_classes)
     return hist, gt_id_set
-
-
-def reorder_preds(gt_paths: List[str], pred_paths: List[str]) -> List[str]:
-    """Reorder the order of predictions given groundtruths."""
-    pred_map: Dict[str, str] = {
-        osp.splitext(osp.split(pred_path)[-1])[0]: pred_path
-        for pred_path in pred_paths
-    }
-    sorted_results: List[str] = []
-    miss_num = 0
-    for gt_path in gt_paths:
-        gt_name = osp.splitext(osp.split(gt_path)[-1])[0]
-        if gt_name in pred_map:
-            sorted_results.append(pred_map[gt_name])
-        else:
-            sorted_results.append("")
-            miss_num += 1
-    logger.info("%s images are missed in the prediction.", miss_num)
-    return sorted_results
 
 
 def evaluate_segmentation(

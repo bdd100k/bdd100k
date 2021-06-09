@@ -42,9 +42,13 @@ from PIL import Image
 from scalabel.label.coco_typing import PanopticCatType
 from tqdm import tqdm
 
+from ..common.bitmask import (
+    bitmask_intersection_rate,
+    gen_blank_bitmask,
+    parse_bitmasks,
+)
+from ..common.utils import reorder_preds
 from ..label.label import labels
-from .mots import mask_intersection_rate, parse_bitmasks
-from .seg import reorder_preds
 
 
 class PQStatCat:
@@ -111,9 +115,7 @@ def pq_per_image(gt_path: str, pred_path: str = "") -> PQStat:
     """Calculate PQStar for each image."""
     gt_masks = np.asarray(Image.open(gt_path))
     if not pred_path:
-        pred_masks = np.zeros_like(gt_masks)
-        pred_masks[:, :, 3] = 1
-        pred_masks[:, :, 1] = 3
+        pred_masks = gen_blank_bitmask(gt_masks.shape)
     else:
         pred_masks = np.asarray(Image.open(pred_path))
 
@@ -123,7 +125,7 @@ def pq_per_image(gt_path: str, pred_path: str = "") -> PQStat:
     gt_valids = np.logical_not((gt_attrs & 3).astype(bool))
     pred_valids = np.logical_not((pred_attrs & 3).astype(bool))
 
-    ious, iofs = mask_intersection_rate(gt_masks, pred_masks)
+    ious, iofs = bitmask_intersection_rate(gt_masks, pred_masks)
     cat_equals = gt_cats.reshape(-1, 1) == pred_cats.reshape(1, -1)
     ious *= cat_equals
 
