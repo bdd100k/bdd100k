@@ -23,6 +23,9 @@ def fast_hist(
     groundtruth: np.ndarray, prediction: np.ndarray, size: int
 ) -> np.ndarray:
     """Compute the histogram."""
+    prediction = prediction.copy()
+    prediction[prediction >= size] = size - 1
+
     k = (groundtruth >= 0) & (groundtruth < size)
     return np.bincount(  # type: ignore
         size * groundtruth[k].astype(int) + prediction[k], minlength=size ** 2
@@ -38,20 +41,20 @@ def per_class_iu(hist: np.ndarray) -> np.ndarray:
 
 
 def per_image_hist(
-    gt_path: str, res_path: str = "", num_classes: int = 1
+    gt_path: str, pred_path: str = "", num_classes: int = 2
 ) -> Tuple[np.ndarray, Set[int]]:
     """Calculate per image hist."""
+    assert num_classes >= 2
+    assert num_classes <= IGNORE_LABEL
     gt = np.asarray(Image.open(gt_path, "r"), dtype=np.uint8)
     gt = gt.copy()
     gt[gt == IGNORE_LABEL] = num_classes - 1
     gt_id_set = set(np.unique(gt).tolist())
 
-    if not res_path:
-        pred = np.ones(gt.shape, dtype=np.uint8) * (num_classes - 1)
+    if not pred_path:
+        pred = np.ones_like(gt, dtype=np.uint8) * (num_classes - 1)
     else:
-        pred = np.asarray(Image.open(res_path, "r"), dtype=np.uint8)
-    pred = pred.copy()
-    pred[pred >= num_classes] = num_classes - 1
+        pred = np.asarray(Image.open(pred_path, "r"), dtype=np.uint8)
     hist = fast_hist(gt.flatten(), pred.flatten(), num_classes)
     return hist, gt_id_set
 
@@ -80,12 +83,15 @@ def evaluate_segmentation(
         for pred_path in pred_paths
     }
     sorted_results: List[str] = []
+    miss_num = 0
     for gt_path in gt_paths:
         gt_name = osp.splitext(osp.split(gt_path)[-1])[0]
         if gt_name in pred_map:
             sorted_results.append(pred_map[gt_name])
         else:
             sorted_results.append("")
+            miss_num += 1
+    logger.info("{} images are missed in the prediction.".format(miss_num))
 
     with Pool(nproc) as pool:
         hist_and_gt_id_sets = pool.starmap(
