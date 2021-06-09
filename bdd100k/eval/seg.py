@@ -78,12 +78,12 @@ def evaluate_segmentation(
         "drivable": len(drivables),  # `background` as `ignored`
     }[mode]
 
-    sorted_results = reorder_preds(gt_paths, pred_paths)
+    pred_paths = reorder_preds(gt_paths, pred_paths)
 
     with Pool(nproc) as pool:
         hist_and_gt_id_sets = pool.starmap(
             partial(per_image_hist, num_classes=num_classes),
-            tqdm(zip(gt_paths, sorted_results), total=len(gt_paths)),
+            tqdm(zip(gt_paths, pred_paths), total=len(gt_paths)),
         )
     hist = np.zeros((num_classes, num_classes))
     gt_id_set = set()

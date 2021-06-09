@@ -158,11 +158,11 @@ def evaluate_pan_seg(
 ) -> Dict[str, float]:
     """Evaluate panoptic segmentation with BDD100K format."""
     start_time = time.time()
-    sorted_results = reorder_preds(gt_paths, pred_paths)
+    pred_paths = reorder_preds(gt_paths, pred_paths)
     with Pool(nproc) as pool:
         pq_stats = pool.starmap(
             pq_per_image,
-            tqdm(zip(gt_paths, sorted_results), total=len(gt_paths)),
+            tqdm(zip(gt_paths, pred_paths), total=len(gt_paths)),
         )
     pq_stat = PQStat()
     for pq_stat_ in pq_stats:

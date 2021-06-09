@@ -5,6 +5,7 @@ from typing import Dict
 
 import numpy as np
 
+from ..common.utils import list_files
 from .lane import (
     eval_lane_per_threshold,
     evaluate_lane_marking,
@@ -86,7 +87,12 @@ class TestEvaluateLaneMarking(unittest.TestCase):
         cur_dir = os.path.dirname(os.path.abspath(__file__))
         gt_dir = "{}/testcases/lane/gts".format(cur_dir)
         res_dir = "{}/testcases/lane/res".format(cur_dir)
-        f_scores = evaluate_lane_marking(gt_dir, res_dir, bound_ths=[1, 2])
+        f_scores = evaluate_lane_marking(
+            list_files(gt_dir, ".png", with_prefix=True),
+            list_files(res_dir, ".png", with_prefix=True),
+            bound_ths=[1, 2],
+            nproc=1,
+        )
         gt_f_scores: Dict[str, float] = {
             "1.0_direction_parallel": 79.46877879291574,
             "2.0_direction_parallel": 87.61816039690531,
