@@ -166,7 +166,7 @@ def eval_lane_per_frame(
     task2arr: Dict[str, np.ndarray] = dict()  # str -> 2d array
     gt_byte = np.asarray(Image.open(gt_path), dtype=np.uint8)
     if not pred_path:
-        pred_byte = np.zeros_list(gt_byte, dtype=np.uint8)
+        pred_byte = np.zeros_like(gt_byte, dtype=np.uint8)
     else:
         pred_byte = np.asarray(Image.open(pred_path), dtype=np.uint8)
     gt_foreground = get_foreground(gt_byte)
