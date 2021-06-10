@@ -27,7 +27,7 @@ Torrent for the 100K video clips
 
 Video Parts
 ~~~~~~~~~~~~
-The 100K videos broken into 100 parts
+The 100K videos broken into 100 parts for easy downloading.
 
 Info
 ~~~~
@@ -44,7 +44,9 @@ The GPS/IMU information recorded along with the videos
 100K Images
 ~~~~~~~~~~~~
 
-Images for object detection, drivable area, lane marking
+The images in this package are the frames at the 10th second in the videos.
+The split of train, validation, and test sets are the same with the whole video set.
+They are used for object detection, drivable area, lane marking.
 
 +------+----------------------------------+
 | Size | 5.3GB                            |
@@ -64,7 +66,10 @@ Images for object detection, drivable area, lane marking
 10K Images
 ~~~~~~~~~~~~
 
-Images for semantic segmentation, instance segmentation and panoptic segmentation
+There are 10K images in this package for for semantic segmentation, instance
+segmentation and panoptic segmentation. Due to some legacy reasons, not all the
+images here have corresponding videos. So it is not a subset of the 100K images,
+even though there is a significant overlap.
 
 +------+----------------------------------+
 | Size | 1.1GB                            |
@@ -242,8 +247,10 @@ The bitmask format is explained at: :ref:`Panoptic Segmentation Format <bitmask>
 MOT 2020 Labels
 ~~~~~~~~~~~~~~~~
 
-Multi-object bounding box tracking training and validation labels released in
-2020
+Multi-object bounding box tracking training and validation labels released in 2020.
+This is a subset of the 100K videos, but the videos are resampled to 5Hz from 30Hz. The labels are in `Scalabel Format
+<https://doc.scalabel.ai/format.html>`_. The same object in each video has the same 
+label id but objects across videos are always distinct even if they have the same id.
 
 +------+----------------------------------+
 | Size | 104MB                            |
@@ -263,7 +270,9 @@ Multi-object bounding box tracking training and validation labels released in
 MOT 2020 Images
 ~~~~~~~~~~~~~~~~
 
-Multi-object bounding box tracking videos in frames released in 2020
+Multi-object bounding box tracking videos in frames released in 2020.
+The videos are a subset of the 100K videos, but they are resampled to 5Hz from 30Hz.
+
 
 :: 
 
@@ -328,7 +337,7 @@ The bitmask format is explained at: :ref:`Instance Segmentation Format <bitmask>
 MOTS 2020 Images
 ~~~~~~~~~~~~~~~~~
 
-Multi-object tracking and segmentation videos in frames released in 2020
+Multi-object tracking and segmentation videos in frames released in 2020. This is a subset of `MOT 2020 Images`_.
 
 +------+----------------------------------+
 | Size | 5.4GB                            |
