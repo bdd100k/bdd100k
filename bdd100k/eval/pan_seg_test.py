@@ -42,15 +42,15 @@ class TestPQStat(unittest.TestCase):
         self.assertAlmostEqual(result["RQ"], 2 / 3)
 
 
-class TestEvalPanopticSeg(unittest.TestCase):
-    """Test cases for panoptic segmentation's evaluation."""
+class TestPQPerImage(unittest.TestCase):
+    """Test cases for the pq_per_image function."""
 
     cur_dir = os.path.dirname(os.path.abspath(__file__))
     gt_base = "{}/testcases/pan_seg/gt".format(cur_dir)
     pred_base = "{}/testcases/pan_seg/pred".format(cur_dir)
 
-    def test_pq_per_image(self) -> None:
-        """Test case for the function pq_per_image."""
+    def test_general_case(self) -> None:
+        """Test a general case."""
         gt_path = os.path.join(self.gt_base, "a.png")
         pred_path = os.path.join(self.pred_base, "a.png")
         pq_stat = pq_per_image(gt_path, pred_path)
@@ -88,8 +88,30 @@ class TestEvalPanopticSeg(unittest.TestCase):
         res_arr = np.array(res_list)
         self.assertTrue((gt_res_arr == res_arr).all())
 
-    def test_evaluate_pan_seg(self) -> None:
-        """Test case for the function evalute_pan_seg."""
+    def test_blank_prediction(self) -> None:
+        """Test pq_per_image with blank prediciton."""
+        gt_path = os.path.join(self.gt_base, "a.png")
+        pred_path = ""
+        pq_stat = pq_per_image(gt_path, pred_path)
+        for key, pq_stat_cat in pq_stat.pq_per_cats.items():
+            self.assertAlmostEqual(pq_stat_cat.iou, 0.0)
+            self.assertEqual(pq_stat_cat.tp, 0)
+            self.assertEqual(pq_stat_cat.fp, 0)
+            if key != 35:
+                self.assertEqual(pq_stat_cat.fn, 1)
+            else:
+                self.assertEqual(pq_stat_cat.fn, 4)
+
+
+class TestEvalPanopticSeg(unittest.TestCase):
+    """Test cases for the evaluate_pan_seg function."""
+
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    gt_base = "{}/testcases/pan_seg/gt".format(cur_dir)
+    pred_base = "{}/testcases/pan_seg/pred".format(cur_dir)
+
+    def test_general_case(self) -> None:
+        """Test a general case."""
         results = evaluate_pan_seg(
             list_files(self.gt_base, suffix=".png", with_prefix=True),
             list_files(self.pred_base, suffix=".png", with_prefix=True),
@@ -109,7 +131,33 @@ class TestEvalPanopticSeg(unittest.TestCase):
             "Thing_RQ": 1.0,
             "Thing_N": 2,
         }
-        self.assertDictEqual(results, gt_results)
+        for key, val in gt_results.items():
+            self.assertAlmostEqual(results[key], val)
+
+    def test_evaluate_pan_seg(self) -> None:
+        """Test for the case that some predictions are missed."""
+        gt_base = "{}/testcases/pan_seg/gt+".format(self.cur_dir)
+        results = evaluate_pan_seg(
+            list_files(gt_base, suffix=".png", with_prefix=True),
+            list_files(self.pred_base, suffix=".png", with_prefix=True),
+            nproc=1,
+        )
+        gt_results = {
+            "PQ": 0.49385236,
+            "SQ": 0.68351837,
+            "RQ": 0.62352941,
+            "N": 17,
+            "Stuff_PQ": 0.48677621,
+            "Stuff_SQ": 0.66526945,
+            "Stuff_RQ": 0.61777778,
+            "Stuff_N": 15,
+            "Thing_PQ": 0.54692351,
+            "Thing_SQ": 0.82038526,
+            "Thing_RQ": 0.66666667,
+            "Thing_N": 2,
+        }
+        for key, val in gt_results.items():
+            self.assertAlmostEqual(results[key], val)
 
 
 if __name__ == "__main__":

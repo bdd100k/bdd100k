@@ -32,7 +32,6 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 ############################################################################
 """
-import os
 import time
 from collections import defaultdict
 from multiprocessing import Pool
@@ -43,8 +42,13 @@ from PIL import Image
 from scalabel.label.coco_typing import PanopticCatType
 from tqdm import tqdm
 
+from ..common.bitmask import (
+    bitmask_intersection_rate,
+    gen_blank_bitmask,
+    parse_bitmasks,
+)
+from ..common.utils import reorder_preds
 from ..label.label import labels
-from .mots import mask_intersection_rate, parse_bitmasks
 
 
 class PQStatCat:
@@ -107,18 +111,21 @@ class PQStat:
         return dict(PQ=0, SQ=0, RQ=0, N=0)
 
 
-def pq_per_image(gt_path: str, pred_path: str) -> PQStat:
+def pq_per_image(gt_path: str, pred_path: str = "") -> PQStat:
     """Calculate PQStar for each image."""
-    assert os.path.split(gt_path)[-1] == os.path.split(pred_path)[-1]
     gt_masks = np.asarray(Image.open(gt_path))
-    pred_masks = np.asarray(Image.open(pred_path))
+    if not pred_path:
+        pred_masks = gen_blank_bitmask(gt_masks.shape)
+    else:
+        pred_masks = np.asarray(Image.open(pred_path))
+
     gt_masks, gt_ids, gt_attrs, gt_cats = parse_bitmasks(gt_masks)
     pred_masks, pred_ids, pred_attrs, pred_cats = parse_bitmasks(pred_masks)
 
     gt_valids = np.logical_not((gt_attrs & 3).astype(bool))
     pred_valids = np.logical_not((pred_attrs & 3).astype(bool))
 
-    ious, iofs = mask_intersection_rate(gt_masks, pred_masks)
+    ious, iofs = bitmask_intersection_rate(gt_masks, pred_masks)
     cat_equals = gt_cats.reshape(-1, 1) == pred_cats.reshape(1, -1)
     ious *= cat_equals
 
@@ -151,9 +158,11 @@ def evaluate_pan_seg(
 ) -> Dict[str, float]:
     """Evaluate panoptic segmentation with BDD100K format."""
     start_time = time.time()
+    pred_paths = reorder_preds(gt_paths, pred_paths)
     with Pool(nproc) as pool:
         pq_stats = pool.starmap(
-            pq_per_image, tqdm(zip(gt_paths, pred_paths), total=len(gt_paths))
+            pq_per_image,
+            tqdm(zip(gt_paths, pred_paths), total=len(gt_paths)),
         )
     pq_stat = PQStat()
     for pq_stat_ in pq_stats:

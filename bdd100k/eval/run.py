@@ -16,7 +16,7 @@ from .ins_seg import evaluate_ins_seg
 from .lane import evaluate_lane_marking
 from .mots import acc_single_video_mots
 from .pan_seg import evaluate_pan_seg
-from .seg import evaluate_drivable, evaluate_segmentation
+from .seg import evaluate_drivable, evaluate_sem_seg
 
 
 def parse_args() -> argparse.Namespace:
@@ -92,13 +92,7 @@ def run() -> None:
     elif args.task in ["det", "ins_seg", "box_track", "seg_track"]:
         bdd100k_config = load_bdd100k_config(args.task)
 
-    if args.task == "drivable":
-        evaluate_drivable(args.gt, args.result, args.nproc)
-    elif args.task == "lane_mark":
-        evaluate_lane_marking(args.gt, args.result, [1, 2, 5, 10], args.nproc)
-    elif args.task == "sem_seg":
-        evaluate_segmentation(args.gt, args.result, args.nproc)
-    elif args.task == "det":
+    if args.task == "det":
         evaluate_det(
             bdd100k_to_scalabel(
                 load(args.gt, args.nproc).frames, bdd100k_config
@@ -116,12 +110,6 @@ def run() -> None:
             args.score_file,
             bdd100k_config.scalabel,
             args.out_dir,
-            args.nproc,
-        )
-    elif args.task == "pan_seg":
-        evaluate_pan_seg(
-            list_files(args.gt, ".png", with_prefix=True),
-            list_files(args.result, ".png", with_prefix=True),
             args.nproc,
         )
     elif args.task == "box_track":
@@ -156,6 +144,19 @@ def run() -> None:
             ignore_iof_thr=args.ignore_iof_thr,
             nproc=args.nproc,
         )
+
+    gt_paths = list_files(args.gt, ".png", with_prefix=True)
+    pred_paths = list_files(args.result, ".png", with_prefix=True)
+    if args.task == "drivable":
+        evaluate_drivable(gt_paths, pred_paths, nproc=args.nproc)
+    elif args.task == "lane_mark":
+        evaluate_lane_marking(
+            gt_paths, pred_paths, [1.0, 2.0, 5.0, 10.0], nproc=args.nproc
+        )
+    elif args.task == "sem_seg":
+        evaluate_sem_seg(gt_paths, pred_paths, nproc=args.nproc)
+    elif args.task == "pan_seg":
+        evaluate_pan_seg(gt_paths, pred_paths, nproc=args.nproc)
 
 
 if __name__ == "__main__":

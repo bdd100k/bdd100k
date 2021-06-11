@@ -73,7 +73,7 @@ from skimage.morphology import (  # type: ignore
 from tabulate import tabulate
 from tqdm import tqdm
 
-from ..common.utils import list_files
+from ..common.utils import reorder_preds
 from ..label.label import lane_categories, lane_directions, lane_styles
 
 AVG = "avg"
@@ -160,12 +160,15 @@ sub_task_cats: Dict[str, List[str]] = dict(
 
 
 def eval_lane_per_frame(
-    gt_file: str, pred_file: str, bound_ths: List[float]
+    gt_path: str, pred_path: str, bound_ths: List[float]
 ) -> Dict[str, np.ndarray]:
     """Compute mean,recall and decay from per-frame evaluation."""
     task2arr: Dict[str, np.ndarray] = dict()  # str -> 2d array
-    gt_byte = np.asarray(Image.open(gt_file))
-    pred_byte = np.asarray(Image.open(pred_file))
+    gt_byte = np.asarray(Image.open(gt_path), dtype=np.uint8)
+    if not pred_path:
+        pred_byte = np.zeros_like(gt_byte, dtype=np.uint8)
+    else:
+        pred_byte = np.asarray(Image.open(pred_path), dtype=np.uint8)
     gt_foreground = get_foreground(gt_byte)
     pd_foreground = get_foreground(pred_byte)
 
@@ -256,16 +259,17 @@ def render_results(
 
 
 def evaluate_lane_marking(
-    gt_dir: str, pred_dir: str, bound_ths: List[float], nproc: int = 4
+    gt_paths: List[str],
+    pred_paths: List[str],
+    bound_ths: List[float],
+    nproc: int = 4,
 ) -> Dict[str, float]:
     """Evaluate F-score for lane marking from input folders."""
-    gt_files = list_files(gt_dir, ".png", with_prefix=True)
-    pred_files = list_files(pred_dir, ".png", with_prefix=True)
-
+    pred_paths = reorder_preds(gt_paths, pred_paths)
     with Pool(nproc) as pool:
         task2arr_list = pool.starmap(
             partial(eval_lane_per_frame, bound_ths=bound_ths),
-            tqdm(zip(gt_files, pred_files), total=len(gt_files)),
+            tqdm(zip(gt_paths, pred_paths), total=len(gt_paths)),
         )
     task2arr = merge_results(task2arr_list)
 
