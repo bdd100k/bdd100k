@@ -19,6 +19,5 @@ sphinx-rtd-theme
 tabulate
 toml
 tqdm
-types-tabulate
 
 git+git://github.com/scalabel/scalabel.git

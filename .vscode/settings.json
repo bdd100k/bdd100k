@@ -17,12 +17,12 @@
     "editor.rulers": [79],
     // Python use black as formatter
     "editor.defaultFormatter": null
-},
+  },
   "python.formatting.provider": "black",
   "python.linting.pylintEnabled": true,
-  "python.linting.mypyEnabled": true,
   "python.linting.pydocstyleEnabled": true,
   "python.linting.pydocstyleArgs": ["--convention=google"],
+  "python.linting.mypyEnabled": true,
   "spellright.language": ["en"],
   "spellright.documentTypes": ["markdown", "latex", "plaintext", "typescript"],
   "files.exclude": {
