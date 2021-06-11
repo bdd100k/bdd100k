@@ -198,7 +198,7 @@ Label attributes
 
 .. _seg mask:
 
-Semantic Segmentation Format
+Semantic Segmentation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We provide labels for **semantic segmentation** and **drivable area** in both JSON and **mask** formats.
@@ -208,7 +208,7 @@ The value of each pixel represents its category. 255 usually means "ignore".
 
 .. _lane mask:
 
-Lane Marking Format
+Lane Marking
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For lane marking, there are three sub-tasks: lane categories, lane direction and lane styles.
@@ -225,7 +225,7 @@ Most importantly, the **5**-th bit is to indicate whether this pixel belongs to 
 
 .. _bitmask:
 
-Instance Segmentation Format
+Instance Segmentation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We provide labels for **instance segmentation**, **panoptic segmentation** and **segmentation tracking** in both JSON and **bitmask** formats.
