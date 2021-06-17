@@ -22,14 +22,14 @@ def annotations_to_tensors_seg(
     annos: List[AnnType], index: int, height: int, width: int
 ) -> Dict[str, Tensor]:
     """Convert a list of annotations to a dict of torchTensor for seg."""
-    masks_ = [anno["segmentation"] for anno in annos]
-    masks = [
-        torch.Tensor(  # type: ignore
-            mask, dtype=torch.uint8  # pylint: disable=no-member
+    segm_list = [anno["segmentation"] for anno in annos]
+    mask_list = [
+        torch.tensor(  # pylint: disable=not-callable
+            segm, dtype=torch.uint8  # pylint: disable=no-member
         )
-        for mask in masks_
+        for segm in segm_list
     ]
-    masks = torch.stack(masks, dim=0)  # pylint: disable=no-member
+    masks = torch.stack(mask_list, dim=0)  # pylint: disable=no-member
 
     target = annotations_to_tensors(annos, index, height, width)
     target.update(masks=masks)
