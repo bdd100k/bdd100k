@@ -39,13 +39,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.s
 Based on:
 ----------------------------------------------------------------------------
 torchvision
-Copyright (c) 2016 Facebook 
+Copyright (c) 2016 Facebook
 Licensed under the BSD License [see LICENSE for details]
 Written by the Pytorch Team
 ----------------------------------------------------------------------------
 """
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import torch
 import torchvision
@@ -54,24 +54,36 @@ from torchvision.transforms import functional as F
 from torchvision.transforms import transforms as T
 
 
-class Compose(object):
+class Compose:
+    """Compose transforms together."""
+
     def __init__(self, transforms):
+        """Init function."""
         self.transforms = transforms
 
     def __call__(self, image, target):
+        """Calling function."""
         for t in self.transforms:
             image, target = t(image, target)
         return image, target
 
 
-class RandomHorizontalFlip(T.RandomHorizontalFlip):
-    def forward(
+class RandomHorizontalFlip(T.RandomHorizontalFlip):  # type: ignore
+    """Randomly flip an input in the horizental direction."""
+
+    def forward(  # pylint: disable=arguments-differ
         self, image: Tensor, target: Optional[Dict[str, Tensor]] = None
     ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
-        if torch.rand(1) < self.p:
+        """Executation function."""
+        if torch.rand(1) < self.p:  # pylint: disable=no-member
             image = F.hflip(image)
             if target is not None:
-                width, _ = F._get_image_size(image)
+                (
+                    width,
+                    _,
+                ) = F._get_image_size(  # pylint: disable=protected-access
+                    image
+                )
                 target["boxes"][:, [0, 2]] = width - target["boxes"][:, [2, 0]]
                 if "masks" in target:
                     target["masks"] = target["masks"].flip(-1)
@@ -79,14 +91,19 @@ class RandomHorizontalFlip(T.RandomHorizontalFlip):
 
 
 class ToTensor(nn.Module):
-    def forward(
+    """Convert a np.ndarray into torch.Tensor."""
+
+    def forward(  # pylint: disable=no-self-use
         self, image: Tensor, target: Optional[Dict[str, Tensor]] = None
     ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+        """Executation function."""
         image = F.to_tensor(image)
         return image, target
 
 
 class RandomIoUCrop(nn.Module):
+    """Randomly crop an input."""
+
     def __init__(
         self,
         min_scale: float = 0.3,
@@ -96,8 +113,8 @@ class RandomIoUCrop(nn.Module):
         sampler_options: Optional[List[float]] = None,
         trials: int = 40,
     ):
+        """Init function."""
         super().__init__()
-        # Configuration similar to https://github.com/weiliu89/caffe/blob/ssd/examples/ssd/ssd_coco.py#L89-L174
         self.min_scale = min_scale
         self.max_scale = max_scale
         self.min_aspect_ratio = min_aspect_ratio
@@ -110,24 +127,34 @@ class RandomIoUCrop(nn.Module):
     def forward(
         self, image: Tensor, target: Optional[Dict[str, Tensor]] = None
     ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+        """Executation function."""
         if target is None:
             raise ValueError("The targets can't be None for this transform.")
 
         if isinstance(image, torch.Tensor):
-            if image.ndimension() not in {2, 3}:
+            if image.ndimension() not in {  # pylint: disable=no-else-raise
+                2,
+                3,
+            }:
                 raise ValueError(
-                    "image should be 2/3 dimensional. Got {} dimensions.".format(
+                    "Should be 2/3 dimensional. Got {} dimensions.".format(
                         image.ndimension()
                     )
                 )
             elif image.ndimension() == 2:
                 image = image.unsqueeze(0)
 
-        orig_w, orig_h = F._get_image_size(image)
+        orig_w, orig_h = F._get_image_size(  # pylint: disable=protected-access
+            image
+        )
 
         while True:
             # sample an option
-            idx = int(torch.randint(low=0, high=len(self.options), size=(1,)))
+            idx = int(
+                torch.randint(  # pylint: disable=no-member
+                    low=0, high=len(self.options), size=(1,)
+                )
+            )
             min_jaccard_overlap = self.options[idx]
             if (
                 min_jaccard_overlap >= 1.0
@@ -138,7 +165,9 @@ class RandomIoUCrop(nn.Module):
                 # check the aspect ratio limitations
                 r = self.min_scale + (
                     self.max_scale - self.min_scale
-                ) * torch.rand(2)
+                ) * torch.rand(  # pylint: disable=no-member
+                    2
+                )
                 new_w = int(orig_w * r[0])
                 new_h = int(orig_h * r[1])
                 aspect_ratio = new_w / new_h
@@ -150,7 +179,7 @@ class RandomIoUCrop(nn.Module):
                     continue
 
                 # check for 0 area crops
-                r = torch.rand(2)
+                r = torch.rand(2)  # pylint: disable=no-member
                 left = int((orig_w - new_w) * r[0])
                 top = int((orig_h - new_h) * r[1])
                 right = left + new_w
@@ -171,7 +200,7 @@ class RandomIoUCrop(nn.Module):
                 boxes = target["boxes"][is_within_crop_area]
                 ious = torchvision.ops.boxes.box_iou(
                     boxes,
-                    torch.tensor(
+                    torch.tensor(  # pylint: disable=not-callable
                         [[left, top, right, bottom]],
                         dtype=boxes.dtype,
                         device=boxes.device,
@@ -193,12 +222,15 @@ class RandomIoUCrop(nn.Module):
 
 
 class RandomZoomOut(nn.Module):
+    """Randomly zoom out an input."""
+
     def __init__(
         self,
         fill: Optional[List[float]] = None,
         side_range: Tuple[float, float] = (1.0, 4.0),
         p: float = 0.5,
     ):
+        """Init function."""
         super().__init__()
         if fill is None:
             fill = [0.0, 0.0, 0.0]
@@ -208,39 +240,45 @@ class RandomZoomOut(nn.Module):
             raise ValueError(
                 "Invalid canvas side range provided {}.".format(side_range)
             )
-        self.p = p
+        self.p = p  # pylint: disable=invalid-name
 
     @torch.jit.unused
-    def _get_fill_value(self, is_pil):
-        # type: (bool) -> int
+    def _get_fill_value(self, is_pil: bool) -> Union[Tuple[int, ...], int]:
+        """Get fill value."""
         # We fake the type to make it work on JIT
         return tuple(int(x) for x in self.fill) if is_pil else 0
 
     def forward(
         self, image: Tensor, target: Optional[Dict[str, Tensor]] = None
     ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+        """Executation function."""
         if isinstance(image, torch.Tensor):
-            if image.ndimension() not in {2, 3}:
+            if image.ndimension() not in {  # pylint: disable=no-else-raise
+                2,
+                3,
+            }:
                 raise ValueError(
-                    "image should be 2/3 dimensional. Got {} dimensions.".format(
+                    "Should be 2/3 dimensional. Got {} dimensions.".format(
                         image.ndimension()
                     )
                 )
             elif image.ndimension() == 2:
                 image = image.unsqueeze(0)
 
-        if torch.rand(1) < self.p:
+        if torch.rand(1) < self.p:  # pylint: disable=no-member
             return image, target
 
-        orig_w, orig_h = F._get_image_size(image)
+        orig_w, orig_h = F._get_image_size(  # pylint: disable=protected-access
+            image
+        )
 
-        r = self.side_range[0] + torch.rand(1) * (
+        r = self.side_range[0] + torch.rand(1) * (  # pylint: disable=no-member
             self.side_range[1] - self.side_range[0]
         )
         canvas_width = int(orig_w * r)
         canvas_height = int(orig_h * r)
 
-        r = torch.rand(2)
+        r = torch.rand(2)  # pylint: disable=no-member
         left = int((canvas_width - orig_w) * r[0])
         top = int((canvas_height - orig_h) * r[1])
         right = canvas_width - (left + orig_w)
@@ -249,11 +287,13 @@ class RandomZoomOut(nn.Module):
         if torch.jit.is_scripting():
             fill = 0
         else:
-            fill = self._get_fill_value(F._is_pil_image(image))
+            fill = self._get_fill_value(
+                F._is_pil_image(image)  # pylint: disable=protected-access
+            )
 
         image = F.pad(image, [left, top, right, bottom], fill=fill)
         if isinstance(image, torch.Tensor):
-            v = torch.tensor(
+            v = torch.tensor(  # pylint: disable=not-callable
                 self.fill, device=image.device, dtype=image.dtype
             ).view(-1, 1, 1)
             image[..., :top, :] = image[..., :, :left] = image[
@@ -268,35 +308,42 @@ class RandomZoomOut(nn.Module):
 
 
 class RandomPhotometricDistort(nn.Module):
+    """Randoms apply photometric distort to an input."""
+
     def __init__(
         self,
-        contrast: Tuple[float] = (0.5, 1.5),
-        saturation: Tuple[float] = (0.5, 1.5),
-        hue: Tuple[float] = (-0.05, 0.05),
-        brightness: Tuple[float] = (0.875, 1.125),
+        contrast: Tuple[float, float] = (0.5, 1.5),
+        saturation: Tuple[float, float] = (0.5, 1.5),
+        hue: Tuple[float, float] = (-0.05, 0.05),
+        brightness: Tuple[float, float] = (0.875, 1.125),
         p: float = 0.5,
     ):
+        """Init function."""
         super().__init__()
         self._brightness = T.ColorJitter(brightness=brightness)
         self._contrast = T.ColorJitter(contrast=contrast)
         self._hue = T.ColorJitter(hue=hue)
         self._saturation = T.ColorJitter(saturation=saturation)
-        self.p = p
+        self.p = p  # pylint: disable=invalid-name
 
     def forward(
         self, image: Tensor, target: Optional[Dict[str, Tensor]] = None
     ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+        """Executation function."""
         if isinstance(image, torch.Tensor):
-            if image.ndimension() not in {2, 3}:
+            if image.ndimension() not in {  # pylint: disable=no-else-raise
+                2,
+                3,
+            }:
                 raise ValueError(
-                    "image should be 2/3 dimensional. Got {} dimensions.".format(
+                    "Should be 2/3 dimensional. Got {} dimensions.".format(
                         image.ndimension()
                     )
                 )
             elif image.ndimension() == 2:
                 image = image.unsqueeze(0)
 
-        r = torch.rand(7)
+        r = torch.rand(7)  # pylint: disable=no-member
 
         if r[0] < self.p:
             image = self._brightness(image)
@@ -317,10 +364,14 @@ class RandomPhotometricDistort(nn.Module):
                 image = self._contrast(image)
 
         if r[6] < self.p:
-            channels = F._get_image_num_channels(image)
-            permutation = torch.randperm(channels)
+            channels = (
+                F._get_image_num_channels(  # pylint: disable=protected-access
+                    image
+                )
+            )
+            permutation = torch.randperm(channels)  # pylint: disable=no-member
 
-            is_pil = F._is_pil_image(image)
+            is_pil = F._is_pil_image(image)  # pylint: disable=protected-access
             if is_pil:
                 image = F.to_tensor(image)
             image = image[..., permutation, :, :]

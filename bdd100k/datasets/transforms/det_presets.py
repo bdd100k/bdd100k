@@ -39,7 +39,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.s
 Based on:
 ----------------------------------------------------------------------------
 torchvision
-Copyright (c) 2016 Facebook 
+Copyright (c) 2016 Facebook
 Licensed under the BSD License [see LICENSE for details]
 Written by the Pytorch Team
 ----------------------------------------------------------------------------
@@ -49,7 +49,7 @@ from typing import Dict, Tuple
 
 from torch import Tensor
 
-from .transforms import (
+from .det_transforms import (
     Compose,
     RandomHorizontalFlip,
     RandomIoUCrop,

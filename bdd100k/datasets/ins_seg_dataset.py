@@ -15,6 +15,25 @@ from torchvision.transforms import Compose
 
 from ..common.bitmask import parse_bitmasks
 from ..common.utils import list_files, load_bdd100k_config
+from .det_dataset import annotations_to_tensors
+
+
+def annotations_to_tensors_seg(
+    annos: List[AnnType], index: int, height: int, width: int
+) -> Dict[str, Tensor]:
+    """Convert a list of annotations to a dict of torchTensor for seg."""
+    masks_ = [anno["segmentation"] for anno in annos]
+    masks = [
+        torch.Tensor(  # type: ignore
+            mask, dtype=torch.uint8  # pylint: disable=no-member
+        )
+        for mask in masks_
+    ]
+    masks = torch.stack(masks, dim=0)  # pylint: disable=no-member
+
+    target = annotations_to_tensors(annos, index, height, width)
+    target.update(masks=masks)
+    return target
 
 
 class BDD100KInsSegDataset(VisionDataset):  # type: ignore
@@ -29,7 +48,7 @@ class BDD100KInsSegDataset(VisionDataset):  # type: ignore
         target_transform: Optional[Compose] = None,
         transforms: Optional[Compose] = None,
     ) -> None:
-        """Init function for the base dataset."""
+        """Init function for the instance segmentation dataset."""
         super().__init__(root, transforms, transform, target_transform)
         self.ann_path = ann_path
         self.config = load_bdd100k_config(cfg_path).scalabel
@@ -80,38 +99,7 @@ class BDD100KInsSegDataset(VisionDataset):  # type: ignore
         else:
             height, width = bitmask.shape[:2]
 
-        annos = [anno for anno in annos if anno["iscrowd"] == 0]
-
-        classes = [anno["category_id"] for anno in annos]
-        iscrowd = [anno["iscrowd"] for anno in annos]
-
-        boxes_ = [anno["bbox"] for anno in annos]
-        boxes = torch.Tensor(  # type: ignore
-            boxes_, dtype=torch.float  # pylint: disable=no-member
-        ).reshape(-1, 4)
-        boxes[:, 2:] += boxes[:, :2]
-        boxes[:, 0::2].clamp_(min=0, max=width)
-        boxes[:, 1::2].clamp_(min=0, max=height)
-        masks_ = [anno["segmentation"] for anno in annos]
-        masks = [
-            torch.Tensor(  # type: ignore
-                mask, dtype=torch.uint8  # pylint: disable=no-member
-            )
-            for mask in masks_
-        ]
-        masks = torch.stack(masks, dim=0)  # pylint: disable=no-member
-        area = [anno["area"] for anno in annos]
-
-        target = dict(
-            image_id=torch.Tensor([index]),
-            labels=torch.LongTensor(classes),  # pylint: disable=no-member
-            iscrowd=torch.Tensor(iscrowd),
-            boxes=boxes,
-            mask=masks,
-            area=torch.Tensor(area),
-        )
-
-        return target
+        return annotations_to_tensors_seg(annos, index, height, width)
 
     def __getitem__(self, index: int) -> Tuple[Tensor, Dict[str, Tensor]]:
         """Load image and target given the index."""

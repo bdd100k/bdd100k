@@ -21,6 +21,33 @@ from torchvision.transforms import Compose
 from ..common.utils import load_bdd100k_config
 
 
+def annotations_to_tensors(
+    annos: List[AnnType], index: int, height: int, width: int
+) -> Dict[str, Tensor]:
+    """Convert a list of annotations to a dict of torchTensor."""
+    annos = [anno for anno in annos if anno["iscrowd"] == 0]
+
+    classes = [anno["category_id"] for anno in annos]
+    iscrowd = [anno["iscrowd"] for anno in annos]
+
+    boxes_ = [anno["bbox"] for anno in annos]
+    boxes = torch.Tensor(  # type: ignore
+        boxes_, dtype=torch.float  # pylint: disable=no-member
+    ).reshape(-1, 4)
+    boxes[:, 2:] += boxes[:, :2]
+    boxes[:, 0::2].clamp_(min=0, max=width)
+    boxes[:, 1::2].clamp_(min=0, max=height)
+    area = [anno["area"] for anno in annos]
+
+    return dict(
+        image_id=torch.Tensor([index]),
+        labels=torch.LongTensor(classes),  # pylint: disable=no-member
+        iscrowd=torch.Tensor(iscrowd),
+        boxes=boxes,
+        area=torch.Tensor(area),
+    )
+
+
 class BDD100KDetDataset(VisionDataset):  # type: ignore
     """The detection dataset for bdd100k."""
 
@@ -34,7 +61,7 @@ class BDD100KDetDataset(VisionDataset):  # type: ignore
         target_transform: Optional[Compose] = None,
         transforms: Optional[Compose] = None,
     ) -> None:
-        """Init function for the base dataset."""
+        """Init function for the detection dataset."""
         super().__init__(root, transforms, transform, target_transform)
         self.config = load_bdd100k_config(cfg_path).scalabel
         self.frames = load(ann_path, nproc).frames
@@ -90,27 +117,7 @@ class BDD100KDetDataset(VisionDataset):  # type: ignore
         annos = self._load_annos(index)
         annos = [obj for obj in annos if obj["iscrowd"] == 0]
 
-        classes = [anno["category_id"] for anno in annos]
-        iscrowd = [anno["iscrowd"] for anno in annos]
-
-        boxes_ = [obj["bbox"] for obj in annos]
-        boxes = torch.Tensor(  # type: ignore
-            boxes_, dtype=torch.float  # pylint: disable=no-member
-        ).reshape(-1, 4)
-        boxes[:, 2:] += boxes[:, :2]
-        boxes[:, 0::2].clamp_(min=0, max=width)
-        boxes[:, 1::2].clamp_(min=0, max=height)
-        area = [obj["area"] for obj in annos]
-
-        target = dict(
-            image_id=torch.Tensor([index]),
-            labels=torch.LongTensor(classes),  # pylint: disable=no-member
-            iscrowd=torch.Tensor(iscrowd),
-            boxes=boxes,
-            area=torch.Tensor(area),
-        )
-
-        return target
+        return annotations_to_tensors(annos, index, height, width)
 
     def __getitem__(self, index: int) -> Tuple[Tensor, Dict[str, Tensor]]:
         """Load image and target given the index."""
