@@ -24,7 +24,7 @@ from ..common.utils import load_bdd100k_config
 def annotations_to_tensors(
     annos: List[AnnType], index: int, height: int, width: int
 ) -> Dict[str, Tensor]:
-    """Convert a list of annotations to a dict of torchTensor."""
+    """Convert a list of annotations to a dict of torch.Tensor."""
     annos = [anno for anno in annos if anno["iscrowd"] == 0]
 
     classes = [anno["category_id"] for anno in annos]
