@@ -1,1 +1,45 @@
-[{"name": "00091078-875c1f73-0000166.jpg", "videoName": "00091078-875c1f73","frameIndex": 0, "labels": [ {"id": "00109430", "category": "other person", "attributes": {"Occluded": true, "Truncated": false, "crowd": false}, "box2d": {"x1": 1068.051474568342, "x2": 1108.7226195720182, "y1": 362.7665840944419, "y2": 466.2931350128905}}]}, {"name": "00091078-875c1f73-0000167.jpg", "videoName": "00091078-875c1f73","frameIndex": 1, "labels": null}]
+[
+  {
+    "name": "00091078-875c1f73-0000166.jpg",
+    "videoName": "00091078-875c1f73",
+    "frameIndex": 0,
+    "labels": [
+      {
+        "id": "00109430",
+        "category": "other person",
+        "attributes": {
+          "Occluded": true,
+          "Truncated": false,
+          "crowd": false
+        },
+        "box2d": {
+          "x1": 1068.051474568342,
+          "x2": 1108.7226195720182,
+          "y1": 362.7665840944419,
+          "y2": 466.2931350128905
+        }
+      },
+      {
+        "id": "00109431",
+        "category": "person",
+        "attributes": {
+          "Occluded": true,
+          "Truncated": false,
+          "crowd": false
+        },
+        "box2d": {
+          "x1": 68.051474568342,
+          "x2": 108.7226195720182,
+          "y1": 301.7665840944419,
+          "y2": 426.2931350128905
+        }
+      }
+    ]
+  },
+  {
+    "name": "00091078-875c1f73-0000167.jpg",
+    "videoName": "00091078-875c1f73",
+    "frameIndex": 1,
+    "labels": null
+  }
+]

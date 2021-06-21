@@ -24,7 +24,9 @@ class TestBDD100KToScalabel(unittest.TestCase):
         self.assertEqual(len(new_frames), 2)
         labels = new_frames[0].labels
         assert labels is not None
+        self.assertEqual(len(labels), 2)
         self.assertEqual(labels[0].category, "pedestrian")
+        self.assertEqual(labels[1].category, "pedestrian")
         assert labels[0].attributes is not None
         self.assertTrue(labels[0].attributes[IGNORED])
         self.assertEqual(new_frames[1].labels, None)
@@ -33,4 +35,5 @@ class TestBDD100KToScalabel(unittest.TestCase):
         new_frames = bdd100k_to_scalabel(frames, bdd100k_config)
         labels = new_frames[0].labels
         assert labels is not None
-        self.assertEqual(len(labels), 0)
+        self.assertEqual(len(labels), 1)
+        self.assertEqual(labels[0].category, "pedestrian")
