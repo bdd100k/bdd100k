@@ -18,7 +18,7 @@ from scalabel.label.transforms import get_coco_categories
 from scalabel.label.typing import Config
 from tqdm import tqdm
 
-from ..common.bitmask import bitmask_intersection_rate, parse_bitmasks
+from ..common.bitmask import bitmask_intersection_rate, parse_bitmask
 from ..common.utils import list_files
 
 
@@ -151,10 +151,10 @@ class BDDInsSegEval(COCOeval):  # type: ignore
 
         gt_path = os.path.join(self.gt_base, img_name)
         gt_bitmask = np.asarray(Image.open(gt_path))
-        gt_masks, _, gt_attrs, gt_cat_ids = parse_bitmasks(gt_bitmask)
+        gt_masks, _, gt_attrs, gt_cat_ids = parse_bitmask(gt_bitmask)
         gt_areas = get_mask_areas(gt_masks)
-        gt_crowds = np.logical_not((gt_attrs & 2).astype(bool))
-        gt_ignores = np.logical_not((gt_attrs & 1).astype(bool))
+        gt_crowds = (gt_attrs & 2).astype(bool)
+        gt_ignores = (gt_attrs & 1).astype(bool)
 
         dt_path = os.path.join(self.dt_base, img_name)
         dt_bitmask = np.asarray(Image.open(dt_path))

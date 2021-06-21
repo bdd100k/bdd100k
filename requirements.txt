@@ -18,6 +18,8 @@ sphinx
 sphinx-rtd-theme
 tabulate
 toml
+torch
+torchvision
 tqdm
 
 git+git://github.com/scalabel/scalabel.git

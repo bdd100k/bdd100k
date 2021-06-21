@@ -37,9 +37,10 @@ setuptools.setup(
         "pycocotools",
         "scalabel @ git+git://github.com/scalabel/scalabel.git",
         "scikit-image",
-        "toml",
-        "tqdm",
         "tabulate",
+        "toml",
+        "torch",
+        "torchvision",
         "tqdm",
     ],
     package_data={

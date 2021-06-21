@@ -9,7 +9,7 @@ from PIL import Image
 from ..common.bitmask import (
     bitmask_intersection_rate,
     gen_blank_bitmask,
-    parse_bitmasks,
+    parse_bitmask,
 )
 from ..common.utils import reorder_preds
 
@@ -36,11 +36,11 @@ def acc_single_video_mots(  # pylint: disable=unused-argument
 
         gt_masks = np.asarray(Image.open(gt))
         if not result:
-            res_masks = gen_blank_bitmask(gt_masks.shape)
+            res_masks = gen_blank_bitmask(*gt_masks.shape)
         else:
             res_masks = np.asarray(Image.open(result))
-        gt_masks, gt_ids, gt_attrs, gt_cats = parse_bitmasks(gt_masks)
-        pred_masks, pred_ids, pred_attrs, pred_cats = parse_bitmasks(res_masks)
+        gt_masks, gt_ids, gt_attrs, gt_cats = parse_bitmask(gt_masks)
+        pred_masks, pred_ids, pred_attrs, pred_cats = parse_bitmask(res_masks)
         ious, iofs = bitmask_intersection_rate(gt_masks, pred_masks)
 
         gt_valids = np.logical_not((gt_attrs & 3).astype(bool))
