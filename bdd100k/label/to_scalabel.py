@@ -40,6 +40,7 @@ def deal_bdd100k_category(
             label.category = category_name
             result = label
     else:
+        label.category = category_name
         result = label
     return result
 
