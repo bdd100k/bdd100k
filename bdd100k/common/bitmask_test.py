@@ -5,7 +5,7 @@ import unittest
 import numpy as np
 from PIL import Image
 
-from .bitmask import bitmask_intersection_rate, parse_bitmasks
+from .bitmask import bitmask_intersection_rate, parse_bitmask
 
 
 class TestMaskIntersectionRate(unittest.TestCase):
@@ -27,19 +27,34 @@ class TestMaskIntersectionRate(unittest.TestCase):
                 self.assertAlmostEqual(ioas[i, j], gt_ioas[i, j])
 
 
-class TestParseBitmasks(unittest.TestCase):
-    """Test Cases for BDD100K MOTS evaluation input parser."""
+class TestParseBitmask(unittest.TestCase):
+    """Test Cases for the function parse_bitmask."""
 
-    def test_parse_bitmasks(self) -> None:
-        """Check input parsing for the MOTS evaluation."""
+    def test_stacked(self) -> None:
+        """Check the non-stacked case."""
         cur_dir = os.path.dirname(os.path.abspath(__file__))
         bitmask = np.asarray(
             Image.open("{}/testcases/example_bitmask.png".format(cur_dir))
         )
-        cvt_maps = parse_bitmasks(bitmask)
+        cvt_maps = parse_bitmask(bitmask)
         gt_maps = [
             np.load("{}/testcases/gt_{}.npy".format(cur_dir, name))
             for name in ["masks", "ins_ids", "attrs", "cat_ids"]
+        ]
+
+        for cvt_map, gt_map in zip(cvt_maps, gt_maps):
+            self.assertTrue(np.isclose(cvt_map, gt_map).all())
+
+    def test_not_stacked(self) -> None:
+        """Check the stacked case."""
+        cur_dir = os.path.dirname(os.path.abspath(__file__))
+        bitmask = np.asarray(
+            Image.open("{}/testcases/example_bitmask.png".format(cur_dir))
+        )
+        cvt_maps = parse_bitmask(bitmask)
+        gt_maps = [
+            np.load("{}/testcases/gt_{}.npy".format(cur_dir, name))
+            for name in ["stacked_masks", "ins_ids", "attrs", "cat_ids"]
         ]
 
         for cvt_map, gt_map in zip(cvt_maps, gt_maps):

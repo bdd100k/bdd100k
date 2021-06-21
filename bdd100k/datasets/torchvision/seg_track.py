@@ -11,10 +11,10 @@ from scalabel.label.coco_typing import AnnType
 from scalabel.label.transforms import mask_to_bbox
 from torch import Tensor
 
-from ..common.bitmask import parse_bitmasks
-from ..common.utils import group_and_sort_files, list_files
-from .box_track_dataset import KEYTYPE, BDD100KBaseTrackDataset
-from .ins_seg_dataset import annotations_to_tensors_seg
+from ...common.bitmask import parse_bitmask
+from ...common.utils import group_and_sort_files, list_files
+from .box_track import KEYTYPE, BDD100KBaseTrackDataset
+from .ins_seg import annotations_to_tensors_seg
 
 
 class BDD100KSegTrackDataset(BDD100KBaseTrackDataset):
@@ -48,7 +48,9 @@ class BDD100KSegTrackDataset(BDD100KBaseTrackDataset):
         bitmask = np.asarray(Image.open(path))
 
         annos: List[AnnType] = []
-        masks, ins_ids, attributes, cat_ids = parse_bitmasks(bitmask)
+        masks, ins_ids, attributes, cat_ids = parse_bitmask(
+            bitmask, stacked=True
+        )
         for mask, ins_id, attribute, cat_id in zip(
             masks, ins_ids, attributes, cat_ids
         ):

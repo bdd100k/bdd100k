@@ -6,8 +6,8 @@ import numpy as np
 from PIL import Image
 from torch import Tensor
 
-from ..eval.lane import get_foreground, sub_task_cats, sub_task_funcs
-from .sem_seg_dataset import BDD100KSemSegDataset
+from ...eval.lane import get_foreground, sub_task_cats, sub_task_funcs
+from .sem_seg import BDD100KSemSegDataset
 
 
 class BDD100KLaneMarkingDataset(BDD100KSemSegDataset):

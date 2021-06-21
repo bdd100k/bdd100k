@@ -18,7 +18,7 @@ from torch import Tensor
 from torchvision.datasets import VisionDataset
 from torchvision.transforms import Compose
 
-from ..common.utils import load_bdd100k_config
+from ...common.utils import load_bdd100k_config
 
 
 def annotations_to_tensors(

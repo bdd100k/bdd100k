@@ -45,7 +45,7 @@ from tqdm import tqdm
 from ..common.bitmask import (
     bitmask_intersection_rate,
     gen_blank_bitmask,
-    parse_bitmasks,
+    parse_bitmask,
 )
 from ..common.utils import reorder_preds
 from ..label.label import labels
@@ -115,12 +115,12 @@ def pq_per_image(gt_path: str, pred_path: str = "") -> PQStat:
     """Calculate PQStar for each image."""
     gt_masks = np.asarray(Image.open(gt_path))
     if not pred_path:
-        pred_masks = gen_blank_bitmask(gt_masks.shape)
+        pred_masks = gen_blank_bitmask(*gt_masks.shape)
     else:
         pred_masks = np.asarray(Image.open(pred_path))
 
-    gt_masks, gt_ids, gt_attrs, gt_cats = parse_bitmasks(gt_masks)
-    pred_masks, pred_ids, pred_attrs, pred_cats = parse_bitmasks(pred_masks)
+    gt_masks, gt_ids, gt_attrs, gt_cats = parse_bitmask(gt_masks)
+    pred_masks, pred_ids, pred_attrs, pred_cats = parse_bitmask(pred_masks)
 
     gt_valids = np.logical_not((gt_attrs & 3).astype(bool))
     pred_valids = np.logical_not((pred_attrs & 3).astype(bool))
@@ -161,8 +161,7 @@ def evaluate_pan_seg(
     pred_paths = reorder_preds(gt_paths, pred_paths)
     with Pool(nproc) as pool:
         pq_stats = pool.starmap(
-            pq_per_image,
-            tqdm(zip(gt_paths, pred_paths), total=len(gt_paths)),
+            pq_per_image, tqdm(zip(gt_paths, pred_paths), total=len(gt_paths)),
         )
     pq_stat = PQStat()
     for pq_stat_ in pq_stats:

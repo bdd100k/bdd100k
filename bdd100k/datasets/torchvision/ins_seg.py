@@ -13,9 +13,9 @@ from torch import Tensor
 from torchvision.datasets import VisionDataset
 from torchvision.transforms import Compose
 
-from ..common.bitmask import parse_bitmasks
-from ..common.utils import list_files, load_bdd100k_config
-from .det_dataset import annotations_to_tensors
+from ...common.bitmask import parse_bitmask
+from ...common.utils import list_files, load_bdd100k_config
+from .det import annotations_to_tensors
 
 
 def annotations_to_tensors_seg(
@@ -24,7 +24,7 @@ def annotations_to_tensors_seg(
     """Convert a list of annotations to a dict of torchTensor for seg."""
     segm_list = [anno["segmentation"] for anno in annos]
     mask_list = [
-        torch.tensor(  # pylint: disable=not-callable
+        torch.tensor(  # pylint: disable=no-member
             segm, dtype=torch.uint8  # pylint: disable=no-member
         )
         for segm in segm_list
@@ -75,7 +75,9 @@ class BDD100KInsSegDataset(VisionDataset):  # type: ignore
         bitmask = np.asarray(Image.open(path))
 
         annos: List[AnnType] = []
-        masks, ins_ids, attributes, cat_ids = parse_bitmasks(bitmask)
+        masks, ins_ids, attributes, cat_ids = parse_bitmask(
+            bitmask, stacked=True
+        )
         i = 0
         for mask, _, attribute, cat_id in zip(
             masks, ins_ids, attributes, cat_ids

@@ -18,8 +18,8 @@ from torch import Tensor
 from torchvision.datasets import VisionDataset
 from torchvision.transforms import Compose
 
-from ..common.utils import load_bdd100k_config
-from .det_dataset import annotations_to_tensors
+from ...common.utils import load_bdd100k_config
+from .det import annotations_to_tensors
 
 KEYTYPE = Tuple[int, int, int]
 

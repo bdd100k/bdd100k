@@ -5,8 +5,8 @@ from typing import Dict
 import torch
 from torch import Tensor
 
-from ..label.to_mask import STUFF_NUM
-from .ins_seg_dataset import BDD100KInsSegDataset
+from ...label.to_mask import STUFF_NUM
+from .ins_seg import BDD100KInsSegDataset
 
 
 class BDD100KPanSegDataset(BDD100KInsSegDataset):

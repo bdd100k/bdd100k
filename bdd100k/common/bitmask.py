@@ -7,7 +7,7 @@ import numpy as np
 MAX_DET = 100
 
 
-def gen_blank_bitmask(shape: Tuple[int]) -> np.ndarray:
+def gen_blank_bitmask(shape: Tuple[int, ...]) -> np.ndarray:
     """Generate blank bitmask given the shape."""
     assert shape[-1] == 4
     bitmask = np.zeros(shape, dtype=np.uint8)
@@ -16,10 +16,8 @@ def gen_blank_bitmask(shape: Tuple[int]) -> np.ndarray:
     return bitmask
 
 
-def parse_bitmasks(
-    bitmask: np.ndarray,
-) -> List[np.ndarray]:
-    """Parse information from bitmasks and compress its value range.
+def parse_bitmask(bitmask: np.ndarray, stacked=False) -> List[np.ndarray]:
+    """Parse information from a bitmask and compress its value range.
 
     The compression works like: [4, 2, 9] --> [2, 1, 3]
     """
@@ -33,11 +31,19 @@ def parse_bitmasks(
     category_ids = np.zeros(instance_ids.shape, dtype=instance_ids.dtype)
     attributes = np.zeros(instance_ids.shape, dtype=instance_ids.dtype)
 
-    masks = np.zeros(bitmask.shape[:2], dtype=np.int32)
+    if not stacked:
+        masks = np.zeros(bitmask.shape[:2], dtype=np.int32)
+    else:
+        masks = np.zeros(
+            (*bitmask.shape[:2], len(instance_ids)), dtype=np.int32
+        )
     for i, instance_id in enumerate(instance_ids):
         mask_inds_i = instance_map == instance_id
-        # 0 is for the background
-        masks[mask_inds_i] = i + 1
+        if not stacked:
+            # 0 is for the background
+            masks[mask_inds_i] = i + 1
+        else:
+            masks[mask_inds_i, i] = 1
 
         attributes_i = np.unique(attributes_map[mask_inds_i])
         assert attributes_i.shape[0] == 1

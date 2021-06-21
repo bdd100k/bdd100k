@@ -1,6 +1,6 @@
 """BDD100K drivable area Dataset for pytorch."""
 
-from .sem_seg_dataset import BDD100KSemSegDataset
+from .sem_seg import BDD100KSemSegDataset
 
 
 class BDD100KDrivableDataset(BDD100KSemSegDataset):
