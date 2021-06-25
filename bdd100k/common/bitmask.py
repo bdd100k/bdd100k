@@ -3,11 +3,12 @@
 from typing import List, Tuple
 
 import numpy as np
+import numpy.typing as npt
 
 MAX_DET = 100
 
 
-def gen_blank_bitmask(shape: Tuple[int]) -> np.ndarray:
+def gen_blank_bitmask(shape: Tuple[int, ...]) -> npt.NDArray[np.uint8]:
     """Generate blank bitmask given the shape."""
     assert shape[-1] == 4
     bitmask = np.zeros(shape, dtype=np.uint8)
@@ -17,8 +18,8 @@ def gen_blank_bitmask(shape: Tuple[int]) -> np.ndarray:
 
 
 def parse_bitmasks(
-    bitmask: np.ndarray,
-) -> List[np.ndarray]:
+    bitmask: npt.NDArray[np.uint8],
+) -> List[npt.NDArray[np.int32]]:
     """Parse information from bitmasks and compress its value range.
 
     The compression works like: [4, 2, 9] --> [2, 1, 3]
@@ -51,8 +52,8 @@ def parse_bitmasks(
 
 
 def bitmask_intersection_rate(
-    gt_masks: np.ndarray, pred_masks: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
+    gt_masks: npt.NDArray[np.int32], pred_masks: npt.NDArray[np.int32]
+) -> Tuple[npt.NDArray[np.float32], npt.NDArray[np.float32]]:
     """Returns the intersection over the area of the predicted box."""
     assert gt_masks.shape == pred_masks.shape
     m: int = np.max(gt_masks)
@@ -69,7 +70,7 @@ def bitmask_intersection_rate(
     gt_areas = conf_matrix.sum(axis=1, keepdims=True)[1:, :]
     pred_areas = conf_matrix.sum(axis=0, keepdims=True)[:, 1:]
 
-    inter = conf_matrix[1:, 1:]
+    inter = conf_matrix[1:, 1:].astype(np.float32)
     union = gt_areas + pred_areas - inter
     ious = inter / union
     ious = np.where(union > 0, ious, 0.0)

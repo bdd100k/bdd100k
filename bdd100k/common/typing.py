@@ -19,6 +19,7 @@ import sys
 from typing import Dict, List, Optional
 
 import numpy as np
+import numpy.typing as npt
 from pydantic import BaseModel
 from scalabel.label.typing import Config
 
@@ -37,7 +38,7 @@ class InstanceType(TypedDict, total=False):
     occluded: bool
     crowd: bool
     ignored: bool
-    mask: np.ndarray
+    mask: npt.NDArray[np.uint8]
     bbox: List[float]
     area: float
 

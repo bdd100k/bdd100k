@@ -64,6 +64,7 @@ from multiprocessing import Pool
 from typing import Callable, Dict, List
 
 import numpy as np
+import numpy.typing as npt
 from PIL import Image
 from skimage.morphology import (  # type: ignore
     binary_dilation,
@@ -81,7 +82,9 @@ TOTAL = "total"
 
 
 def eval_lane_per_threshold(
-    gt_mask: np.ndarray, pd_mask: np.ndarray, bound_th: float = 0.008
+    gt_mask: npt.NDArray[np.uint8],
+    pd_mask: npt.NDArray[np.uint8],
+    bound_th: float = 0.008,
 ) -> float:
     """Compute mean,recall and decay from per-threshold evaluation."""
     bound_pix = (
@@ -128,8 +131,8 @@ def eval_lane_per_threshold(
 
 
 def get_lane_class(
-    byte: np.ndarray, value: int, offset: int, width: int
-) -> np.ndarray:
+    byte: npt.NDArray[np.uint8], value: int, offset: int, width: int
+) -> npt.NDArray[np.uint8]:
     """Extract the lane class given offset, width and value."""
     assert byte.dtype == "uint8"
     assert 0 <= value < (1 << 8)
@@ -141,7 +144,7 @@ def get_lane_class(
 
 def lane_class_func(
     offset: int, width: int
-) -> Callable[[np.ndarray, int], np.ndarray]:
+) -> Callable[[npt.NDArray[np.uint8], int], npt.NDArray[np.uint8]]:
     """Get the function for extracting the specific lane class."""
     return partial(get_lane_class, offset=offset, width=width)
 
@@ -161,9 +164,9 @@ sub_task_cats: Dict[str, List[str]] = dict(
 
 def eval_lane_per_frame(
     gt_path: str, pred_path: str, bound_ths: List[float]
-) -> Dict[str, np.ndarray]:
+) -> Dict[str, npt.NDArray[np.float32]]:
     """Compute mean,recall and decay from per-frame evaluation."""
-    task2arr: Dict[str, np.ndarray] = dict()  # str -> 2d array
+    task2arr: Dict[str, npt.NDArray[np.float32]] = dict()  # str -> 2d array
     gt_byte = np.asarray(Image.open(gt_path), dtype=np.uint8)
     if not pred_path:
         pred_byte = np.zeros_like(gt_byte, dtype=np.uint8)
@@ -182,16 +185,16 @@ def eval_lane_per_frame(
                 for bound_th in bound_ths
             ]
             task_scores.append(cat_scores)
-        task2arr[task_name] = np.array(task_scores)
+        task2arr[task_name] = np.array(task_scores, np.float32)
 
     return task2arr
 
 
 def merge_results(
-    task2arr_list: List[Dict[str, np.ndarray]]
-) -> Dict[str, np.ndarray]:
+    task2arr_list: List[Dict[str, npt.NDArray[np.float32]]]
+) -> Dict[str, npt.NDArray[np.float32]]:
     """Merge F-score results from all images."""
-    task2arr: Dict[str, np.ndarray] = {
+    task2arr: Dict[str, npt.NDArray[np.float32]] = {
         task_name: np.stack(
             [task2arr_img[task_name] for task2arr_img in task2arr_list]
         ).mean(axis=0)
@@ -210,7 +213,7 @@ def merge_results(
 
 
 def create_table(
-    task2arr: Dict[str, np.ndarray],
+    task2arr: Dict[str, npt.NDArray[np.float32]],
     all_task_cats: Dict[str, List[str]],
     bound_ths: List[float],
 ) -> None:
@@ -240,7 +243,7 @@ def create_table(
 
 
 def render_results(
-    task2arr: Dict[str, np.ndarray],
+    task2arr: Dict[str, npt.NDArray[np.float32]],
     all_task_cats: Dict[str, List[str]],
     bound_ths: List[float],
 ) -> Dict[str, float]:

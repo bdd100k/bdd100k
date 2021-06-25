@@ -8,6 +8,7 @@ from typing import Callable, Dict, List
 import matplotlib  # type: ignore
 import matplotlib.pyplot as plt  # type: ignore
 import numpy as np
+import numpy.typing as npt
 from PIL import Image
 from scalabel.label.io import group_and_sort, load
 from scalabel.label.transforms import poly_to_patch
@@ -35,7 +36,7 @@ LANE_STYLE_MAP = {"solid": 0, "dashed": 1}
 def frame_to_mask(
     out_path: str,
     shape: ImageSize,
-    colors: List[np.ndarray],
+    colors: List[npt.NDArray[np.uint8]],
     poly2ds: List[List[Poly2D]],
     with_instances: bool = True,
     back_color: int = 0,
@@ -95,7 +96,7 @@ def frame_to_mask(
 
 def set_instance_color(
     label: Label, category_id: int, ann_id: int
-) -> np.ndarray:
+) -> npt.NDArray[np.uint8]:
     """Set the color for an instance given its attributes and ID."""
     attributes = label.attributes
     if attributes is None:
@@ -117,7 +118,7 @@ def set_instance_color(
     return color
 
 
-def set_lane_color(label: Label, category_id: int) -> np.ndarray:
+def set_lane_color(label: Label, category_id: int) -> npt.NDArray[np.uint8]:
     """Set the color for the lane given its attributes and category."""
     attributes = label.attributes
     if attributes is None:
@@ -137,7 +138,7 @@ def frames_to_masks(
     nproc: int,
     out_paths: List[str],
     shapes: List[ImageSize],
-    colors_list: List[List[np.ndarray]],
+    colors_list: List[List[npt.NDArray[np.uint8]]],
     poly2ds_list: List[List[List[Poly2D]]],
     with_instances: bool = True,
     back_color: int = 0,
@@ -174,7 +175,7 @@ def seg_to_masks(
 
     out_paths: List[str] = []
     shapes: List[ImageSize] = []
-    colors_list: List[List[np.ndarray]] = []
+    colors_list: List[List[npt.NDArray[np.uint8]]] = []
     poly2ds_list: List[List[List[Poly2D]]] = []
 
     categories = dict(
@@ -202,7 +203,7 @@ def seg_to_masks(
                 raise ValueError("Image shape not defined!")
         shapes.append(img_shape)
 
-        colors: List[np.ndarray] = []
+        colors: List[npt.NDArray[np.uint8]] = []
         poly2ds: List[List[Poly2D]] = []
         colors_list.append(colors)
         poly2ds_list.append(poly2ds)
@@ -264,7 +265,7 @@ def insseg_to_bitmasks(
 
     out_paths: List[str] = []
     shapes: List[ImageSize] = []
-    colors_list: List[List[np.ndarray]] = []
+    colors_list: List[List[npt.NDArray[np.uint8]]] = []
     poly2ds_list: List[List[List[Poly2D]]] = []
 
     categories = get_leaf_categories(config.categories)
@@ -288,7 +289,7 @@ def insseg_to_bitmasks(
                 raise ValueError("Image shape not defined!")
         shapes.append(img_shape)
 
-        colors: List[np.ndarray] = []
+        colors: List[npt.NDArray[np.uint8]] = []
         poly2ds: List[List[Poly2D]] = []
         colors_list.append(colors)
         poly2ds_list.append(poly2ds)
@@ -329,7 +330,7 @@ def panseg_to_bitmasks(
 
     out_paths: List[str] = []
     shapes: List[ImageSize] = []
-    colors_list: List[List[np.ndarray]] = []
+    colors_list: List[List[npt.NDArray[np.uint8]]] = []
     poly2ds_list: List[List[List[Poly2D]]] = []
     cat_name2id = {cat.name: cat.id for cat in labels}
 
@@ -351,7 +352,7 @@ def panseg_to_bitmasks(
                 raise ValueError("Image shape not defined!")
         shapes.append(img_shape)
 
-        colors: List[np.ndarray] = []
+        colors: List[npt.NDArray[np.uint8]] = []
         poly2ds: List[List[Poly2D]] = []
         colors_list.append(colors)
         poly2ds_list.append(poly2ds)
@@ -399,7 +400,7 @@ def segtrack_to_bitmasks(
 
     out_paths: List[str] = []
     shapes: List[ImageSize] = []
-    colors_list: List[List[np.ndarray]] = []
+    colors_list: List[List[npt.NDArray[np.uint8]]] = []
     poly2ds_list: List[List[List[Poly2D]]] = []
 
     categories = get_leaf_categories(config.categories)
@@ -430,7 +431,7 @@ def segtrack_to_bitmasks(
                     raise ValueError("Image shape not defined!")
             shapes.append(img_shape)
 
-            colors: List[np.ndarray] = []
+            colors: List[npt.NDArray[np.uint8]] = []
             poly2ds: List[List[Poly2D]] = []
             colors_list.append(colors)
             poly2ds_list.append(poly2ds)

@@ -10,6 +10,7 @@ from multiprocessing import Pool
 from typing import Dict, List, Set, Tuple
 
 import numpy as np
+import numpy.typing as npt
 from PIL import Image
 from tqdm import tqdm
 
@@ -20,8 +21,10 @@ from ..label.to_mask import IGNORE_LABEL
 
 
 def fast_hist(
-    groundtruth: np.ndarray, prediction: np.ndarray, size: int
-) -> np.ndarray:
+    groundtruth: npt.NDArray[np.uint8],
+    prediction: npt.NDArray[np.uint8],
+    size: int,
+) -> npt.NDArray[np.uint8]:
     """Compute the histogram."""
     prediction = prediction.copy()
     prediction[prediction >= size] = size - 1
@@ -32,9 +35,11 @@ def fast_hist(
     ).reshape(size, size)
 
 
-def per_class_iu(hist: np.ndarray) -> np.ndarray:
+def per_class_iu(hist: npt.NDArray[np.uint8]) -> npt.NDArray[np.float32]:
     """Calculate per class iou."""
-    ious = np.diag(hist) / (hist.sum(1) + hist.sum(0) - np.diag(hist))
+    ious = np.diag(hist).astype(np.float32) / (
+        hist.sum(1) + hist.sum(0) - np.diag(hist)
+    )
     ious[np.isnan(ious)] = 0
     # Last class as `ignored`
     return ious[:-1]  # type: ignore
@@ -42,7 +47,7 @@ def per_class_iu(hist: np.ndarray) -> np.ndarray:
 
 def per_image_hist(
     gt_path: str, pred_path: str = "", num_classes: int = 2
-) -> Tuple[np.ndarray, Set[int]]:
+) -> Tuple[npt.NDArray[np.uint8], Set[int]]:
     """Calculate per image hist."""
     assert num_classes >= 2
     assert num_classes <= IGNORE_LABEL
@@ -52,9 +57,9 @@ def per_image_hist(
     gt_id_set = set(np.unique(gt).tolist())
 
     if not pred_path:
-        pred = np.ones_like(gt, dtype=np.uint8) * (num_classes - 1)
+        pred = np.uint8(np.ones_like(gt) * (num_classes - 1))
     else:
-        pred = np.asarray(Image.open(pred_path, "r"), dtype=np.uint8)
+        pred = np.uint8(Image.open(pred_path, "r"))
     hist = fast_hist(gt.flatten(), pred.flatten(), num_classes)
     return hist, gt_id_set
 

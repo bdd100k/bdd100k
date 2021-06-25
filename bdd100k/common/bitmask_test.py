@@ -19,8 +19,8 @@ class TestMaskIntersectionRate(unittest.TestCase):
         b_bitmask[:7, :7] = 1
 
         ious, ioas = bitmask_intersection_rate(a_bitmask, b_bitmask)
-        gt_ious = np.array([[40 / 73, 24 / 91], [9 / 76, 9 / 20]])
-        gt_ioas = np.array([[40 / 49, 24 / 51], [9 / 49, 27 / 51]])
+        gt_ious = np.array([[40 / 73, 24 / 91], [9 / 76, 9 / 20]], np.float32)
+        gt_ioas = np.array([[40 / 49, 24 / 51], [9 / 49, 27 / 51]], np.float32)
         for i in range(2):
             for j in range(2):
                 self.assertAlmostEqual(ious[i, j], gt_ious[i, j])
