@@ -12,7 +12,9 @@ PALETTES: Dict[str, List[int]] = {}
 def get_palette(mode: str) -> List[int]:
     """Generate mapping for the required task."""
     if mode in ["ins_seg", "pan_seg"]:
-        palette = (np.random.rand(768) * 255).astype(np.uint8).tolist()
+        palette = (
+            np.multiply(np.random.rand(768), 255).astype(np.uint8).tolist()
+        )
         palette[:3] = [0, 0, 0]
         if mode == "ins_seg":
             assert isinstance(palette, list)
@@ -31,7 +33,9 @@ def get_palette(mode: str) -> List[int]:
         return PALETTES[mode]
 
     if mode == "seg_track":
-        palette = (np.random.rand(768) * 255).astype(np.uint8).tolist()
+        palette = (
+            np.multiply(np.random.rand(768), 255).astype(np.uint8).tolist()
+        )
         palette[:3] = [0, 0, 0]
     else:
         color_mapping = {

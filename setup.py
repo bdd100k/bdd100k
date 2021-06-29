@@ -31,7 +31,7 @@ setuptools.setup(
         "joblib",
         "matplotlib",
         "motmetrics",
-        "numpy==1.19.5",
+        "numpy",
         "pandas",
         "pillow",
         "pycocotools",

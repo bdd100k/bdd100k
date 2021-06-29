@@ -11,6 +11,7 @@ from typing import Dict, List, Set, Tuple
 
 import numpy as np
 from PIL import Image
+from scalabel.common.typing import NDArrayF64, NDArrayI32, NDArrayU8
 from tqdm import tqdm
 
 from ..common.logger import logger
@@ -20,21 +21,27 @@ from ..label.to_mask import IGNORE_LABEL
 
 
 def fast_hist(
-    groundtruth: np.ndarray, prediction: np.ndarray, size: int
-) -> np.ndarray:
+    groundtruth: NDArrayU8,
+    prediction: NDArrayU8,
+    size: int,
+) -> NDArrayI32:
     """Compute the histogram."""
     prediction = prediction.copy()
     prediction[prediction >= size] = size - 1
 
-    k = (groundtruth >= 0) & (groundtruth < size)
+    k = np.logical_and(
+        np.greater_equal(groundtruth, 0), np.less(groundtruth, size)
+    )
     return np.bincount(  # type: ignore
         size * groundtruth[k].astype(int) + prediction[k], minlength=size ** 2
     ).reshape(size, size)
 
 
-def per_class_iu(hist: np.ndarray) -> np.ndarray:
+def per_class_iu(hist: NDArrayU8) -> NDArrayF64:
     """Calculate per class iou."""
-    ious = np.diag(hist) / (hist.sum(1) + hist.sum(0) - np.diag(hist))
+    ious: NDArrayF64 = np.diag(hist) / (
+        hist.sum(1) + hist.sum(0) - np.diag(hist)
+    )
     ious[np.isnan(ious)] = 0
     # Last class as `ignored`
     return ious[:-1]  # type: ignore
@@ -42,7 +49,7 @@ def per_class_iu(hist: np.ndarray) -> np.ndarray:
 
 def per_image_hist(
     gt_path: str, pred_path: str = "", num_classes: int = 2
-) -> Tuple[np.ndarray, Set[int]]:
+) -> Tuple[NDArrayI32, Set[int]]:
     """Calculate per image hist."""
     assert num_classes >= 2
     assert num_classes <= IGNORE_LABEL
@@ -52,9 +59,9 @@ def per_image_hist(
     gt_id_set = set(np.unique(gt).tolist())
 
     if not pred_path:
-        pred = np.ones_like(gt, dtype=np.uint8) * (num_classes - 1)
+        pred = np.uint8(np.ones_like(gt) * (num_classes - 1))
     else:
-        pred = np.asarray(Image.open(pred_path, "r"), dtype=np.uint8)
+        pred = np.uint8(Image.open(pred_path, "r"))
     hist = fast_hist(gt.flatten(), pred.flatten(), num_classes)
     return hist, gt_id_set
 
@@ -92,7 +99,7 @@ def evaluate_segmentation(
         gt_id_set.update(gt_id_set_)
 
     logger.info("GT id set [%s]", ",".join(str(s) for s in gt_id_set))
-    ious = per_class_iu(hist) * 100
+    ious = np.multiply(per_class_iu(hist), 100)
     miou = np.mean(ious[list(gt_id_set)])
 
     iou_dict = dict(miou=miou)

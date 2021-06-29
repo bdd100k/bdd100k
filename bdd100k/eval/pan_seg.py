@@ -113,17 +113,17 @@ class PQStat:
 
 def pq_per_image(gt_path: str, pred_path: str = "") -> PQStat:
     """Calculate PQStar for each image."""
-    gt_masks = np.asarray(Image.open(gt_path))
+    gt_bitmask = np.asarray(Image.open(gt_path))
     if not pred_path:
-        pred_masks = gen_blank_bitmask(gt_masks.shape)
+        pred_bitmask = gen_blank_bitmask(gt_bitmask.shape)
     else:
-        pred_masks = np.asarray(Image.open(pred_path))
+        pred_bitmask = np.asarray(Image.open(pred_path), dtype=np.uint8)
 
-    gt_masks, gt_ids, gt_attrs, gt_cats = parse_bitmasks(gt_masks)
-    pred_masks, pred_ids, pred_attrs, pred_cats = parse_bitmasks(pred_masks)
+    gt_masks, gt_ids, gt_attrs, gt_cats = parse_bitmasks(gt_bitmask)
+    pred_masks, pred_ids, pred_attrs, pred_cats = parse_bitmasks(pred_bitmask)
 
-    gt_valids = np.logical_not((gt_attrs & 3).astype(bool))
-    pred_valids = np.logical_not((pred_attrs & 3).astype(bool))
+    gt_valids = np.logical_not(np.bitwise_and(gt_attrs, 3).astype(bool))
+    pred_valids = np.logical_not(np.bitwise_and(pred_attrs, 3).astype(bool))
 
     ious, iofs = bitmask_intersection_rate(gt_masks, pred_masks)
     cat_equals = gt_cats.reshape(-1, 1) == pred_cats.reshape(1, -1)

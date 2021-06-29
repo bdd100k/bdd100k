@@ -51,7 +51,7 @@ def parse_args() -> argparse.Namespace:
 
 def bitmask2pan_mask(mask_name: str, pan_name: str) -> None:
     """Convert bitmask into panoptic segmentation mask."""
-    bitmask = np.asarray(Image.open(mask_name)).astype(np.uint32)
+    bitmask = np.asarray(Image.open(mask_name), dtype=np.int32)
     height, width = bitmask.shape[:2]
 
     pan_fmt = np.zeros((height, width, 3), dtype=np.uint8)

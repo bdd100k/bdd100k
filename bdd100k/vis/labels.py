@@ -211,7 +211,7 @@ def convert_instance_rgb(label_path):
     image = np.array(Image.open(label_path, "r"))
     seg = image[:, :, 0]
     seg_color = seg2color(seg)
-    image = image.astype(np.uint32)
+    image = image.astype(np.int32)
     instance = image[:, :, 0] * 1000 + image[:, :, 1]
     # instance_color = instance2color(instance)
     Image.fromarray(seg).save(join(label_dir, label_name + "_train_id.png"))
@@ -239,7 +239,7 @@ def convert_drivable_rgb(label_path):
     image = np.array(Image.open(label_path, "r"))
     seg = image[:, :, 0]
     seg_color = drivable2color(seg)
-    image = image.astype(np.uint32)
+    image = image.astype(np.int32)
     instance = image[:, :, 0] * 1000 + image[:, :, 2]
     # instance_color = instance2color(instance)
     Image.fromarray(seg).save(join(label_dir, label_name + "_drivable_id.png"))

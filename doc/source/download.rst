@@ -253,9 +253,9 @@ This is a subset of the 100K videos, but the videos are resampled to 5Hz from 30
 label id but objects across videos are always distinct even if they have the same id.
 
 +------+----------------------------------+
-| Size | 104MB                            |
+| Size | 115MB                            |
 +------+----------------------------------+
-| md5  | 931813bcec4e0483f57b443c4cbd6c5c |
+| md5  | 6be40e0ca56a83ddeba2ed6bff50f9e6 |
 +------+----------------------------------+
 
 :: 
@@ -314,9 +314,9 @@ The bitmask format is explained at: :ref:`Instance Segmentation Format <bitmask>
 
 
 +------+----------------------------------+
-| Size | 390MB                            |
+| Size | 418MB                            |
 +------+----------------------------------+
-| md5  | bfb965633c3e34a3fce1bf892ba8f519 |
+| md5  | c29fb3fc54b119c8e5d980ce74d7b8b6 |
 +------+----------------------------------+
 
 :: 

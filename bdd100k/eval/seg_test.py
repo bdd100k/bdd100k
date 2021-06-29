@@ -13,9 +13,9 @@ class TestFastHist(unittest.TestCase):
 
     def test_a_mock_case(self) -> None:
         """Test the correctness for fast_hist."""
-        a_bitmask = np.zeros((10, 10), dtype=np.int32)
+        a_bitmask = np.zeros((10, 10), dtype=np.uint8)
         a_bitmask[4:, 4:] = 1
-        b_bitmask = np.ones((10, 10), dtype=np.int32)
+        b_bitmask = np.ones((10, 10), dtype=np.uint8)
         b_bitmask[:7, :7] = 0
 
         hist = fast_hist(a_bitmask, b_bitmask, 2)
@@ -24,9 +24,10 @@ class TestFastHist(unittest.TestCase):
 
     def test_pred_overflow(self) -> None:
         """Test the blank prediction overflows."""
-        a_bitmask = np.zeros((10, 10), dtype=np.int32)
+        a_bitmask = np.zeros((10, 10), dtype=np.uint8)
         a_bitmask[4:, 4:] = 1
-        b_bitmask = np.ones((10, 10), dtype=np.int32) * 2
+        b_bitmask = np.ones((10, 10), dtype=np.uint8)
+        b_bitmask *= 2
         b_bitmask[:7, :7] = 0
 
         hist = fast_hist(a_bitmask, b_bitmask, 2)

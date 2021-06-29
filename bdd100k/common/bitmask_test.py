@@ -4,6 +4,7 @@ import unittest
 
 import numpy as np
 from PIL import Image
+from scalabel.common.typing import NDArrayI32
 
 from .bitmask import bitmask_intersection_rate, parse_bitmasks
 
@@ -15,7 +16,7 @@ class TestMaskIntersectionRate(unittest.TestCase):
         """Check mask intersection rate correctness."""
         a_bitmask = np.ones((10, 10), dtype=np.int32)
         a_bitmask[4:, 4:] = 2
-        b_bitmask = np.ones((10, 10), dtype=np.int32) * 2
+        b_bitmask: NDArrayI32 = np.ones((10, 10), dtype=np.int32) * 2
         b_bitmask[:7, :7] = 1
 
         ious, ioas = bitmask_intersection_rate(a_bitmask, b_bitmask)
