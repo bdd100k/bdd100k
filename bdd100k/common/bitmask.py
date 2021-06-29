@@ -3,12 +3,12 @@
 from typing import List, Tuple
 
 import numpy as np
-import numpy.typing as npt
+from scalabel.common.typing import NDArrayF64, NDArrayI32, NDArrayU8
 
 MAX_DET = 100
 
 
-def gen_blank_bitmask(shape: Tuple[int, ...]) -> npt.NDArray[np.uint8]:
+def gen_blank_bitmask(shape: Tuple[int, ...]) -> NDArrayU8:
     """Generate blank bitmask given the shape."""
     assert shape[-1] == 4
     bitmask = np.zeros(shape, dtype=np.uint8)
@@ -17,9 +17,7 @@ def gen_blank_bitmask(shape: Tuple[int, ...]) -> npt.NDArray[np.uint8]:
     return bitmask
 
 
-def parse_bitmasks(
-    bitmask: npt.NDArray[np.uint8],
-) -> List[npt.NDArray[np.int32]]:
+def parse_bitmasks(bitmask: NDArrayU8) -> List[NDArrayI32]:
     """Parse information from bitmasks and compress its value range.
 
     The compression works like: [4, 2, 9] --> [2, 1, 3]
@@ -52,8 +50,8 @@ def parse_bitmasks(
 
 
 def bitmask_intersection_rate(
-    gt_masks: npt.NDArray[np.int32], pred_masks: npt.NDArray[np.int32]
-) -> Tuple[npt.NDArray[np.float32], npt.NDArray[np.float32]]:
+    gt_masks: NDArrayI32, pred_masks: NDArrayI32
+) -> Tuple[NDArrayF64, NDArrayF64]:
     """Returns the intersection over the area of the predicted box."""
     assert gt_masks.shape == pred_masks.shape
     m: int = np.max(gt_masks)
@@ -63,14 +61,14 @@ def bitmask_intersection_rate(
     pred_masks = pred_masks.reshape(-1)
     pred_masks[pred_masks > MAX_DET] = 0
 
-    confusion = gt_masks * (1 + n) + pred_masks
+    confusion: NDArrayI32 = gt_masks * (1 + n) + pred_masks
     bin_num = (1 + m) * (1 + n)
-    histogram = np.histogram(confusion, bins=bin_num, range=(0, bin_num))[0]
-    conf_matrix = histogram.reshape(1 + m, 1 + n)
+    hist = np.histogram(confusion, bins=bin_num, range=(0, bin_num))[0]
+    conf_matrix = hist.reshape(1 + m, 1 + n)
     gt_areas = conf_matrix.sum(axis=1, keepdims=True)[1:, :]
     pred_areas = conf_matrix.sum(axis=0, keepdims=True)[:, 1:]
 
-    inter = conf_matrix[1:, 1:].astype(np.float32)
+    inter = conf_matrix[1:, 1:]
     union = gt_areas + pred_areas - inter
     ious = inter / union
     ious = np.where(union > 0, ious, 0.0)

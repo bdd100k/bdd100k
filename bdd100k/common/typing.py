@@ -18,9 +18,8 @@ the annotations in `ignored` class. To achieve this, setting
 import sys
 from typing import Dict, List, Optional
 
-import numpy as np
-import numpy.typing as npt
 from pydantic import BaseModel
+from scalabel.common.typing import NDArrayU8
 from scalabel.label.typing import Config
 
 if sys.version_info >= (3, 8):
@@ -38,7 +37,7 @@ class InstanceType(TypedDict, total=False):
     occluded: bool
     crowd: bool
     ignored: bool
-    mask: npt.NDArray[np.uint8]
+    mask: NDArrayU8
     bbox: List[float]
     area: float
 

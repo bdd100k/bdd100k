@@ -10,10 +10,14 @@ from multiprocessing import Pool
 from typing import Dict, List, Tuple
 
 import numpy as np
-import numpy.typing as npt
 from PIL import Image
 from pycocotools.cocoeval import COCOeval  # type: ignore
-from scalabel.common.typing import DictStrAny
+from scalabel.common.typing import (
+    DictStrAny,
+    NDArrayF64,
+    NDArrayI32,
+    NDArrayU8,
+)
 from scalabel.eval.detect import evaluate_workflow
 from scalabel.label.transforms import get_coco_categories
 from scalabel.label.typing import Config
@@ -24,8 +28,8 @@ from ..common.utils import list_files
 
 
 def parse_res_bitmasks(
-    ann_score: List[Tuple[int, float]], bitmask: npt.NDArray[np.uint8]
-) -> List[npt.NDArray[np.int32]]:
+    ann_score: List[Tuple[int, float]], bitmask: NDArrayU8
+) -> List[NDArrayI32]:
     """Parse information from result bitmasks and compress its value range."""
     bitmask = bitmask.astype(np.int32)
     category_map = bitmask[:, :, 0]
@@ -56,11 +60,11 @@ def parse_res_bitmasks(
     return [masks, np.array(ann_ids), np.array(scores), np.array(category_ids)]
 
 
-def get_mask_areas(masks: npt.NDArray[np.int32]) -> npt.NDArray[np.float32]:
+def get_mask_areas(masks: NDArrayI32) -> NDArrayF64:
     """Get mask areas from the compressed mask map."""
     # 0 for background
     ann_ids = np.sort(np.unique(masks))[1:]
-    areas = np.zeros((len(ann_ids)), dtype=np.float32)
+    areas = np.zeros((len(ann_ids)))
     for i, ann_id in enumerate(ann_ids):
         areas[i] = np.count_nonzero(ann_id == masks)
     return areas
@@ -154,8 +158,8 @@ class BDDInsSegEval(COCOeval):  # type: ignore
         gt_bitmask = np.asarray(Image.open(gt_path), dtype=np.uint8)
         gt_masks, _, gt_attrs, gt_cat_ids = parse_bitmasks(gt_bitmask)
         gt_areas = get_mask_areas(gt_masks)
-        gt_crowds = (gt_attrs & 2).astype(bool)
-        gt_ignores = (gt_attrs & 1).astype(bool)
+        gt_crowds = np.bitwise_and(gt_attrs, 2)
+        gt_ignores = np.bitwise_and(gt_attrs, 1)
 
         dt_path = os.path.join(self.dt_base, img_name)
         dt_bitmask = np.asarray(Image.open(dt_path), dtype=np.uint8)

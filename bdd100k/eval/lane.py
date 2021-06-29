@@ -64,8 +64,8 @@ from multiprocessing import Pool
 from typing import Callable, Dict, List
 
 import numpy as np
-import numpy.typing as npt
 from PIL import Image
+from scalabel.common.typing import NDArrayF64, NDArrayU8
 from skimage.morphology import (  # type: ignore
     binary_dilation,
     disk,
@@ -82,8 +82,8 @@ TOTAL = "total"
 
 
 def eval_lane_per_threshold(
-    gt_mask: npt.NDArray[np.uint8],
-    pd_mask: npt.NDArray[np.uint8],
+    gt_mask: NDArrayU8,
+    pd_mask: NDArrayU8,
     bound_th: float = 0.008,
 ) -> float:
     """Compute mean,recall and decay from per-threshold evaluation."""
@@ -131,20 +131,25 @@ def eval_lane_per_threshold(
 
 
 def get_lane_class(
-    byte: npt.NDArray[np.uint8], value: int, offset: int, width: int
-) -> npt.NDArray[np.uint8]:
+    byte: NDArrayU8, value: int, offset: int, width: int
+) -> NDArrayU8:
     """Extract the lane class given offset, width and value."""
-    assert byte.dtype == "uint8"
+    assert byte.dtype is np.dtype(np.uint8)
     assert 0 <= value < (1 << 8)
     assert 0 <= offset < 8
     assert 0 < width <= 8
-    lane_cls = (((byte >> offset) & ((1 << width) - 1)) == value).astype(bool)
+    lane_cls = np.equal(
+        np.bitwise_and(
+            np.right_shift(byte, offset), np.left_shift(1, width) - 1
+        ),
+        value,
+    )
     return lane_cls  # type: ignore
 
 
 def lane_class_func(
     offset: int, width: int
-) -> Callable[[npt.NDArray[np.uint8], int], npt.NDArray[np.uint8]]:
+) -> Callable[[NDArrayU8, int], NDArrayU8]:
     """Get the function for extracting the specific lane class."""
     return partial(get_lane_class, offset=offset, width=width)
 
@@ -164,9 +169,9 @@ sub_task_cats: Dict[str, List[str]] = dict(
 
 def eval_lane_per_frame(
     gt_path: str, pred_path: str, bound_ths: List[float]
-) -> Dict[str, npt.NDArray[np.float32]]:
+) -> Dict[str, NDArrayF64]:
     """Compute mean,recall and decay from per-frame evaluation."""
-    task2arr: Dict[str, npt.NDArray[np.float32]] = dict()  # str -> 2d array
+    task2arr: Dict[str, NDArrayF64] = dict()  # str -> 2d array
     gt_byte = np.asarray(Image.open(gt_path), dtype=np.uint8)
     if not pred_path:
         pred_byte = np.zeros_like(gt_byte, dtype=np.uint8)
@@ -178,23 +183,25 @@ def eval_lane_per_frame(
     for task_name, class_func in sub_task_funcs.items():
         task_scores: List[List[float]] = []
         for value in range(len(sub_task_cats[task_name])):
-            gt_mask = class_func(gt_byte, value) & gt_foreground
-            pd_mask = class_func(pred_byte, value) & pd_foreground
+            gt_mask = np.logical_and(class_func(gt_byte, value), gt_foreground)
+            pd_mask = np.logical_and(
+                class_func(pred_byte, value), pd_foreground
+            )
             cat_scores = [
                 eval_lane_per_threshold(gt_mask, pd_mask, bound_th)
                 for bound_th in bound_ths
             ]
             task_scores.append(cat_scores)
-        task2arr[task_name] = np.array(task_scores, np.float32)
+        task2arr[task_name] = np.array(task_scores)
 
     return task2arr
 
 
 def merge_results(
-    task2arr_list: List[Dict[str, npt.NDArray[np.float32]]]
-) -> Dict[str, npt.NDArray[np.float32]]:
+    task2arr_list: List[Dict[str, NDArrayF64]]
+) -> Dict[str, NDArrayF64]:
     """Merge F-score results from all images."""
-    task2arr: Dict[str, npt.NDArray[np.float32]] = {
+    task2arr: Dict[str, NDArrayF64] = {
         task_name: np.stack(
             [task2arr_img[task_name] for task2arr_img in task2arr_list]
         ).mean(axis=0)
@@ -213,7 +220,7 @@ def merge_results(
 
 
 def create_table(
-    task2arr: Dict[str, npt.NDArray[np.float32]],
+    task2arr: Dict[str, NDArrayF64],
     all_task_cats: Dict[str, List[str]],
     bound_ths: List[float],
 ) -> None:
@@ -243,7 +250,7 @@ def create_table(
 
 
 def render_results(
-    task2arr: Dict[str, npt.NDArray[np.float32]],
+    task2arr: Dict[str, NDArrayF64],
     all_task_cats: Dict[str, List[str]],
     bound_ths: List[float],
 ) -> Dict[str, float]:

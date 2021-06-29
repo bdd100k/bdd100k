@@ -10,8 +10,8 @@ from multiprocessing import Pool
 from typing import Dict, List, Set, Tuple
 
 import numpy as np
-import numpy.typing as npt
 from PIL import Image
+from scalabel.common.typing import NDArrayF64, NDArrayI32, NDArrayU8
 from tqdm import tqdm
 
 from ..common.logger import logger
@@ -21,23 +21,25 @@ from ..label.to_mask import IGNORE_LABEL
 
 
 def fast_hist(
-    groundtruth: npt.NDArray[np.uint8],
-    prediction: npt.NDArray[np.uint8],
+    groundtruth: NDArrayU8,
+    prediction: NDArrayU8,
     size: int,
-) -> npt.NDArray[np.uint8]:
+) -> NDArrayI32:
     """Compute the histogram."""
     prediction = prediction.copy()
     prediction[prediction >= size] = size - 1
 
-    k = (groundtruth >= 0) & (groundtruth < size)
+    k = np.logical_and(
+        np.greater_equal(groundtruth, 0), np.less(groundtruth, size)
+    )
     return np.bincount(  # type: ignore
         size * groundtruth[k].astype(int) + prediction[k], minlength=size ** 2
     ).reshape(size, size)
 
 
-def per_class_iu(hist: npt.NDArray[np.uint8]) -> npt.NDArray[np.float32]:
+def per_class_iu(hist: NDArrayU8) -> NDArrayF64:
     """Calculate per class iou."""
-    ious = np.diag(hist).astype(np.float32) / (
+    ious: NDArrayF64 = np.diag(hist) / (
         hist.sum(1) + hist.sum(0) - np.diag(hist)
     )
     ious[np.isnan(ious)] = 0
@@ -47,7 +49,7 @@ def per_class_iu(hist: npt.NDArray[np.uint8]) -> npt.NDArray[np.float32]:
 
 def per_image_hist(
     gt_path: str, pred_path: str = "", num_classes: int = 2
-) -> Tuple[npt.NDArray[np.uint8], Set[int]]:
+) -> Tuple[NDArrayI32, Set[int]]:
     """Calculate per image hist."""
     assert num_classes >= 2
     assert num_classes <= IGNORE_LABEL
@@ -97,7 +99,7 @@ def evaluate_segmentation(
         gt_id_set.update(gt_id_set_)
 
     logger.info("GT id set [%s]", ",".join(str(s) for s in gt_id_set))
-    ious = per_class_iu(hist) * 100
+    ious = np.multiply(per_class_iu(hist), 100)
     miou = np.mean(ious[list(gt_id_set)])
 
     iou_dict = dict(miou=miou)
