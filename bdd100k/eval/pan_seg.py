@@ -159,11 +159,19 @@ def evaluate_pan_seg(
     """Evaluate panoptic segmentation with BDD100K format."""
     start_time = time.time()
     pred_paths = reorder_preds(gt_paths, pred_paths)
-    with Pool(nproc) as pool:
-        pq_stats = pool.starmap(
-            pq_per_image,
-            tqdm(zip(gt_paths, pred_paths), total=len(gt_paths)),
-        )
+    if nproc > 1:
+        with Pool(nproc) as pool:
+            pq_stats = pool.starmap(
+                pq_per_image,
+                tqdm(zip(gt_paths, pred_paths), total=len(gt_paths)),
+            )
+    else:
+        pq_stats = [
+            pq_per_image(gt_path, pred_path)
+            for gt_path, pred_path in tqdm(
+                zip(gt_paths, pred_paths), total=len(gt_paths)
+            )
+        ]
     pq_stat = PQStat()
     for pq_stat_ in pq_stats:
         pq_stat += pq_stat_

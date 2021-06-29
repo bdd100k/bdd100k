@@ -87,11 +87,19 @@ def evaluate_segmentation(
 
     pred_paths = reorder_preds(gt_paths, pred_paths)
 
-    with Pool(nproc) as pool:
-        hist_and_gt_id_sets = pool.starmap(
-            partial(per_image_hist, num_classes=num_classes),
-            tqdm(zip(gt_paths, pred_paths), total=len(gt_paths)),
-        )
+    if nproc > 1:
+        with Pool(nproc) as pool:
+            hist_and_gt_id_sets = pool.starmap(
+                partial(per_image_hist, num_classes=num_classes),
+                tqdm(zip(gt_paths, pred_paths), total=len(gt_paths)),
+            )
+    else:
+        hist_and_gt_id_sets = [
+            per_image_hist(gt_path, pred_path, num_classes=num_classes)
+            for gt_path, pred_path in tqdm(
+                zip(gt_paths, pred_paths), total=len(gt_paths)
+            )
+        ]
     hist = np.zeros((num_classes, num_classes))
     gt_id_set = set()
     for (hist_, gt_id_set_) in hist_and_gt_id_sets:
