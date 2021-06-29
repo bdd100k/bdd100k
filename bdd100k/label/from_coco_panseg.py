@@ -44,7 +44,7 @@ def panseg2bitmask(
 ) -> None:
     """Convert COCO panoptic annotations of an image to BDD100K format."""
     pan_name = os.path.join(pan_mask_base, annotation["file_name"])
-    pan_fmt = np.array(Image.open(pan_name), dtype=np.uint32)
+    pan_fmt = np.array(Image.open(pan_name), dtype=np.int32)
     instance_map = pan_fmt[..., 0] + (pan_fmt[..., 1] << 8)
 
     height, width = pan_fmt.shape[:2]
