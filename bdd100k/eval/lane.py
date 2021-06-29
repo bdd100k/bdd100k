@@ -276,11 +276,19 @@ def evaluate_lane_marking(
 ) -> Dict[str, float]:
     """Evaluate F-score for lane marking from input folders."""
     pred_paths = reorder_preds(gt_paths, pred_paths)
-    with Pool(nproc) as pool:
-        task2arr_list = pool.starmap(
-            partial(eval_lane_per_frame, bound_ths=bound_ths),
-            tqdm(zip(gt_paths, pred_paths), total=len(gt_paths)),
-        )
+    if nproc > 1:
+        with Pool(nproc) as pool:
+            task2arr_list = pool.starmap(
+                partial(eval_lane_per_frame, bound_ths=bound_ths),
+                tqdm(zip(gt_paths, pred_paths), total=len(gt_paths)),
+            )
+    else:
+        task2arr_list = [
+            eval_lane_per_frame(gt_path, pred_path, bound_ths=bound_ths)
+            for gt_path, pred_path in tqdm(
+                zip(gt_paths, pred_paths), total=len(gt_paths)
+            )
+        ]
     task2arr = merge_results(task2arr_list)
 
     all_task_cats = sub_task_cats.copy()
