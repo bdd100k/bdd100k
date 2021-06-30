@@ -27,6 +27,7 @@ def fast_hist(
 ) -> NDArrayI32:
     """Compute the histogram."""
     prediction = prediction.copy()
+    # Out-of-range values as `ignored`
     prediction[prediction >= size] = size - 1
 
     k = np.logical_and(
@@ -59,6 +60,7 @@ def per_image_hist(
     gt_id_set = set(np.unique(gt).tolist())
 
     if not pred_path:
+        # Blank input feed as `ignored`
         pred = np.uint8(np.ones_like(gt) * (num_classes - 1))
     else:
         pred = np.uint8(Image.open(pred_path, "r"))
@@ -81,7 +83,7 @@ def evaluate_segmentation(
     }[mode]
     categories = [label.name for label in label_defs if label.trainId != 255]
     num_classes = {
-        "sem_seg": len(labels) + 1,  # add an ignored class
+        "sem_seg": len(labels) + 1,  # add an `ignored` class
         "drivable": len(drivables),  # `background` as `ignored`
     }[mode]
 
@@ -105,6 +107,9 @@ def evaluate_segmentation(
     for (hist_, gt_id_set_) in hist_and_gt_id_sets:
         hist += hist_
         gt_id_set.update(gt_id_set_)
+    # remove `ignored`
+    if num_classes - 1 in gt_id_set:
+        gt_id_set.remove(num_classes - 1)
 
     logger.info("GT id set [%s]", ",".join(str(s) for s in gt_id_set))
     ious = np.multiply(per_class_iu(hist), 100)
