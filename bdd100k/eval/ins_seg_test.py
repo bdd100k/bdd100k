@@ -33,8 +33,8 @@ class TestBDD100KInsSegEval(unittest.TestCase):
             "AR_max_100": 0.7083333333333334,
             "AR_small": 0.7083333333333334,
         }
-        for key in overall_reference:
-            self.assertAlmostEqual(result[key], overall_reference[key])
+        for key, val in overall_reference.items():
+            self.assertAlmostEqual(result[key], val)
 
 
 def create_test_file() -> None:
