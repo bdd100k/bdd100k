@@ -12,6 +12,7 @@ from typing import Dict, List, Tuple
 import numpy as np
 from PIL import Image
 from pycocotools.cocoeval import COCOeval  # type: ignore
+from scalabel.common.parallel import NPROC
 from scalabel.common.typing import (
     DictStrAny,
     NDArrayF64,
@@ -74,7 +75,7 @@ class BDDInsSegEval(COCOeval):  # type: ignore
     """Modify the COCO API to support bitmasks as input."""
 
     def __init__(
-        self, gt_base: str, dt_base: str, dt_json: str, nproc: int = 4
+        self, gt_base: str, dt_base: str, dt_json: str, nproc: int = NPROC
     ) -> None:
         """Initialize InsSeg eval."""
         super().__init__(iouType="segm")
@@ -272,8 +273,7 @@ def evaluate_ins_seg(
     pred_base: str,
     pred_score_file: str,
     config: Config,
-    out_dir: str = "none",
-    nproc: int = 4,
+    nproc: int = NPROC,
 ) -> Dict[str, float]:
     """Load the ground truth and prediction results.
 
@@ -282,7 +282,6 @@ def evaluate_ins_seg(
         pred_base: path to the prediciton bitmasks folder.
         pred_score_file: path tothe prediction scores.
         config: Config instance.
-        out_dir: output_directory.
         nproc: number of processes.
 
     Returns:
@@ -292,4 +291,4 @@ def evaluate_ins_seg(
     bdd_eval = BDDInsSegEval(ann_base, pred_base, pred_score_file, nproc)
     cat_ids = [category["id"] for category in categories]
     cat_names = [category["name"] for category in categories]
-    return evaluate_workflow(bdd_eval, cat_ids, cat_names, out_dir)
+    return evaluate_workflow(bdd_eval, cat_ids, cat_names)

@@ -35,7 +35,8 @@ class TestParseBitmasks(unittest.TestCase):
         """Check input parsing for the MOTS evaluation."""
         cur_dir = os.path.dirname(os.path.abspath(__file__))
         bitmask = np.asarray(
-            Image.open("{}/testcases/example_bitmask.png".format(cur_dir))
+            Image.open("{}/testcases/example_bitmask.png".format(cur_dir)),
+            dtype=np.uint8,
         )
         cvt_maps = parse_bitmasks(bitmask)
         gt_maps = [

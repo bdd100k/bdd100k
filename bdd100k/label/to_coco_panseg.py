@@ -8,6 +8,7 @@ from typing import Dict, List
 
 import numpy as np
 from PIL import Image
+from scalabel.common.parallel import NPROC
 from scalabel.label.coco_typing import (
     ImgType,
     PanopticAnnType,
@@ -38,7 +39,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--nproc",
         type=int,
-        default=4,
+        default=NPROC,
         help="number of processes for conversion",
     )
     parser.add_argument(
@@ -51,7 +52,7 @@ def parse_args() -> argparse.Namespace:
 
 def bitmask2pan_mask(mask_name: str, pan_name: str) -> None:
     """Convert bitmask into panoptic segmentation mask."""
-    bitmask = np.asarray(Image.open(mask_name), dtype=np.int32)
+    bitmask = np.asarray(Image.open(mask_name)).astype(dtype=np.int32)
     height, width = bitmask.shape[:2]
 
     pan_fmt = np.zeros((height, width, 3), dtype=np.uint8)
@@ -100,7 +101,7 @@ def bitmask2panseg_parallel(
     mask_base: str,
     pan_mask_base: str,
     images: List[ImgType],
-    nproc: int = 4,
+    nproc: int = NPROC,
 ) -> List[PanopticAnnType]:
     """Execute the bitmask conversion in parallel."""
     logger.info("Converting annotations...")
@@ -127,7 +128,7 @@ def bitmask2panseg_parallel(
 def bitmask2coco_pan_seg(
     mask_base: str,
     pan_mask_base: str,
-    nproc: int = 4,
+    nproc: int = NPROC,
 ) -> PanopticGtType:
     """Converting BDD100K Instance Segmentation Set to COCO format."""
     files = list_files(mask_base, suffix=".png")

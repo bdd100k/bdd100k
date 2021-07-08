@@ -36,8 +36,8 @@ class TestToCocoPanSeg(unittest.TestCase):
         os.makedirs(self.test_out, exist_ok=True)
         bitmask2pan_mask(mask_name, pan_name)
 
-        pan_mask = np.asarray(Image.open(pan_name))
-        gt_pan_mask = np.asarray(Image.open(gt_pan_name))
+        pan_mask = np.asarray(Image.open(pan_name), dtype=np.uint8)
+        gt_pan_mask = np.asarray(Image.open(gt_pan_name), dtype=np.uint8)
 
         self.assertTrue((pan_mask == gt_pan_mask).all())
 

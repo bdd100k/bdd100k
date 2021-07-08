@@ -34,8 +34,8 @@ class TestFromCocoPanSeg(unittest.TestCase):
         gt_mask_name = "{}/testcases/panseg_bdd100k/panseg_mask.png".format(
             self.cur_dir
         )
-        bitmask = np.asarray(Image.open(mask_name))
-        gt_bitmask = np.asarray(Image.open(gt_mask_name))
+        bitmask = np.asarray(Image.open(mask_name), dtype=np.uint8)
+        gt_bitmask = np.asarray(Image.open(gt_mask_name), dtype=np.uint8)
         self.assertTrue((bitmask == gt_bitmask).all())
 
     @classmethod

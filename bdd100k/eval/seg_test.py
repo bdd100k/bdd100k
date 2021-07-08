@@ -18,7 +18,7 @@ class TestFastHist(unittest.TestCase):
         b_bitmask = np.ones((10, 10), dtype=np.uint8)
         b_bitmask[:7, :7] = 0
 
-        hist = fast_hist(a_bitmask, b_bitmask, 2)
+        hist = fast_hist(a_bitmask, b_bitmask, 3)[:-1, :-1]
         gt_hist = np.array([[40, 24], [9, 27]])
         self.assertTrue((hist == gt_hist).all())
 
@@ -27,11 +27,11 @@ class TestFastHist(unittest.TestCase):
         a_bitmask = np.zeros((10, 10), dtype=np.uint8)
         a_bitmask[4:, 4:] = 1
         b_bitmask = np.ones((10, 10), dtype=np.uint8)
-        b_bitmask *= 2
+        b_bitmask *= 3
         b_bitmask[:7, :7] = 0
 
-        hist = fast_hist(a_bitmask, b_bitmask, 2)
-        gt_hist = np.array([[40, 24], [9, 27]])
+        hist = fast_hist(a_bitmask, b_bitmask, 3)[:-1, :-1]
+        gt_hist = np.array([[40, 0], [9, 0]])
         self.assertTrue((hist == gt_hist).all())
 
 
@@ -45,10 +45,10 @@ class TestPerImageHist(unittest.TestCase):
         gt_path = "{}/testcases/seg/gt/a.png".format(self.cur_dir)
         pred_path = "{}/testcases/seg/pred/a.png".format(self.cur_dir)
 
-        hist, id_set = per_image_hist(gt_path, pred_path, 2)
+        hist, id_set = per_image_hist(gt_path, pred_path, 3)
         gt_hist = np.array([[93, 1], [4, 2]])
         gt_id_set = set([0, 1])
-        self.assertTrue((hist == gt_hist).all())
+        self.assertTrue((hist[:-1, :-1] == gt_hist).all())
         self.assertSetEqual(id_set, gt_id_set)
 
     def test_blank_pred(self) -> None:
@@ -56,8 +56,8 @@ class TestPerImageHist(unittest.TestCase):
         gt_path = "{}/testcases/seg/gt/a.png".format(self.cur_dir)
         pred_path = ""
 
-        hist, id_set = per_image_hist(gt_path, pred_path, 2)
-        gt_hist = np.array([[0, 94], [0, 6]])
+        hist, id_set = per_image_hist(gt_path, pred_path, 3)
+        gt_hist = np.array([[0, 0, 94], [0, 0, 6], [0, 0, 0]])
         gt_id_set = set([0, 1])
         self.assertTrue((hist == gt_hist).all())
         self.assertSetEqual(id_set, gt_id_set)

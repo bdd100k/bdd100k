@@ -34,13 +34,15 @@ def acc_single_video_mots(  # pylint: disable=unused-argument
         assert os.path.isfile(gt)
         assert os.path.isfile(result)
 
-        gt_masks = np.asarray(Image.open(gt))
+        gt_bitmask = np.asarray(Image.open(gt), np.uint8)
         if not result:
-            res_masks = gen_blank_bitmask(gt_masks.shape)
+            res_bitmask = gen_blank_bitmask(gt_bitmask.shape)
         else:
-            res_masks = np.asarray(Image.open(result), dtype=np.uint8)
-        gt_masks, gt_ids, gt_attrs, gt_cats = parse_bitmasks(gt_masks)
-        pred_masks, pred_ids, pred_attrs, pred_cats = parse_bitmasks(res_masks)
+            res_bitmask = np.asarray(Image.open(result), dtype=np.uint8)
+        gt_masks, gt_ids, gt_attrs, gt_cats = parse_bitmasks(gt_bitmask)
+        pred_masks, pred_ids, pred_attrs, pred_cats = parse_bitmasks(
+            res_bitmask
+        )
         ious, iofs = bitmask_intersection_rate(gt_masks, pred_masks)
 
         gt_valids = np.logical_not(np.bitwise_and(gt_attrs, 3).astype(bool))

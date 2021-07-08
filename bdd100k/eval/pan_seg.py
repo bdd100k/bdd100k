@@ -39,6 +39,7 @@ from typing import Dict, List
 
 import numpy as np
 from PIL import Image
+from scalabel.common.parallel import NPROC
 from scalabel.label.coco_typing import PanopticCatType
 from tqdm import tqdm
 
@@ -113,7 +114,7 @@ class PQStat:
 
 def pq_per_image(gt_path: str, pred_path: str = "") -> PQStat:
     """Calculate PQStar for each image."""
-    gt_bitmask = np.asarray(Image.open(gt_path))
+    gt_bitmask = np.asarray(Image.open(gt_path), dtype=np.uint8)
     if not pred_path:
         pred_bitmask = gen_blank_bitmask(gt_bitmask.shape)
     else:
@@ -154,7 +155,7 @@ def pq_per_image(gt_path: str, pred_path: str = "") -> PQStat:
 
 
 def evaluate_pan_seg(
-    gt_paths: List[str], pred_paths: List[str], nproc: int = 4
+    gt_paths: List[str], pred_paths: List[str], nproc: int = NPROC
 ) -> Dict[str, float]:
     """Evaluate panoptic segmentation with BDD100K format."""
     start_time = time.time()
