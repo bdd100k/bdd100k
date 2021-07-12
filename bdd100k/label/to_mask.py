@@ -9,6 +9,7 @@ import matplotlib  # type: ignore
 import matplotlib.pyplot as plt  # type: ignore
 import numpy as np
 from PIL import Image
+from scalabel.common.parallel import NPROC
 from scalabel.common.typing import NDArrayU8
 from scalabel.label.io import group_and_sort, load
 from scalabel.label.transforms import poly_to_patch
@@ -166,7 +167,7 @@ def seg_to_masks(
     frames: List[Frame],
     out_base: str,
     config: Config,
-    nproc: int = 4,
+    nproc: int = NPROC,
     mode: str = "sem_seg",
     back_color: int = IGNORE_LABEL,
     closed: bool = True,
@@ -256,10 +257,7 @@ lanemark_to_masks: ToMasksFunc = partial(
 
 
 def insseg_to_bitmasks(
-    frames: List[Frame],
-    out_base: str,
-    config: Config,
-    nproc: int = 4,
+    frames: List[Frame], out_base: str, config: Config, nproc: int = NPROC
 ) -> None:
     """Converting instance segmentation poly2d to bitmasks."""
     os.makedirs(out_base, exist_ok=True)
@@ -321,10 +319,7 @@ def insseg_to_bitmasks(
 
 
 def panseg_to_bitmasks(
-    frames: List[Frame],
-    out_base: str,
-    config: Config,
-    nproc: int = 4,
+    frames: List[Frame], out_base: str, config: Config, nproc: int = NPROC
 ) -> None:
     """Converting panoptic segmentation poly2d to bitmasks."""
     os.makedirs(out_base, exist_ok=True)
@@ -391,10 +386,7 @@ def panseg_to_bitmasks(
 
 
 def segtrack_to_bitmasks(
-    frames: List[Frame],
-    out_base: str,
-    config: Config,
-    nproc: int = 4,
+    frames: List[Frame], out_base: str, config: Config, nproc: int = NPROC
 ) -> None:
     """Converting segmentation tracking poly2d to bitmasks."""
     frames_list = group_and_sort(frames)

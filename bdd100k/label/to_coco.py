@@ -9,6 +9,7 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 from PIL import Image
+from scalabel.common.parallel import NPROC
 from scalabel.label.coco_typing import AnnType, GtType, ImgType, VidType
 from scalabel.label.io import group_and_sort, load
 from scalabel.label.to_coco import (
@@ -71,7 +72,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--nproc",
         type=int,
-        default=4,
+        default=NPROC,
         help="number of processes for conversion",
     )
     parser.add_argument(
@@ -161,7 +162,7 @@ def bitmask2coco_wo_ids(image: ImgType, mask_base: str) -> List[AnnType]:
 
 
 def bitmask2coco_wo_ids_parallel(
-    mask_base: str, images: List[ImgType], nproc: int = 4
+    mask_base: str, images: List[ImgType], nproc: int = NPROC
 ) -> List[AnnType]:
     """Execute the bitmask conversion in parallel."""
     logger.info("Converting annotations...")
@@ -210,7 +211,7 @@ def bitmask2coco_with_ids_parallel(
     mask_names: List[str],
     category_ids_list: List[List[int]],
     instance_ids_list: List[List[int]],
-    nproc: int = 4,
+    nproc: int = NPROC,
 ) -> List[AnnType]:
     """Execute the bitmask conversion in parallel."""
     logger.info("Converting annotations...")
@@ -236,7 +237,7 @@ def bitmask2coco_with_ids_parallel(
 
 
 def bitmask2coco_ins_seg(
-    mask_base: str, config: Config, nproc: int = 4
+    mask_base: str, config: Config, nproc: int = NPROC
 ) -> GtType:
     """Converting BDD100K Instance Segmentation Set to COCO format."""
     files = list_files(mask_base, suffix=".png")
@@ -263,7 +264,7 @@ def bitmask2coco_ins_seg(
 
 
 def bitmask2coco_seg_track(
-    mask_base: str, config: Config, nproc: int = 4
+    mask_base: str, config: Config, nproc: int = NPROC
 ) -> GtType:
     """Converting BDD100K Instance Segmentation Set to COCO format."""
     videos: List[VidType] = []
@@ -301,7 +302,7 @@ def bitmask2coco_seg_track(
 
 
 def bdd100k2coco_ins_seg(
-    mask_base: str, frames: List[Frame], config: Config, nproc: int = 4
+    mask_base: str, frames: List[Frame], config: Config, nproc: int = NPROC
 ) -> GtType:
     """Converting BDD100K Instance Segmentation Set to COCO format."""
     image_id, ann_id = 0, 0
@@ -391,7 +392,7 @@ def bdd100k2coco_ins_seg(
 
 
 def bdd100k2coco_seg_track(
-    mask_base: str, frames: List[Frame], config: Config, nproc: int = 4
+    mask_base: str, frames: List[Frame], config: Config, nproc: int = NPROC
 ) -> GtType:
     """Converting BDD100K Segmentation Tracking Set to COCO format."""
     video_id, image_id, ann_id = 0, 0, 0

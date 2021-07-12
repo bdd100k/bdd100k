@@ -65,6 +65,7 @@ from typing import Callable, Dict, List
 
 import numpy as np
 from PIL import Image
+from scalabel.common.parallel import NPROC
 from scalabel.common.typing import NDArrayF64, NDArrayU8
 from skimage.morphology import (  # type: ignore
     binary_dilation,
@@ -272,7 +273,7 @@ def evaluate_lane_marking(
     gt_paths: List[str],
     pred_paths: List[str],
     bound_ths: List[float],
-    nproc: int = 4,
+    nproc: int = NPROC,
 ) -> Dict[str, float]:
     """Evaluate F-score for lane marking from input folders."""
     pred_paths = reorder_preds(gt_paths, pred_paths)

@@ -1,6 +1,7 @@
 """Convert coco to bdd100k format."""
 import argparse
 
+from scalabel.common.parallel import NPROC
 from scalabel.label.from_coco import run
 
 
@@ -20,7 +21,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--nproc",
         type=int,
-        default=4,
+        default=NPROC,
         help="number of processes for the conversion",
     )
     return parser.parse_args()

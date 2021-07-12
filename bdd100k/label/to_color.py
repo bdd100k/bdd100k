@@ -8,6 +8,7 @@ from typing import List
 
 import numpy as np
 from PIL import Image
+from scalabel.common.parallel import NPROC
 from tqdm import tqdm
 
 from ..common.logger import logger
@@ -41,7 +42,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--nproc",
         type=int,
-        default=4,
+        default=NPROC,
         help="number of processes for conversion.",
     )
     return parser.parse_args()
@@ -53,7 +54,7 @@ def mask_to_color(bitmask_file: str, colormap_file: str, mode: str) -> None:
     if mode in ["ins_seg", "pan_seg", "seg_track"]:
         bitmask = bitmask.split()[3]
     elif mode == "lane_mark":
-        array = np.asarray(bitmask)
+        array = np.asarray(bitmask, dtype=np.uint8)
         # 15 = (1 << 4) - 1, only take the last 4 bits
         array = array & 15
         bitmask = Image.fromarray(array)
@@ -66,7 +67,7 @@ def masks_to_colors(
     bitmasks_files: List[str],
     colormap_files: List[str],
     mode: str,
-    nproc: int,
+    nproc: int = NPROC,
 ) -> None:
     """Convert mask/bitmask to colormap for a list of images."""
     logger.info("Converting annotations...")
@@ -85,7 +86,7 @@ def image_dataset_to_colormap(
     in_base: str,
     out_base: str,
     mode: str,
-    nproc: int,
+    nproc: int = NPROC,
 ) -> None:
     """Convert instance segmentation bitmasks to labelmap."""
     if not os.path.isdir(out_base):
@@ -108,7 +109,7 @@ def video_dataset_to_colormap(
     in_base: str,
     out_base: str,
     mode: str,
-    nproc: int,
+    nproc: int = NPROC,
 ) -> None:
     """Convert segmentation tracking bitmasks to labelmap."""
     if not os.path.isdir(out_base):

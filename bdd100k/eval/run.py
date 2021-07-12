@@ -1,7 +1,11 @@
 """Evaluation helper functoins."""
 
 import argparse
+import json
+import os
 
+from scalabel.common.parallel import NPROC
+from scalabel.common.typing import DictStrAny
 from scalabel.eval.detect import evaluate_det
 from scalabel.eval.mot import acc_single_video_mot, evaluate_track
 from scalabel.label.io import group_and_sort, load
@@ -64,12 +68,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--nproc",
         type=int,
-        default=4,
+        default=NPROC,
         help="number of processes for evaluation",
     )
     # Flags for detection and instance segmentation
     parser.add_argument(
-        "--out-dir", type=str, default=".", help="Path to store output files"
+        "--out-file", type=str, default=".", help="Path to store output files"
     )
     # Flags for instance segmentation
     parser.add_argument(
@@ -92,8 +96,9 @@ def run() -> None:
     elif args.task in ["det", "ins_seg", "box_track", "seg_track"]:
         bdd100k_config = load_bdd100k_config(args.task)
 
+    results: DictStrAny = dict()
     if args.task == "det":
-        evaluate_det(
+        results = evaluate_det(
             bdd100k_to_scalabel(
                 load(args.gt, args.nproc).frames, bdd100k_config
             ),
@@ -101,19 +106,17 @@ def run() -> None:
                 load(args.result, args.nproc).frames, bdd100k_config
             ),
             bdd100k_config.scalabel,
-            args.out_dir,
         )
     elif args.task == "ins_seg":
-        evaluate_ins_seg(
+        results = evaluate_ins_seg(
             args.gt,
             args.result,
             args.score_file,
             bdd100k_config.scalabel,
-            args.out_dir,
             args.nproc,
         )
     elif args.task == "box_track":
-        evaluate_track(
+        results = evaluate_track(
             acc_single_video_mot,
             gts=group_and_sort(
                 bdd100k_to_scalabel(
@@ -131,7 +134,7 @@ def run() -> None:
             nproc=args.nproc,
         )
     elif args.task == "seg_track":
-        evaluate_track(
+        results = evaluate_track(
             acc_single_video_mots,
             gts=group_and_sort_files(
                 list_files(args.gt, ".png", with_prefix=True)
@@ -148,15 +151,23 @@ def run() -> None:
     gt_paths = list_files(args.gt, ".png", with_prefix=True)
     pred_paths = list_files(args.result, ".png", with_prefix=True)
     if args.task == "drivable":
-        evaluate_drivable(gt_paths, pred_paths, nproc=args.nproc)
+        results = evaluate_drivable(gt_paths, pred_paths, nproc=args.nproc)
     elif args.task == "lane_mark":
-        evaluate_lane_marking(
+        results = evaluate_lane_marking(
             gt_paths, pred_paths, [1.0, 2.0, 5.0, 10.0], nproc=args.nproc
         )
     elif args.task == "sem_seg":
-        evaluate_sem_seg(gt_paths, pred_paths, nproc=args.nproc)
+        results = evaluate_sem_seg(gt_paths, pred_paths, nproc=args.nproc)
     elif args.task == "pan_seg":
-        evaluate_pan_seg(gt_paths, pred_paths, nproc=args.nproc)
+        results = evaluate_pan_seg(gt_paths, pred_paths, nproc=args.nproc)
+
+    if args.out_file:
+        out_folder = os.path.split(args.out_file)[0]
+        print(out_folder)
+        if not os.path.exists(out_folder):
+            os.makedirs(out_folder)
+        with open(args.out_file, "w") as fp:
+            json.dump(results, fp, indent=2)
 
 
 if __name__ == "__main__":

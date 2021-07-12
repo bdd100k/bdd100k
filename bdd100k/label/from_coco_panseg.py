@@ -8,6 +8,7 @@ from multiprocessing import Pool
 
 import numpy as np
 from PIL import Image
+from scalabel.common.parallel import NPROC
 from scalabel.label.coco_typing import PanopticAnnType, PanopticGtType
 from tqdm import tqdm
 
@@ -28,7 +29,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--nproc",
         type=int,
-        default=4,
+        default=NPROC,
         help="number of processes for conversion",
     )
     parser.add_argument(
@@ -44,7 +45,7 @@ def panseg2bitmask(
 ) -> None:
     """Convert COCO panoptic annotations of an image to BDD100K format."""
     pan_name = os.path.join(pan_mask_base, annotation["file_name"])
-    pan_fmt = np.array(Image.open(pan_name), dtype=np.int32)
+    pan_fmt = np.asarray(Image.open(pan_name)).astype(dtype=np.int32)
     instance_map = pan_fmt[..., 0] + (pan_fmt[..., 1] << 8)
 
     height, width = pan_fmt.shape[:2]
@@ -73,7 +74,7 @@ def coco_pan_seg2bitmask(
     coco_pan_seg: PanopticGtType,
     pan_mask_base: str,
     mask_base: str,
-    nproc: int = 4,
+    nproc: int = NPROC,
 ) -> None:
     """Converting COCO panoptic segmentation dataset to BDD100K format."""
     logger.info("Converting annotations...")
