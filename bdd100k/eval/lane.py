@@ -94,19 +94,16 @@ def eval_lane_per_threshold(
         else np.ceil(bound_th * np.linalg.norm(gt_mask.shape))
     )
 
-    gt_skeleton = skeletonize(gt_mask)
-    pd_skeleton = skeletonize(pd_mask)
-
-    gt_dil = binary_dilation(gt_skeleton, disk(bound_pix))
-    pd_dil = binary_dilation(pd_skeleton, disk(bound_pix))
+    gt_dil = binary_dilation(gt_mask, disk(bound_pix))
+    pd_dil = binary_dilation(pd_mask, disk(bound_pix))
 
     # Get the intersection
-    gt_match = gt_skeleton * pd_dil
-    pd_match = pd_skeleton * gt_dil
+    gt_match = gt_mask * pd_dil
+    pd_match = pd_mask * gt_dil
 
     # Area of the intersection
-    n_gt = np.sum(gt_skeleton)
-    n_pd = np.sum(pd_skeleton)
+    n_gt = np.sum(gt_mask)
+    n_pd = np.sum(pd_mask)
 
     # Compute precision and recall
     if n_pd == 0 and n_gt > 0:

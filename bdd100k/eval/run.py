@@ -73,7 +73,7 @@ def parse_args() -> argparse.Namespace:
     )
     # Flags for detection and instance segmentation
     parser.add_argument(
-        "--out-file", type=str, default=".", help="Path to store output files"
+        "--out-file", type=str, default=None, help="Path to store output files"
     )
     # Flags for instance segmentation
     parser.add_argument(
@@ -154,7 +154,7 @@ def run() -> None:
         results = evaluate_drivable(gt_paths, pred_paths, nproc=args.nproc)
     elif args.task == "lane_mark":
         results = evaluate_lane_marking(
-            gt_paths, pred_paths, [1.0, 2.0, 5.0, 10.0], nproc=args.nproc
+            gt_paths, pred_paths, [1.0, 2.0, 5.0], nproc=args.nproc
         )
     elif args.task == "sem_seg":
         results = evaluate_sem_seg(gt_paths, pred_paths, nproc=args.nproc)
