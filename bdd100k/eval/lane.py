@@ -67,11 +67,7 @@ import numpy as np
 from PIL import Image
 from scalabel.common.parallel import NPROC
 from scalabel.common.typing import NDArrayF64, NDArrayU8
-from skimage.morphology import (  # type: ignore
-    binary_dilation,
-    disk,
-    skeletonize,
-)
+from skimage.morphology import binary_dilation, disk  # type: ignore
 from tabulate import tabulate
 from tqdm import tqdm
 
