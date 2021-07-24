@@ -1,3 +1,5 @@
+.. default-role:: code
+
 Data Download
 ---------------
 
@@ -90,8 +92,9 @@ even though there is a significant overlap.
 Labels
 ~~~~~~~
 
-Annotations of road objects, lanes, and drivable areas in JSON format released
-in 2018. Details at Github repo. We revised the detection annotations in 2020
+Annotations of road object detection in JSON format released
+in 2018. The video attributes, including `weather`, `scene`, and `timeofday`,
+are also stored in the downloaded json files. We revised the detection annotations in 2020
 and released them as Detection 2020 Labels in the list. You are recommended to
 use the new labels. This detection annotation set is kept for comparison with
 legacy results.
