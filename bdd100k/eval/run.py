@@ -163,7 +163,6 @@ def run() -> None:
 
     if args.out_file:
         out_folder = os.path.split(args.out_file)[0]
-        print(out_folder)
         if not os.path.exists(out_folder):
             os.makedirs(out_folder)
         with open(args.out_file, "w") as fp:
