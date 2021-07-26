@@ -14,39 +14,52 @@ The BDD100K toolkit depends on Python 3.7+. To install the python dependencies:
 Understanding the Data
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-After being unzipped, all the files will reside in a folder named ``bdd100k``. All
-the original videos are in ``bdd100k/videos`` and labels in ``bdd100k/labels``.
-``bdd100k/images`` contains the frame at 10th second in the corresponding video.
+You can start the Visualization by running:
 
+``python3 -m scalabel.vis.controller <args>``
 
-``bdd100k/labels`` contains json files based on `Scalabel Format
-<https://doc.scalabel.ai/format.html>`_ for training and validation sets. |vis_labels|_ provides examples to parse and
-visualize the labels.
-
-.. |vis_labels| replace:: ``bdd100k.vis.labels``
-.. _vis_labels: https://github.com/bdd100k/bdd100k/blob/master/bdd100k/vis/labels.py
-
-For example, you can view training data one by one
+Available arguments:
 
 .. code-block:: bash
 
-    python3 -m bdd100k.vis.labels --image-dir bdd100k/images/100k/train \
-        -l bdd100k/labels/bdd100k_labels_images_train.json
+    --image-dir IMAGE_DIR, -i IMAGE_DIR
+                            path to the image directory
+    --labels LABEL_PATH, -l LABEL_PATH
+                            path to the json file
+    --color-dir COLORMAP_DIR, -c COLORMAP_DIR
+                            path to the colormap directory
+    --scale SCALE, -s SCALE
+                            visualization size scale
+    --height HEIGHT
+                            height of the image(px)
+    --width WIDTH
+                            width of the image(px)
+    --no-attr
+                            do not show attributes
+    --no-box3d
+                            do not show 3D bouding boxes
+    --no-tags
+                            do not show tags on boxes or polygons
+    --no-vertices
+                            do not show vertices
+    --output_dir OUTPUT_DIR, -o OUTPUT_DIR
+                            output image directory with label visualization. If
+                            it is set, the images will be written to the output
+                            folder instead of being displayed interactively.
+    --nproc NUM_PROCESS
+                            number of processes for json loading and parsing
 
+In the visualization window, you may use these keys for controlling:
 
-Or export the drivable area in segmentation maps:
+.. code-block:: yaml
 
-.. code-block:: bash
-
-    python3 -m bdd100k.vis.labels --image-dir bdd100k/images/100k/train \
-        -l bdd100k/labels/bdd100k_labels_images_train.json \
-        -s 1 -o bdd100k/out_drivable_maps/train --drivable
-
-
-This exporting process will take a while, so we also provide ``Drivable Maps`` in
-the downloading page, which will be ``bdd100k/drivable_maps`` after decompressing.
-There are 3 possible labels on the maps: 0 for background, 1 for direct drivable
-area and 2 for alternative drivable area.
+    - n / p: Show next or previous image
+    - Space: Start / stop animation
+    - t: Toggle 2D / 3D bounding box (if avaliable)
+    - a: Toggle the display of the attribute tags on boxes or polygons.
+    - c: Toggle the display of polygon vertices.
+    - Up: Increase the size of polygon vertices.
+    - Down: Decrease the size of polygon vertices.
 
 
 Trajectories
