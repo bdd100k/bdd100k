@@ -66,18 +66,6 @@ class TestEvalLanePerThreshold(unittest.TestCase):
         self.assertAlmostEqual(eval_lane_per_threshold(a, b, 4), 2 / 3)
         self.assertAlmostEqual(eval_lane_per_threshold(a, b, 5), 1.0)
 
-    def test_two_vertical_border_lines(self) -> None:
-        """Check the correctness of the function in general cases."""
-        a = np.zeros((10, 10), dtype=bool)
-        b = np.zeros((10, 10), dtype=bool)
-        a[1:6, 1:4] = True
-        b[4:7, 3:8] = True
-
-        self.assertAlmostEqual(eval_lane_per_threshold(a, b, 2), 0.0)
-        self.assertAlmostEqual(eval_lane_per_threshold(a, b, 3), 0.4)
-        self.assertAlmostEqual(eval_lane_per_threshold(a, b, 4), 0.70588235)
-        self.assertAlmostEqual(eval_lane_per_threshold(a, b, 5), 1.0)
-
 
 class TestEvaluateLaneMarking(unittest.TestCase):
     """Test cases for the evaluate_lane_marking function."""
@@ -94,39 +82,39 @@ class TestEvaluateLaneMarking(unittest.TestCase):
             nproc=1,
         )
         gt_f_scores: Dict[str, float] = {
-            "1.0_direction_parallel": 79.46877879291574,
-            "2.0_direction_parallel": 87.61816039690531,
-            "1.0_direction_vertical": 58.9375575858315,
-            "2.0_direction_vertical": 75.23632079381062,
+            "1.0_direction_parallel": 85.26664133475094,
+            "2.0_direction_parallel": 90.4915559511542,
+            "1.0_direction_vertical": 70.5332826695019,
+            "2.0_direction_vertical": 80.98311190230838,
             "1.0_direction_avg": 100.0,
             "2.0_direction_avg": 100.0,
-            "1.0_style_solid": 79.46877879291574,
-            "2.0_style_solid": 87.61816039690531,
-            "1.0_style_dashed": 58.9375575858315,
-            "2.0_style_dashed": 75.23632079381062,
+            "1.0_style_solid": 85.26664133475094,
+            "2.0_style_solid": 90.4915559511542,
+            "1.0_style_dashed": 70.5332826695019,
+            "2.0_style_dashed": 80.98311190230838,
             "1.0_style_avg": 100.0,
             "2.0_style_avg": 100.0,
-            "1.0_category_crosswalk": 88.24432582570225,
-            "2.0_category_crosswalk": 93.82889258902341,
-            "1.0_category_double_other": 99.01265721381078,
+            "1.0_category_crosswalk": 92.17697635518259,
+            "2.0_category_crosswalk": 95.70112753111016,
+            "1.0_category_double_other": 99.82147747570991,
             "2.0_category_double_other": 100.0,
             "1.0_category_double_white": 100.0,
             "2.0_category_double_white": 100.0,
             "1.0_category_double_yellow": 100.0,
             "2.0_category_double_yellow": 100.0,
-            "1.0_category_road_curb": 75.0,
-            "2.0_category_road_curb": 75.16008049762166,
-            "1.0_category_single_other": 59.173962031069706,
-            "2.0_category_single_other": 75.48380881221992,
+            "1.0_category_road_curb": 75.33066960595205,
+            "2.0_category_road_curb": 79.34917317397218,
+            "1.0_category_single_other": 71.02916505202546,
+            "2.0_category_single_other": 86.25984707490902,
             "1.0_category_single_white": 100.0,
             "2.0_category_single_white": 100.0,
-            "1.0_category_single_yellow": 89.27983318704442,
-            "2.0_category_single_yellow": 99.98725140234575,
-            "1.0_category_avg": 83.48815417369305,
+            "1.0_category_single_yellow": 96.43828133485101,
+            "2.0_category_single_yellow": 100.0,
+            "1.0_category_avg": 94.79621737292219,
             "2.0_category_avg": 100.0,
-            "1.0_total_avg": 94.496051391231,
+            "1.0_total_avg": 98.26540579097406,
             "2.0_total_avg": 100.0,
-            "average": 97.2480256956155,
+            "average": 99.13270289548703,
         }
         for key, val in gt_f_scores.items():
             self.assertAlmostEqual(val, f_scores[key])
