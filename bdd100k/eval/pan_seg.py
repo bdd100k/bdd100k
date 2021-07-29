@@ -46,7 +46,7 @@ from tqdm import tqdm
 from ..common.bitmask import (
     bitmask_intersection_rate,
     gen_blank_bitmask,
-    parse_bitmasks,
+    parse_bitmask,
 )
 from ..common.utils import reorder_preds
 from ..label.label import labels
@@ -120,8 +120,8 @@ def pq_per_image(gt_path: str, pred_path: str = "") -> PQStat:
     else:
         pred_bitmask = np.asarray(Image.open(pred_path), dtype=np.uint8)
 
-    gt_masks, gt_ids, gt_attrs, gt_cats = parse_bitmasks(gt_bitmask)
-    pred_masks, pred_ids, pred_attrs, pred_cats = parse_bitmasks(pred_bitmask)
+    gt_masks, gt_ids, gt_attrs, gt_cats = parse_bitmask(gt_bitmask)
+    pred_masks, pred_ids, pred_attrs, pred_cats = parse_bitmask(pred_bitmask)
 
     gt_valids = np.logical_not(np.bitwise_and(gt_attrs, 3).astype(bool))
     pred_valids = np.logical_not(np.bitwise_and(pred_attrs, 3).astype(bool))

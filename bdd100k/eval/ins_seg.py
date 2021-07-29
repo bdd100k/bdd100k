@@ -24,11 +24,11 @@ from scalabel.label.transforms import get_coco_categories
 from scalabel.label.typing import Config
 from tqdm import tqdm
 
-from ..common.bitmask import bitmask_intersection_rate, parse_bitmasks
+from ..common.bitmask import bitmask_intersection_rate, parse_bitmask
 from ..common.utils import list_files
 
 
-def parse_res_bitmasks(
+def parse_res_bitmask(
     ann_score: List[Tuple[int, float]], bitmask: NDArrayU8
 ) -> List[NDArrayI32]:
     """Parse information from result bitmasks and compress its value range."""
@@ -163,14 +163,14 @@ class BDDInsSegEval(COCOeval):  # type: ignore
 
         gt_path = os.path.join(self.gt_base, img_name)
         gt_bitmask = np.asarray(Image.open(gt_path), dtype=np.uint8)
-        gt_masks, _, gt_attrs, gt_cat_ids = parse_bitmasks(gt_bitmask)
+        gt_masks, _, gt_attrs, gt_cat_ids = parse_bitmask(gt_bitmask)
         gt_areas = get_mask_areas(gt_masks)
         gt_crowds = np.bitwise_and(gt_attrs, 2)
         gt_ignores = np.bitwise_and(gt_attrs, 1)
 
         dt_path = os.path.join(self.dt_base, img_name)
         dt_bitmask = np.asarray(Image.open(dt_path), dtype=np.uint8)
-        dt_masks, _, dt_scores, dt_cat_ids = parse_res_bitmasks(
+        dt_masks, _, dt_scores, dt_cat_ids = parse_res_bitmask(
             ann_score, dt_bitmask
         )
         dt_areas = get_mask_areas(dt_masks)

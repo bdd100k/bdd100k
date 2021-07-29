@@ -81,6 +81,7 @@ class TestEvaluateLaneMarking(unittest.TestCase):
             bound_ths=[1, 2],
             nproc=1,
         )
+        print(f_scores)
         gt_f_scores: Dict[str, float] = {
             "1.0_direction_parallel": 85.26664133475094,
             "2.0_direction_parallel": 90.4915559511542,
