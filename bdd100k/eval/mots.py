@@ -15,7 +15,9 @@ from ..common.utils import reorder_preds
 
 Files = List[str]
 FilesList = List[Files]
-FilesFunc = Callable[[Files, Files, float, float], List[mm.MOTAccumulator]]
+FilesFunc = Callable[
+    [Files, Files, float, float, bool], List[mm.MOTAccumulator]
+]
 
 
 def acc_single_video_mots(  # pylint: disable=unused-argument
@@ -24,6 +26,7 @@ def acc_single_video_mots(  # pylint: disable=unused-argument
     classes: List[str],
     iou_thr: float = 0.5,
     ignore_iof_thr: float = 0.5,
+    ignore_unknown_cats: bool = False,
 ) -> List[mm.MOTAccumulator]:
     """Accumulate results for one video."""
     results = reorder_preds(gts, results)
