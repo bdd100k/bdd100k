@@ -39,7 +39,9 @@ from typing import Dict, List
 
 import numpy as np
 from PIL import Image
+from pydantic import PrivateAttr
 from scalabel.common.parallel import NPROC
+from scalabel.eval.result import OVERALL, BaseResult
 from scalabel.label.coco_typing import PanopticCatType
 from tqdm import tqdm
 
@@ -50,6 +52,40 @@ from ..common.bitmask import (
 )
 from ..common.utils import reorder_preds
 from ..label.label import labels
+
+
+class PanSegResult(BaseResult):
+    """The class for panoptic segmentation evaluation results."""
+
+    PQ: List[float]
+    SQ: List[float]
+    RQ: List[float]
+    N: List[int]  # pylint: disable=invalid-name
+    _stuff_num: int = PrivateAttr()
+
+    def __init__(self, stuff_num, *args_, **kwargs) -> None:  # type: ignore
+        """Set extra parameters."""
+        super().__init__(*args_, **kwargs)
+        self._formatters = {
+            "PQ": "{:.1f}".format,
+            "SQ": "{:.1f}".format,
+            "RQ": "{:.1f}".format,
+            "N": "{:d}".format,
+        }
+        assert 0 <= stuff_num <= len(self._classes)
+        self._stuff_num = stuff_num
+
+    @property
+    def row_breaks(self) -> List[int]:
+        """Compute row break points according to class numbers."""
+        if len(self._super_classes) == 0:
+            return [1, 2 + self._stuff_num, 3 + len(self._classes)]
+        return [
+            1,
+            2 + self._stuff_num,
+            3 + len(self._classes),
+            4 + len(self._classes) + len(self._super_classes),
+        ]
 
 
 class PQStatCat:
@@ -102,9 +138,9 @@ class PQStat:
 
             if tp + fp + fn == 0:
                 continue
-            pq += iou / (tp + 0.5 * fp + 0.5 * fn)
-            sq += iou / tp if tp != 0 else 0
-            rq += tp / (tp + 0.5 * fp + 0.5 * fn)
+            pq += (iou / (tp + 0.5 * fp + 0.5 * fn)) * 100
+            sq += (iou / tp if tp != 0 else 0) * 100
+            rq += (tp / (tp + 0.5 * fp + 0.5 * fn)) * 100
             n += 1
 
         if n > 0:
@@ -156,7 +192,7 @@ def pq_per_image(gt_path: str, pred_path: str = "") -> PQStat:
 
 def evaluate_pan_seg(
     gt_paths: List[str], pred_paths: List[str], nproc: int = NPROC
-) -> Dict[str, float]:
+) -> PanSegResult:
     """Evaluate panoptic segmentation with BDD100K format."""
     start_time = time.time()
     pred_paths = reorder_preds(gt_paths, pred_paths)
@@ -187,44 +223,32 @@ def evaluate_pan_seg(
         )
         for label in labels
     ]
+    categories = categories[1:]
     categories_stuff = [
         category for category in categories if not category["isthing"]
     ]
     categories_thing = [
         category for category in categories if category["isthing"]
     ]
-
-    print(
-        "{:10s}| {:>5s}  {:>5s}  {:>5s} {:>5s}".format(
-            "", "PQ", "SQ", "RQ", "N"
-        )
-    )
-    print("-" * (10 + 7 * 4))
-
-    name_cateogries = [
-        ("", categories),
-        ("Stuff", categories_stuff),
-        ("Thing", categories_thing),
+    all_category_list = [[category] for category in categories] + [
+        categories_stuff,
+        categories_thing,
+        categories,
     ]
-    results = dict()
-    for name, categories_ in name_cateogries:
+
+    res_dict = defaultdict(list)
+    for categories_ in all_category_list:
         result = pq_stat.pq_average(categories_)
-        print(
-            "{:10s}| {:5.1f}  {:5.1f}  {:5.1f} {:5f}".format(
-                name,
-                100 * result["PQ"],
-                100 * result["SQ"],
-                100 * result["RQ"],
-                result["N"],
-            )
-        )
-        for key, val in result.items():
-            if name:
-                results["{}_{}".format(name, key)] = val
-            else:
-                results["{}".format(key)] = val
+        for metric, score in result.items():
+            res_dict[metric].append(score)
 
     t_delta = time.time() - start_time
     print("Time elapsed: {:0.2f} seconds".format(t_delta))
 
-    return results
+    return PanSegResult(
+        stuff_num=len(categories_stuff),
+        classes=[category["name"] for category in categories],
+        super_classes=["STUFF", "THING"],
+        hyper_classes=[OVERALL],
+        **res_dict
+    )

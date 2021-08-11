@@ -3,6 +3,7 @@ import os
 import unittest
 
 import numpy as np
+from scalabel.eval.result import result_to_nested_dict
 from scalabel.label.coco_typing import PanopticCatType
 
 from ..common.utils import list_files
@@ -37,9 +38,9 @@ class TestPQStat(unittest.TestCase):
             id=1, name="", supercategory="", isthing=True, color=[0, 0, 0]
         )
         result = self.pq_a.pq_average([category])
-        self.assertAlmostEqual(result["PQ"], 0.6)
-        self.assertAlmostEqual(result["SQ"], 0.9)
-        self.assertAlmostEqual(result["RQ"], 2 / 3)
+        self.assertAlmostEqual(result["PQ"], 60.0)
+        self.assertAlmostEqual(result["SQ"], 90.0)
+        self.assertAlmostEqual(result["RQ"], 66.6666666666)
 
 
 class TestPQPerImage(unittest.TestCase):
@@ -112,53 +113,88 @@ class TestEvalPanopticSeg(unittest.TestCase):
 
     def test_general_case(self) -> None:
         """Test a general case."""
-        results = evaluate_pan_seg(
+        result = evaluate_pan_seg(
             list_files(self.gt_base, suffix=".png", with_prefix=True),
             list_files(self.pred_base, suffix=".png", with_prefix=True),
             nproc=1,
         )
+        nested_dict = result_to_nested_dict(
+            result, result._all_classes  # pylint: disable=protected-access
+        )
+
         gt_results = {
-            "PQ": 0.6646278879162744,
-            "SQ": 0.6835183709387517,
-            "RQ": 0.8529411764705882,
-            "N": 17,
-            "Stuff_PQ": 0.643860238090212,
-            "Stuff_SQ": 0.6652694521823528,
-            "Stuff_RQ": 0.8333333333333334,
-            "Stuff_N": 15,
-            "Thing_PQ": 0.8203852616117429,
-            "Thing_SQ": 0.8203852616117429,
-            "Thing_RQ": 1.0,
-            "Thing_N": 2,
+            "PQ": {
+                "STUFF": 64.38602380902118,
+                "THING": 82.03852616117427,
+                "OVERALL": 66.46278879162743,
+            },
+            "SQ": {
+                "STUFF": 66.52694521823528,
+                "THING": 82.03852616117427,
+                "OVERALL": 68.35183709387516,
+            },
+            "RQ": {
+                "STUFF": 83.33333333333333,
+                "THING": 100.0,
+                "OVERALL": 85.29411764705883,
+            },
+            "N": {
+                "STUFF": 15,
+                "THING": 2,
+                "OVERALL": 17,
+            },
         }
-        for key, val in gt_results.items():
-            self.assertAlmostEqual(results[key], val)
+        nested_dict = {
+            metric: {
+                category: score
+                for category, score in scores.items()
+                if category in gt_results[metric]  # type: ignore
+            }
+            for metric, scores in nested_dict.items()
+        }
+        print(nested_dict)
+        self.assertDictEqual(nested_dict, gt_results)
 
     def test_evaluate_pan_seg(self) -> None:
         """Test for the case that some predictions are missed."""
         gt_base = "{}/testcases/pan_seg/gt+".format(self.cur_dir)
-        results = evaluate_pan_seg(
+        result = evaluate_pan_seg(
             list_files(gt_base, suffix=".png", with_prefix=True),
             list_files(self.pred_base, suffix=".png", with_prefix=True),
             nproc=1,
         )
+        nested_dict = result_to_nested_dict(
+            result, result._all_classes  # pylint: disable=protected-access
+        )
+
         gt_results = {
-            "PQ": 0.49385236,
-            "SQ": 0.68351837,
-            "RQ": 0.62352941,
-            "N": 17,
-            "Stuff_PQ": 0.48677621,
-            "Stuff_SQ": 0.66526945,
-            "Stuff_RQ": 0.61777778,
-            "Stuff_N": 15,
-            "Thing_PQ": 0.54692351,
-            "Thing_SQ": 0.82038526,
-            "Thing_RQ": 0.66666667,
-            "Thing_N": 2,
+            "PQ": {
+                "STUFF": 48.677620814166644,
+                "THING": 54.69235077411619,
+                "OVERALL": 49.385236103572474,
+            },
+            "SQ": {
+                "STUFF": 66.52694521823528,
+                "THING": 82.03852616117427,
+                "OVERALL": 68.35183709387516,
+            },
+            "RQ": {
+                "STUFF": 61.77777777777776,
+                "THING": 66.66666666666666,
+                "OVERALL": 62.35294117647057,
+            },
+            "N": {
+                "STUFF": 15,
+                "THING": 2,
+                "OVERALL": 17,
+            },
         }
-        for key, val in gt_results.items():
-            self.assertAlmostEqual(results[key], val)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        nested_dict = {
+            metric: {
+                category: score
+                for category, score in scores.items()
+                if category in gt_results[metric]  # type: ignore
+            }
+            for metric, scores in nested_dict.items()
+        }
+        self.assertDictEqual(nested_dict, gt_results)

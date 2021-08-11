@@ -7,18 +7,35 @@ However, IoU(ignored) doesn't influence mIoU.
 
 from functools import partial
 from multiprocessing import Pool
-from typing import Dict, List, Set, Tuple
+from typing import List, Set, Tuple, cast
 
 import numpy as np
 from PIL import Image
 from scalabel.common.parallel import NPROC
 from scalabel.common.typing import NDArrayF64, NDArrayI32, NDArrayU8
+from scalabel.eval.result import BaseResult
 from tqdm import tqdm
 
 from ..common.logger import logger
 from ..common.utils import reorder_preds
 from ..label.label import drivables, labels
 from ..label.to_mask import IGNORE_LABEL
+
+
+class SemSegResult(BaseResult):
+    """The class for semantic segmentation evaluation results."""
+
+    IoU: List[float]
+    Acc: List[float]
+    fIoU: float
+    pAcc: float
+
+    def __init__(self, *args_, **kwargs) -> None:  # type: ignore
+        """Set extra parameters."""
+        super().__init__(*args_, **kwargs)
+        self._formatters = {
+            metric: "{:.1f}".format for metric in self.__fields__
+        }
 
 
 def fast_hist(
@@ -41,7 +58,7 @@ def fast_hist(
     ).reshape(size, size)
 
 
-def per_class_iu(hist: NDArrayU8) -> NDArrayF64:
+def per_class_iou(hist: NDArrayU8) -> NDArrayF64:
     """Calculate per class iou."""
     ious: NDArrayF64 = np.diag(hist) / (
         hist.sum(1) + hist.sum(0) - np.diag(hist)
@@ -49,6 +66,28 @@ def per_class_iu(hist: NDArrayU8) -> NDArrayF64:
     ious[np.isnan(ious)] = 0
     # Last class as `ignored`
     return ious[:-1]  # type: ignore
+
+
+def per_class_acc(hist: NDArrayU8) -> NDArrayF64:
+    """Calculate per class accuracy."""
+    accs: NDArrayF64 = np.diag(hist) / hist.sum(axis=0)
+    accs[np.isnan(accs)] = 0
+    # Last class as `ignored`
+    return accs[:-1]  # type: ignore
+
+
+def whole_acc(hist: NDArrayU8) -> float:
+    """Calculate whole accuray."""
+    hist = hist[:-1]
+    return cast(float, np.diag(hist).sum() / hist.sum())
+
+
+def freq_iou(hist: NDArrayU8) -> float:
+    """Calculate frequency iou."""
+    ious = per_class_iou(hist)
+    hist = hist[:-1]
+    freq = hist.sum(axis=1) / hist.sum()
+    return cast(float, (ious * freq).sum())
 
 
 def per_image_hist(
@@ -80,7 +119,7 @@ def evaluate_segmentation(
     pred_paths: List[str],
     mode: str = "sem_seg",
     nproc: int = NPROC,
-) -> Dict[str, float]:
+) -> SemSegResult:
     """Evaluate segmentation IoU from input folders."""
     assert mode in ["sem_seg", "drivable"]
     logger.info("Found %d results", len(gt_paths))
@@ -90,7 +129,7 @@ def evaluate_segmentation(
     }[mode]
     categories = [label.name for label in label_defs if label.trainId != 255]
     num_classes = {
-        "sem_seg": len(labels) + 1,  # add an `ignored` class
+        "sem_seg": len(categories) + 1,  # add an `ignored` class
         "drivable": len(drivables),  # `background` as `ignored`
     }[mode]
 
@@ -115,21 +154,26 @@ def evaluate_segmentation(
         hist += hist_
         gt_id_set.update(gt_id_set_)
 
-    logger.info("GT id set [%s]", ",".join(str(s) for s in gt_id_set))
-    ious = np.multiply(per_class_iu(hist), 100)
-    miou = np.mean(ious[list(gt_id_set)])
+    ious = per_class_iou(hist)
+    accs = per_class_acc(hist)
+    mIoU = np.mean(ious[list(gt_id_set)])  # pylint: disable=invalid-name
+    mAcc = np.mean(accs[list(gt_id_set)])  # pylint: disable=invalid-name
+    res_dict = dict(
+        IoU=np.multiply(ious, 100).tolist() + [100 * mIoU],
+        Acc=np.multiply(accs, 100).tolist() + [100 * mAcc],
+        fIoU=100 * freq_iou(hist),  # pylint: disable=invalid-name
+        pAcc=100 * whole_acc(hist),  # pylint: disable=invalid-name
+    )
 
-    iou_dict = dict(miou=miou)
-    logger.info("mIoU: {:.2f}".format(miou))
-    for category, iou in zip(categories, ious):
-        iou_dict[category] = iou
-        logger.info("{}: {:.2f}".format(category, iou))
-    return iou_dict
+    logger.info("GT id set [%s]", ",".join(str(s) for s in gt_id_set))
+    return SemSegResult(
+        classes=categories, hyper_classes=["AVERAGE"], **res_dict
+    )
 
 
 def evaluate_drivable(
     gt_paths: List[str], pred_paths: List[str], nproc: int = NPROC
-) -> Dict[str, float]:
+) -> SemSegResult:
     """Evaluate drivable area."""
     return evaluate_segmentation(
         gt_paths, pred_paths, mode="drivable", nproc=nproc
@@ -138,7 +182,7 @@ def evaluate_drivable(
 
 def evaluate_sem_seg(
     gt_paths: List[str], pred_paths: List[str], nproc: int = NPROC
-) -> Dict[str, float]:
+) -> SemSegResult:
     """Evaluate semantic segmentation."""
     return evaluate_segmentation(
         gt_paths, pred_paths, mode="sem_seg", nproc=nproc

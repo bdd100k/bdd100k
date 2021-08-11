@@ -67,6 +67,7 @@ import numpy as np
 from PIL import Image
 from scalabel.common.parallel import NPROC
 from scalabel.common.typing import NDArrayF64, NDArrayU8
+from scalabel.eval.result import BaseResult
 from skimage.morphology import binary_dilation, disk  # type: ignore
 from tabulate import tabulate
 from tqdm import tqdm
@@ -76,6 +77,20 @@ from ..label.label import lane_categories, lane_directions, lane_styles
 
 AVG = "avg"
 TOTAL = "total"
+
+
+class LaneResult(BaseResult):
+    """The class for lane marking evaluation results."""
+
+    Thres1: List[float]
+    Thres2: List[float]
+
+    def __init__(self, *args_, **kwargs) -> None:  # type: ignore
+        """Set extra parameters."""
+        super().__init__(*args_, **kwargs)
+        self._formatters = {
+            metric: "{:.1f}".format for metric in self.__fields__
+        }
 
 
 def eval_lane_per_threshold(

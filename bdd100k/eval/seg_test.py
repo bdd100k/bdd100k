@@ -3,6 +3,7 @@ import os
 import unittest
 
 import numpy as np
+from scalabel.eval.result import result_to_flatten_dict
 
 from ..common.utils import list_files
 from .seg import evaluate_segmentation, fast_hist, per_image_hist
@@ -73,33 +74,37 @@ class TestEvaluateSegmentation(unittest.TestCase):
         a_dir = "{}/testcases/seg/gt".format(self.cur_dir)
         b_dir = "{}/testcases/seg/pred".format(self.cur_dir)
 
-        ious = evaluate_segmentation(
+        result = evaluate_segmentation(
             list_files(a_dir, ".png", with_prefix=True),
             list_files(b_dir, ".png", with_prefix=True),
+            nproc=1,
         )
-        gt_ious = dict(
-            miou=61.73469388,
-            road=94.89795918,
-            sidewalk=28.57142857,
-            wall=0.0,
-        )
-        for key, val in gt_ious.items():
-            self.assertAlmostEqual(val, ious[key])
+        res_dict = result_to_flatten_dict(result)
+
+        gt_res_dict = {
+            "Acc": 81.27147766323024,
+            "IoU": 61.73469387755102,
+            "fIoU": 90.91836734693878,
+            "pAcc": 95.0,
+        }
+        self.assertDictEqual(res_dict, gt_res_dict)
 
     def test_blank_dir(self) -> None:
         """Test the missing prediction scenario."""
         a_dir = "{}/testcases/seg/gt+".format(self.cur_dir)
         b_dir = "{}/testcases/seg/pred".format(self.cur_dir)
 
-        ious = evaluate_segmentation(
+        result = evaluate_segmentation(
             list_files(a_dir, ".png", with_prefix=True),
             list_files(b_dir, ".png", with_prefix=True),
+            nproc=1,
         )
-        gt_ious = dict(
-            miou=31.9110576923,
-            road=48.4375,
-            sidewalk=15.3846153846,
-            wall=0.0,
-        )
-        for key, val in gt_ious.items():
-            self.assertAlmostEqual(val, ious[key])
+        res_dict = result_to_flatten_dict(result)
+
+        gt_res_dict = {
+            "Acc": 81.27147766323024,
+            "IoU": 31.911057692307693,
+            "fIoU": 46.45432692307692,
+            "pAcc": 47.5,
+        }
+        self.assertDictEqual(res_dict, gt_res_dict)
