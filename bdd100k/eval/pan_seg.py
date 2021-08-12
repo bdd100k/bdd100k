@@ -39,7 +39,6 @@ from typing import Dict, List
 
 import numpy as np
 from PIL import Image
-from pydantic import PrivateAttr
 from scalabel.common.parallel import NPROC
 from scalabel.eval.result import OVERALL, BaseResult
 from scalabel.label.coco_typing import PanopticCatType
@@ -61,9 +60,8 @@ class PanSegResult(BaseResult):
     SQ: List[float]
     RQ: List[float]
     N: List[int]  # pylint: disable=invalid-name
-    _stuff_num: int = PrivateAttr()
 
-    def __init__(self, stuff_num, *args_, **kwargs) -> None:  # type: ignore
+    def __init__(self, *args_, **kwargs) -> None:  # type: ignore
         """Set extra parameters."""
         super().__init__(*args_, **kwargs)
         self._formatters = {
@@ -72,20 +70,6 @@ class PanSegResult(BaseResult):
             "RQ": "{:.1f}".format,
             "N": "{:d}".format,
         }
-        assert 0 <= stuff_num <= len(self._classes)
-        self._stuff_num = stuff_num
-
-    @property
-    def row_breaks(self) -> List[int]:
-        """Compute row break points according to class numbers."""
-        if len(self._super_classes) == 0:
-            return [1, 2 + self._stuff_num, 3 + len(self._classes)]
-        return [
-            1,
-            2 + self._stuff_num,
-            3 + len(self._classes),
-            4 + len(self._classes) + len(self._super_classes),
-        ]
 
 
 class PQStatCat:
@@ -245,10 +229,15 @@ def evaluate_pan_seg(
     t_delta = time.time() - start_time
     print("Time elapsed: {:0.2f} seconds".format(t_delta))
 
+    row_breaks = [
+        1,
+        2 + len(categories_stuff),
+        3 + len(categories),
+        6 + len(categories),
+    ]
     return PanSegResult(
-        stuff_num=len(categories_stuff),
-        classes=[category["name"] for category in categories],
-        super_classes=["STUFF", "THING"],
-        hyper_classes=[OVERALL],
+        all_classes=[category["name"] for category in categories]
+        + ["STUFF", "THING", OVERALL],
+        row_breaks=row_breaks,
         **res_dict
     )
