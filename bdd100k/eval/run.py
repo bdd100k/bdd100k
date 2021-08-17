@@ -5,9 +5,9 @@ import json
 import os
 
 from scalabel.common.parallel import NPROC
-from scalabel.eval.box_track import acc_single_video_mot, evaluate_track
-from scalabel.eval.det import evaluate_det
-from scalabel.eval.result import BaseResult, result_to_flatten_dict
+from scalabel.eval.detect import evaluate_det
+from scalabel.eval.mot import acc_single_video_mot, evaluate_track
+from scalabel.eval.result import Result
 from scalabel.label.io import group_and_sort, load
 
 from ..common.logger import logger
@@ -83,6 +83,12 @@ def parse_args() -> argparse.Namespace:
         default=".",
         help="Path to store the prediction scoring file",
     )
+    parser.add_argument(
+        "--quite",
+        "-q",
+        action="store_true",
+        help="without logging",
+    )
 
     args = parser.parse_args()
 
@@ -98,7 +104,7 @@ def run() -> None:
         bdd100k_config = load_bdd100k_config(args.task)
 
     if args.task == "det":
-        results: BaseResult = evaluate_det(
+        results: Result = evaluate_det(
             bdd100k_to_scalabel(
                 load(args.gt, args.nproc).frames, bdd100k_config
             ),
@@ -106,6 +112,8 @@ def run() -> None:
                 load(args.result, args.nproc).frames, bdd100k_config
             ),
             bdd100k_config.scalabel,
+            nproc=args.nproc,
+            with_logs=not args.quite,
         )
     elif args.task == "ins_seg":
         results = evaluate_ins_seg(
@@ -113,7 +121,8 @@ def run() -> None:
             args.result,
             args.score_file,
             bdd100k_config.scalabel,
-            args.nproc,
+            nproc=args.nproc,
+            with_logs=not args.quite,
         )
     elif args.task == "box_track":
         results = evaluate_track(
@@ -132,6 +141,7 @@ def run() -> None:
             iou_thr=args.iou_thr,
             ignore_iof_thr=args.ignore_iof_thr,
             nproc=args.nproc,
+            with_logs=not args.quite,
         )
     elif args.task == "seg_track":
         results = evaluate_track(
@@ -146,20 +156,27 @@ def run() -> None:
             iou_thr=args.iou_thr,
             ignore_iof_thr=args.ignore_iof_thr,
             nproc=args.nproc,
+            with_logs=not args.quite,
         )
 
     gt_paths = list_files(args.gt, ".png", with_prefix=True)
     pred_paths = list_files(args.result, ".png", with_prefix=True)
     if args.task == "drivable":
-        results = evaluate_drivable(gt_paths, pred_paths, nproc=args.nproc)
+        results = evaluate_drivable(
+            gt_paths, pred_paths, nproc=args.nproc, with_logs=not args.quite
+        )
     elif args.task == "lane_mark":
-        results = evaluate_lane_marking(  # type: ignore
-            gt_paths, pred_paths, [1.0, 2.0, 5.0], nproc=args.nproc
+        results = evaluate_lane_marking(
+            gt_paths, pred_paths, nproc=args.nproc, with_logs=not args.quite
         )
     elif args.task == "sem_seg":
-        results = evaluate_sem_seg(gt_paths, pred_paths, nproc=args.nproc)
+        results = evaluate_sem_seg(
+            gt_paths, pred_paths, nproc=args.nproc, with_logs=not args.quite
+        )
     elif args.task == "pan_seg":
-        results = evaluate_pan_seg(gt_paths, pred_paths, nproc=args.nproc)
+        results = evaluate_pan_seg(
+            gt_paths, pred_paths, nproc=args.nproc, with_logs=not args.quite
+        )
 
     logger.info(results)
     if args.out_file:
@@ -167,7 +184,7 @@ def run() -> None:
         if not os.path.exists(out_folder):
             os.makedirs(out_folder)
         with open(args.out_file, "w") as fp:
-            json.dump(result_to_flatten_dict(results), fp, indent=2)
+            json.dump(dict(results), fp, indent=2)
 
 
 if __name__ == "__main__":

@@ -3,7 +3,6 @@ import os
 import unittest
 
 import numpy as np
-from scalabel.eval.result import result_to_nested_dict
 from scalabel.label.coco_typing import PanopticCatType
 
 from ..common.utils import list_files
@@ -118,42 +117,25 @@ class TestEvalPanopticSeg(unittest.TestCase):
             list_files(self.pred_base, suffix=".png", with_prefix=True),
             nproc=1,
         )
-        nested_dict = result_to_nested_dict(
-            result, result._all_classes  # pylint: disable=protected-access
-        )
+        summary = result.summary()
 
-        gt_results = {
-            "PQ": {
-                "STUFF": 64.38602380902118,
-                "THING": 82.03852616117427,
-                "OVERALL": 66.46278879162743,
-            },
-            "SQ": {
-                "STUFF": 66.52694521823528,
-                "THING": 82.03852616117427,
-                "OVERALL": 68.35183709387516,
-            },
-            "RQ": {
-                "STUFF": 83.33333333333333,
-                "THING": 100.0,
-                "OVERALL": 85.29411764705883,
-            },
-            "N": {
-                "STUFF": 15,
-                "THING": 2,
-                "OVERALL": 17,
-            },
+        gt_summary = {
+            "PQ": 66.46278879162743,
+            "PQ/STUFF": 64.38602380902118,
+            "PQ/THING": 82.03852616117427,
+            "SQ": 68.35183709387516,
+            "SQ/STUFF": 66.52694521823528,
+            "SQ/THING": 82.03852616117427,
+            "RQ": 85.29411764705883,
+            "RQ/STUFF": 83.33333333333333,
+            "RQ/THING": 100.0,
+            "N": 17,
+            "N/STUFF": 15,
+            "N/THING": 2,
         }
-        nested_dict = {
-            metric: {
-                category: score
-                for category, score in scores.items()
-                if category in gt_results[metric]  # type: ignore
-            }
-            for metric, scores in nested_dict.items()
-        }
-        print(nested_dict)
-        self.assertDictEqual(nested_dict, gt_results)
+        self.assertSetEqual(set(summary.keys()), set(gt_summary.keys()))
+        for name, score in gt_summary.items():
+            self.assertAlmostEqual(score, summary[name])
 
     def test_evaluate_pan_seg(self) -> None:
         """Test for the case that some predictions are missed."""
@@ -163,38 +145,22 @@ class TestEvalPanopticSeg(unittest.TestCase):
             list_files(self.pred_base, suffix=".png", with_prefix=True),
             nproc=1,
         )
-        nested_dict = result_to_nested_dict(
-            result, result._all_classes  # pylint: disable=protected-access
-        )
+        summary = result.summary()
 
-        gt_results = {
-            "PQ": {
-                "STUFF": 48.677620814166644,
-                "THING": 54.69235077411619,
-                "OVERALL": 49.385236103572474,
-            },
-            "SQ": {
-                "STUFF": 66.52694521823528,
-                "THING": 82.03852616117427,
-                "OVERALL": 68.35183709387516,
-            },
-            "RQ": {
-                "STUFF": 61.77777777777776,
-                "THING": 66.66666666666666,
-                "OVERALL": 62.35294117647057,
-            },
-            "N": {
-                "STUFF": 15,
-                "THING": 2,
-                "OVERALL": 17,
-            },
+        gt_summary = {
+            "PQ": 49.385236103572474,
+            "PQ/STUFF": 48.677620814166644,
+            "PQ/THING": 54.69235077411619,
+            "SQ": 68.35183709387516,
+            "SQ/STUFF": 66.52694521823528,
+            "SQ/THING": 82.03852616117427,
+            "RQ": 62.35294117647057,
+            "RQ/STUFF": 61.77777777777776,
+            "RQ/THING": 66.66666666666666,
+            "N": 17,
+            "N/STUFF": 15,
+            "N/THING": 2,
         }
-        nested_dict = {
-            metric: {
-                category: score
-                for category, score in scores.items()
-                if category in gt_results[metric]  # type: ignore
-            }
-            for metric, scores in nested_dict.items()
-        }
-        self.assertDictEqual(nested_dict, gt_results)
+        self.assertSetEqual(set(summary.keys()), set(gt_summary.keys()))
+        for name, score in gt_summary.items():
+            self.assertAlmostEqual(score, summary[name])

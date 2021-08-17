@@ -7,13 +7,13 @@ However, IoU(ignored) doesn't influence mIoU.
 
 from functools import partial
 from multiprocessing import Pool
-from typing import List, Set, Tuple, cast
+from typing import AbstractSet, Dict, List, Optional, Set, Tuple, Union, cast
 
 import numpy as np
 from PIL import Image
 from scalabel.common.parallel import NPROC
 from scalabel.common.typing import NDArrayF64, NDArrayI32, NDArrayU8
-from scalabel.eval.result import BaseResult
+from scalabel.eval.result import AVERAGE, Result, Scores, ScoresList
 from tqdm import tqdm
 
 from ..common.logger import logger
@@ -22,20 +22,41 @@ from ..label.label import drivables, labels
 from ..label.to_mask import IGNORE_LABEL
 
 
-class SemSegResult(BaseResult):
-    """The class for semantic segmentation evaluation results."""
+class SegResult(Result):
+    """The class for general segmentation evaluation results."""
 
-    IoU: List[float]
-    Acc: List[float]
+    IoU: List[Dict[str, float]]
+    Acc: List[Dict[str, float]]
     fIoU: float
     pAcc: float
 
-    def __init__(self, *args_, **kwargs) -> None:  # type: ignore
+    def __init__(self, **data: Union[float, ScoresList]) -> None:
         """Set extra parameters."""
-        super().__init__(*args_, **kwargs)
+        super().__init__(**data)
         self._formatters = {
             metric: "{:.1f}".format for metric in self.__fields__
         }
+
+    # pylint: disable=useless-super-delegation
+    def __eq__(self, other: "SegResult") -> bool:  # type: ignore
+        """Check whether two instances are equal."""
+        return super().__eq__(other)
+
+    def summary(
+        self,
+        include: Optional[AbstractSet[str]] = None,
+        exclude: Optional[AbstractSet[str]] = None,
+    ) -> Scores:
+        """Convert the seg result into a flattened dict as the summary."""
+        summary_dict: Dict[str, Union[int, float]] = dict()
+        for metric, scores_list in self.dict(
+            include=include, exclude=exclude  # type: ignore
+        ).items():
+            if not isinstance(scores_list, list):
+                summary_dict[metric] = scores_list
+            else:
+                summary_dict["m" + metric] = scores_list[-1][AVERAGE]
+        return summary_dict
 
 
 def fast_hist(
@@ -119,10 +140,12 @@ def evaluate_segmentation(
     pred_paths: List[str],
     mode: str = "sem_seg",
     nproc: int = NPROC,
-) -> SemSegResult:
+    with_logs: bool = True,
+) -> SegResult:
     """Evaluate segmentation IoU from input folders."""
     assert mode in ["sem_seg", "drivable"]
-    logger.info("Found %d results", len(gt_paths))
+    if with_logs:
+        logger.info("Found %d results", len(gt_paths))
     label_defs = {
         "sem_seg": labels,
         "drivable": drivables,
@@ -133,6 +156,8 @@ def evaluate_segmentation(
         "drivable": len(drivables),  # `background` as `ignored`
     }[mode]
 
+    if with_logs:
+        logger.info("evaluating...")
     pred_paths = reorder_preds(gt_paths, pred_paths)
 
     if nproc > 1:
@@ -148,6 +173,9 @@ def evaluate_segmentation(
                 zip(gt_paths, pred_paths), total=len(gt_paths)
             )
         ]
+
+    if with_logs:
+        logger.info("accumulating...")
     hist = np.zeros((num_classes, num_classes))
     gt_id_set = set()
     for (hist_, gt_id_set_) in hist_and_gt_id_sets:
@@ -156,34 +184,44 @@ def evaluate_segmentation(
 
     ious = per_class_iou(hist)
     accs = per_class_acc(hist)
-    mIoU = np.mean(ious[list(gt_id_set)])  # pylint: disable=invalid-name
-    mAcc = np.mean(accs[list(gt_id_set)])  # pylint: disable=invalid-name
-    res_dict = dict(
-        IoU=np.multiply(ious, 100).tolist() + [100 * mIoU],
-        Acc=np.multiply(accs, 100).tolist() + [100 * mAcc],
-        fIoU=100 * freq_iou(hist),  # pylint: disable=invalid-name
-        pAcc=100 * whole_acc(hist),  # pylint: disable=invalid-name
+    IoUs = [  # pylint: disable=invalid-name
+        {cat_name: 100 * score for cat_name, score in zip(categories, ious)},
+        {AVERAGE: np.multiply(np.mean(ious[list(gt_id_set)]), 100)},
+    ]
+    Accs = [  # pylint: disable=invalid-name
+        {cat_name: 100 * score for cat_name, score in zip(categories, accs)},
+        {AVERAGE: np.multiply(np.mean(accs[list(gt_id_set)]), 100)},
+    ]
+    res_dict: Dict[str, Union[float, ScoresList]] = dict(
+        IoU=IoUs,
+        Acc=Accs,
+        fIoU=np.multiply(freq_iou(hist), 100),  # pylint: disable=invalid-name
+        pAcc=np.multiply(whole_acc(hist), 100),  # pylint: disable=invalid-name
     )
 
     logger.info("GT id set [%s]", ",".join(str(s) for s in gt_id_set))
-    return SemSegResult(
-        classes=categories, hyper_classes=["AVERAGE"], **res_dict
-    )
+    return SegResult(**res_dict)
 
 
 def evaluate_drivable(
-    gt_paths: List[str], pred_paths: List[str], nproc: int = NPROC
-) -> SemSegResult:
+    gt_paths: List[str],
+    pred_paths: List[str],
+    nproc: int = NPROC,
+    with_logs: bool = True,
+) -> SegResult:
     """Evaluate drivable area."""
     return evaluate_segmentation(
-        gt_paths, pred_paths, mode="drivable", nproc=nproc
+        gt_paths, pred_paths, mode="drivable", nproc=nproc, with_logs=with_logs
     )
 
 
 def evaluate_sem_seg(
-    gt_paths: List[str], pred_paths: List[str], nproc: int = NPROC
-) -> SemSegResult:
+    gt_paths: List[str],
+    pred_paths: List[str],
+    nproc: int = NPROC,
+    with_logs: bool = True,
+) -> SegResult:
     """Evaluate semantic segmentation."""
     return evaluate_segmentation(
-        gt_paths, pred_paths, mode="sem_seg", nproc=nproc
+        gt_paths, pred_paths, mode="sem_seg", nproc=nproc, with_logs=with_logs
     )

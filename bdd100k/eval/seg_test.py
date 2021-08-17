@@ -3,7 +3,6 @@ import os
 import unittest
 
 import numpy as np
-from scalabel.eval.result import result_to_flatten_dict
 
 from ..common.utils import list_files
 from .seg import evaluate_segmentation, fast_hist, per_image_hist
@@ -79,15 +78,16 @@ class TestEvaluateSegmentation(unittest.TestCase):
             list_files(b_dir, ".png", with_prefix=True),
             nproc=1,
         )
-        res_dict = result_to_flatten_dict(result)
-
-        gt_res_dict = {
-            "Acc": 81.27147766323024,
-            "IoU": 61.73469387755102,
+        summary = result.summary()
+        gt_summary = {
+            "mAcc": 81.27147766323024,
+            "mIoU": 61.73469387755102,
             "fIoU": 90.91836734693878,
             "pAcc": 95.0,
         }
-        self.assertDictEqual(res_dict, gt_res_dict)
+        self.assertSetEqual(set(summary.keys()), set(gt_summary.keys()))
+        for name, score in gt_summary.items():
+            self.assertAlmostEqual(score, summary[name])
 
     def test_blank_dir(self) -> None:
         """Test the missing prediction scenario."""
@@ -99,12 +99,13 @@ class TestEvaluateSegmentation(unittest.TestCase):
             list_files(b_dir, ".png", with_prefix=True),
             nproc=1,
         )
-        res_dict = result_to_flatten_dict(result)
-
-        gt_res_dict = {
-            "Acc": 81.27147766323024,
-            "IoU": 31.911057692307693,
+        summary = result.summary()
+        gt_summary = {
+            "mAcc": 81.27147766323024,
+            "mIoU": 31.911057692307693,
             "fIoU": 46.45432692307692,
             "pAcc": 47.5,
         }
-        self.assertDictEqual(res_dict, gt_res_dict)
+        self.assertSetEqual(set(summary.keys()), set(gt_summary.keys()))
+        for name, score in gt_summary.items():
+            self.assertAlmostEqual(score, summary[name])

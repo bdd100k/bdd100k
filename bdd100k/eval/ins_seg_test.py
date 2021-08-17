@@ -5,11 +5,6 @@ import unittest
 
 import numpy as np
 from PIL import Image
-from scalabel.eval.result import (
-    nested_dict_to_data_frame,
-    result_to_flatten_dict,
-    result_to_nested_dict,
-)
 
 from ..common.utils import load_bdd100k_config
 from .ins_seg import evaluate_ins_seg
@@ -26,20 +21,81 @@ class TestBDD100KInsSegEval(unittest.TestCase):
     result = evaluate_ins_seg(
         gt_base, pred_base, pred_json, bdd100k_config.scalabel, nproc=1
     )
-    res_dict = result_to_flatten_dict(result)
-    data_frame = nested_dict_to_data_frame(
-        result_to_nested_dict(
-            result, result._all_classes  # pylint: disable=protected-access
-        )
-    )
 
-    def test_ins_seg(self) -> None:
+    def test_frame(self) -> None:
+        """Test case for the function frame()."""
+        data_frame = self.result.pd_frame()
+        categories = set(
+            [
+                "pedestrian",
+                "rider",
+                "car",
+                "truck",
+                "bus",
+                "train",
+                "motorcycle",
+                "bicycle",
+                "OVERALL",
+            ]
+        )
+        self.assertSetEqual(categories, set(data_frame.index.values))
+
+        data_arr = data_frame.to_numpy()
+        APs = np.array(  # pylint: disable=invalid-name
+            [
+                100.0,
+                90.0,
+                15.81683168,
+                -1.0,
+                -1.0,
+                -1.0,
+                -1.0,
+                -1.0,
+                68.60561056,
+            ]
+        )
+        self.assertTrue(
+            np.isclose(np.nan_to_num(data_arr[:, 0], nan=-1.0), APs).all()
+        )
+
+        overall_scores = np.array(
+            [
+                68.60561056,
+                89.68646865,
+                66.66666667,
+                68.60561056,
+                70.92409241,
+                70.92409241,
+                65.83333333,
+                70.83333333,
+                70.83333333,
+                70.83333333,
+                70.83333333,
+                70.83333333,
+            ]
+        )
+        self.assertTrue(
+            np.isclose(
+                np.nan_to_num(data_arr[-1], nan=-1.0), overall_scores
+            ).all()
+        )
+
+    def test_summary(self) -> None:
         """Check evaluation scores' correctness."""
+        summary = self.result.summary()
         overall_reference = {
-            "AP": 68.6056105610561,
+            "AP/pedestrian": 99.99999999999997,
+            "AP/rider": 89.99999999999999,
+            "AP/car": 15.816831683168317,
+            "AP/truck": -1.0,
+            "AP/bus": -1.0,
+            "AP/train": -1.0,
+            "AP/motorcycle": -1.0,
+            "AP/bicycle": -1.0,
+            "AP": 68.60561056105611,
             "AP50": 89.68646864686468,
             "AP75": 66.66666666666666,
-            "APs": 68.6056105610561,
+            "APs": 68.60561056105611,
             "APm": 70.92409240924093,
             "APl": 70.92409240924093,
             "AR1": 65.83333333333333,
@@ -49,9 +105,11 @@ class TestBDD100KInsSegEval(unittest.TestCase):
             "ARm": 70.83333333333334,
             "ARl": 70.83333333333334,
         }
-        for key, val in self.res_dict.items():
-            self.assertAlmostEqual(val, overall_reference[key])
-        self.assertEqual(len(self.res_dict), len(overall_reference))
+        self.assertSetEqual(set(summary.keys()), set(overall_reference.keys()))
+        for name, score in summary.items():
+            if np.isnan(score):
+                score = np.nan_to_num(score, nan=-1.0)
+            self.assertAlmostEqual(score, overall_reference[name])
 
 
 def create_test_file() -> None:

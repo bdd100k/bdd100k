@@ -5,7 +5,6 @@ predictions format: BitMasks
 import copy
 import json
 import os
-import time
 from multiprocessing import Pool
 from typing import Dict, List, Tuple
 
@@ -18,12 +17,13 @@ from scalabel.common.typing import (
     NDArrayI32,
     NDArrayU8,
 )
-from scalabel.eval.det import COCOevalV2, DetResult
+from scalabel.eval.detect import COCOevalV2, DetResult
 from scalabel.label.transforms import get_coco_categories
 from scalabel.label.typing import Config
 from tqdm import tqdm
 
 from ..common.bitmask import bitmask_intersection_rate, parse_bitmask
+from ..common.logger import logger
 from ..common.utils import list_files
 
 
@@ -92,7 +92,6 @@ class BDD100KInsSegEval(COCOevalV2):
         self.evalImgs: List[DictStrAny] = []
         self.iou_res: List[DictStrAny] = []
 
-        print("Precompute per image IoUs...")
         self._prepare()
 
     def __len__(self) -> int:
@@ -132,10 +131,7 @@ class BDD100KInsSegEval(COCOevalV2):
 
     def evaluate(self) -> None:
         """Run per image evaluation."""
-        tic = time.time()
-        print("Running per image evaluation...")
         p = self.params
-        print("Evaluate annotation type *{}*".format(p.iouType))
         p.maxDets = sorted(p.maxDets)
         self.params = p
 
@@ -155,8 +151,6 @@ class BDD100KInsSegEval(COCOevalV2):
                 self.evalImgs[ind].update(item)
 
         self._paramsEval = copy.deepcopy(self.params)
-        toc = time.time()
-        print("DONE (t={:0.2f}s).".format(toc - tic))
 
     def compute_iou(self, img_ind: int) -> DictStrAny:
         """Compute IoU per image."""
@@ -276,6 +270,7 @@ def evaluate_ins_seg(
     pred_score_file: str,
     config: Config,
     nproc: int = NPROC,
+    with_logs: bool = True,
 ) -> DetResult:
     """Load the ground truth and prediction results.
 
@@ -285,6 +280,7 @@ def evaluate_ins_seg(
         pred_score_file: path tothe prediction scores.
         config: Config instance.
         nproc: number of processes.
+        with_logs: whether to print logs
 
     Returns:
         dict: detection metric scores
@@ -296,7 +292,11 @@ def evaluate_ins_seg(
         ann_base, pred_base, pred_score_file, cat_names, nproc
     )
     bdd_eval.params.catIds = cat_ids
+    if with_logs:
+        logger.info("evaluating...")
     bdd_eval.evaluate()
+    if with_logs:
+        logger.info("accumulating...")
     bdd_eval.accumulate()
     result = bdd_eval.summarize()  # pylint: disable=redefined-outer-name
     return result
