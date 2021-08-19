@@ -35,11 +35,12 @@ either expressed or implied, of the FreeBSD Project.
 import time
 from collections import defaultdict
 from multiprocessing import Pool
-from typing import Dict, List
+from typing import AbstractSet, Dict, List, Optional, Union
 
 import numpy as np
 from PIL import Image
 from scalabel.common.parallel import NPROC
+from scalabel.eval.result import OVERALL, Result, Scores, ScoresList
 from scalabel.label.coco_typing import PanopticCatType
 from tqdm import tqdm
 
@@ -48,8 +49,51 @@ from ..common.bitmask import (
     gen_blank_bitmask,
     parse_bitmask,
 )
+from ..common.logger import logger
 from ..common.utils import reorder_preds
 from ..label.label import labels
+
+STUFF = "STUFF"
+THING = "THING"
+
+
+class PanSegResult(Result):
+    """The class for panoptic segmentation evaluation results."""
+
+    PQ: List[Dict[str, float]]
+    SQ: List[Dict[str, float]]
+    RQ: List[Dict[str, float]]
+    N: List[Dict[str, int]]  # pylint: disable=invalid-name
+
+    def __init__(self, **data: ScoresList) -> None:
+        """Set extra parameters."""
+        super().__init__(**data)
+        self._formatters = {
+            "PQ": "{:.1f}".format,
+            "SQ": "{:.1f}".format,
+            "RQ": "{:.1f}".format,
+            "N": "{:d}".format,
+        }
+
+    # pylint: disable=useless-super-delegation
+    def __eq__(self, other: "PanSegResult") -> bool:  # type: ignore
+        """Check whether two instances are equal."""
+        return super().__eq__(other)
+
+    def summary(
+        self,
+        include: Optional[AbstractSet[str]] = None,
+        exclude: Optional[AbstractSet[str]] = None,
+    ) -> Scores:
+        """Convert the pan_seg data into a flattened dict as the summary."""
+        summary_dict: Dict[str, Union[int, float]] = dict()
+        for metric, scores_list in self.dict(
+            include=include, exclude=exclude  # type: ignore
+        ).items():
+            summary_dict["{}/{}".format(metric, STUFF)] = scores_list[1][STUFF]
+            summary_dict["{}/{}".format(metric, THING)] = scores_list[1][THING]
+            summary_dict[metric] = scores_list[-1][OVERALL]
+        return summary_dict
 
 
 class PQStatCat:
@@ -102,9 +146,9 @@ class PQStat:
 
             if tp + fp + fn == 0:
                 continue
-            pq += iou / (tp + 0.5 * fp + 0.5 * fn)
-            sq += iou / tp if tp != 0 else 0
-            rq += tp / (tp + 0.5 * fp + 0.5 * fn)
+            pq += (iou / (tp + 0.5 * fp + 0.5 * fn)) * 100
+            sq += (iou / tp if tp != 0 else 0) * 100
+            rq += (tp / (tp + 0.5 * fp + 0.5 * fn)) * 100
             n += 1
 
         if n > 0:
@@ -155,10 +199,15 @@ def pq_per_image(gt_path: str, pred_path: str = "") -> PQStat:
 
 
 def evaluate_pan_seg(
-    gt_paths: List[str], pred_paths: List[str], nproc: int = NPROC
-) -> Dict[str, float]:
+    gt_paths: List[str],
+    pred_paths: List[str],
+    nproc: int = NPROC,
+    with_logs: bool = True,
+) -> PanSegResult:
     """Evaluate panoptic segmentation with BDD100K format."""
     start_time = time.time()
+    if with_logs:
+        logger.info("evaluating...")
     pred_paths = reorder_preds(gt_paths, pred_paths)
     if nproc > 1:
         with Pool(nproc) as pool:
@@ -177,6 +226,8 @@ def evaluate_pan_seg(
     for pq_stat_ in pq_stats:
         pq_stat += pq_stat_
 
+    if with_logs:
+        logger.info("accumulating...")
     categories: List[PanopticCatType] = [
         PanopticCatType(
             id=label.id,
@@ -187,44 +238,35 @@ def evaluate_pan_seg(
         )
         for label in labels
     ]
+    categories = categories[1:]
     categories_stuff = [
         category for category in categories if not category["isthing"]
     ]
     categories_thing = [
         category for category in categories if category["isthing"]
     ]
+    basic_category_names = [category["name"] for category in categories]
 
-    print(
-        "{:10s}| {:>5s}  {:>5s}  {:>5s} {:>5s}".format(
-            "", "PQ", "SQ", "RQ", "N"
-        )
-    )
-    print("-" * (10 + 7 * 4))
+    res_dict: Dict[str, ScoresList] = dict()
+    for category_name, category in zip(basic_category_names, categories):
+        result = pq_stat.pq_average([category])
+        for metric, score in result.items():
+            if metric not in res_dict:
+                res_dict[metric] = [dict(), dict(), dict()]
+            res_dict[metric][0][category_name] = score
 
-    name_cateogries = [
-        ("", categories),
-        ("Stuff", categories_stuff),
-        ("Thing", categories_thing),
-    ]
-    results = dict()
-    for name, categories_ in name_cateogries:
-        result = pq_stat.pq_average(categories_)
-        print(
-            "{:10s}| {:5.1f}  {:5.1f}  {:5.1f} {:5f}".format(
-                name,
-                100 * result["PQ"],
-                100 * result["SQ"],
-                100 * result["RQ"],
-                result["N"],
-            )
-        )
-        for key, val in result.items():
-            if name:
-                results["{}_{}".format(name, key)] = val
-            else:
-                results["{}".format(key)] = val
+    result = pq_stat.pq_average(categories_stuff)
+    for metric, score in result.items():
+        res_dict[metric][1][STUFF] = score
+    result = pq_stat.pq_average(categories_thing)
+    for metric, score in result.items():
+        res_dict[metric][1][THING] = score
+    result = pq_stat.pq_average(categories)
+    for metric, score in result.items():
+        res_dict[metric][2][OVERALL] = score
 
     t_delta = time.time() - start_time
-    print("Time elapsed: {:0.2f} seconds".format(t_delta))
+    if with_logs:
+        logger.info("Time elapsed: {:0.2f} seconds".format(t_delta))
 
-    return results
+    return PanSegResult(**res_dict)
