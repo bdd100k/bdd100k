@@ -5,13 +5,11 @@ predictions format: BitMasks
 import copy
 import json
 import os
-import time
 from multiprocessing import Pool
 from typing import Dict, List, Tuple
 
 import numpy as np
 from PIL import Image
-from pycocotools.cocoeval import COCOeval  # type: ignore
 from scalabel.common.parallel import NPROC
 from scalabel.common.typing import (
     DictStrAny,
@@ -19,12 +17,13 @@ from scalabel.common.typing import (
     NDArrayI32,
     NDArrayU8,
 )
-from scalabel.eval.detect import evaluate_workflow
+from scalabel.eval.detect import COCOevalV2, DetResult
 from scalabel.label.transforms import get_coco_categories
 from scalabel.label.typing import Config
 from tqdm import tqdm
 
 from ..common.bitmask import bitmask_intersection_rate, parse_bitmask
+from ..common.logger import logger
 from ..common.utils import list_files
 
 
@@ -71,14 +70,19 @@ def get_mask_areas(masks: NDArrayI32) -> NDArrayF64:
     return areas
 
 
-class BDDInsSegEval(COCOeval):  # type: ignore
+class BDD100KInsSegEval(COCOevalV2):
     """Modify the COCO API to support bitmasks as input."""
 
     def __init__(
-        self, gt_base: str, dt_base: str, dt_json: str, nproc: int = NPROC
+        self,
+        gt_base: str,  # pylint: disable=redefined-outer-name
+        dt_base: str,
+        dt_json: str,
+        cat_names: List[str],
+        nproc: int = NPROC,
     ) -> None:
         """Initialize InsSeg eval."""
-        super().__init__(iouType="segm")
+        super().__init__(cat_names)
         self.gt_base = gt_base
         self.dt_base = dt_base
         self.dt_json = dt_json
@@ -88,7 +92,6 @@ class BDDInsSegEval(COCOeval):  # type: ignore
         self.evalImgs: List[DictStrAny] = []
         self.iou_res: List[DictStrAny] = []
 
-        print("Precompute per image IoUs...")
         self._prepare()
 
     def __len__(self) -> int:
@@ -102,7 +105,7 @@ class BDDInsSegEval(COCOeval):  # type: ignore
         for gt_img, dt_img in zip(gt_imgs, dt_imgs):
             assert gt_img == dt_img
         self.img_names = gt_imgs
-        self.params.imgIds = self.img_names  # type: ignore
+        self.params.imgIds = self.img_names
 
         with open(self.dt_json) as fp:
             dt_pred = json.load(fp)
@@ -128,16 +131,8 @@ class BDDInsSegEval(COCOeval):  # type: ignore
 
     def evaluate(self) -> None:
         """Run per image evaluation."""
-        tic = time.time()
-
-        print("Running per image evaluation...")
-        p = self.params  # type: ignore
-        eval_num = len(p.catIds) * len(p.areaRng) * len(self)
-        self.evalImgs = [dict() for i in range(eval_num)]
-
-        print("Evaluate annotation type *{}*".format(p.iouType))
+        p = self.params
         p.maxDets = sorted(p.maxDets)
-
         self.params = p
 
         # loop through images, area range, max detection number
@@ -148,13 +143,14 @@ class BDDInsSegEval(COCOeval):  # type: ignore
                 )
         else:
             to_updates = list(map(self.compute_match, range(len(self))))
+
+        eval_num = len(p.catIds) * len(p.areaRng) * len(self)
+        self.evalImgs = [dict() for _ in range(eval_num)]
         for to_update in to_updates:
             for ind, item in to_update.items():
                 self.evalImgs[ind].update(item)
 
         self._paramsEval = copy.deepcopy(self.params)
-        toc = time.time()
-        print("DONE (t={:0.2f}s).".format(toc - tic))
 
     def compute_iou(self, img_ind: int) -> DictStrAny:
         """Compute IoU per image."""
@@ -270,11 +266,12 @@ class BDDInsSegEval(COCOeval):  # type: ignore
 
 def evaluate_ins_seg(
     ann_base: str,
-    pred_base: str,
+    pred_base: str,  # pylint: disable=redefined-outer-name
     pred_score_file: str,
     config: Config,
     nproc: int = NPROC,
-) -> Dict[str, float]:
+    with_logs: bool = True,
+) -> DetResult:
     """Load the ground truth and prediction results.
 
     Args:
@@ -283,12 +280,23 @@ def evaluate_ins_seg(
         pred_score_file: path tothe prediction scores.
         config: Config instance.
         nproc: number of processes.
+        with_logs: whether to print logs
 
     Returns:
         dict: detection metric scores
     """
     categories = get_coco_categories(config)
-    bdd_eval = BDDInsSegEval(ann_base, pred_base, pred_score_file, nproc)
     cat_ids = [category["id"] for category in categories]
     cat_names = [category["name"] for category in categories]
-    return evaluate_workflow(bdd_eval, cat_ids, cat_names)
+    bdd_eval = BDD100KInsSegEval(
+        ann_base, pred_base, pred_score_file, cat_names, nproc
+    )
+    bdd_eval.params.catIds = cat_ids
+    if with_logs:
+        logger.info("evaluating...")
+    bdd_eval.evaluate()
+    if with_logs:
+        logger.info("accumulating...")
+    bdd_eval.accumulate()
+    result = bdd_eval.summarize()  # pylint: disable=redefined-outer-name
+    return result
