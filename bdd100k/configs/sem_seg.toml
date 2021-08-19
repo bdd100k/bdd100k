@@ -1,5 +1,5 @@
 [scalabel]
-    [scalabel.image_size]
+    [scalabel.imageSize]
     height = 720
     width = 1280
 

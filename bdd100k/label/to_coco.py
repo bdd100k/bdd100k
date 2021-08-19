@@ -306,7 +306,7 @@ def bdd100k2coco_ins_seg(
 ) -> GtType:
     """Converting BDD100K Instance Segmentation Set to COCO format."""
     image_id, ann_id = 0, 0
-    img_shape = config.image_size
+    img_shape = config.imageSize
     images: List[ImgType] = []
 
     mask_names: List[str] = []
@@ -396,7 +396,7 @@ def bdd100k2coco_seg_track(
 ) -> GtType:
     """Converting BDD100K Segmentation Tracking Set to COCO format."""
     video_id, image_id, ann_id = 0, 0, 0
-    img_shape = config.image_size
+    img_shape = config.imageSize
     frames_list = group_and_sort(frames)
     videos: List[VidType] = []
     images: List[ImgType] = []
@@ -415,7 +415,7 @@ def bdd100k2coco_seg_track(
         global_instance_id: int = 1
         instance_id_maps: Dict[str, int] = dict()
 
-        video_name = video_anns[0].video_name
+        video_name = video_anns[0].videoName
         video_id += 1
         video = VidType(id=video_id, name=video_name)
         videos.append(video)
@@ -430,7 +430,7 @@ def bdd100k2coco_seg_track(
 
             image = ImgType(
                 video_id=video_id,
-                frame_id=image_anns.frame_index,
+                frame_id=image_anns.frameIndex,
                 id=image_id,
                 file_name=os.path.join(video_name, image_anns.name),
                 height=img_shape.height,

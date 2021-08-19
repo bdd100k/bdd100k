@@ -174,7 +174,7 @@ def seg_to_masks(
 ) -> None:
     """Converting segmentation poly2d to 1-channel masks."""
     os.makedirs(out_base, exist_ok=True)
-    img_shape = config.image_size
+    img_shape = config.imageSize
 
     out_paths: List[str] = []
     shapes: List[ImageSize] = []
@@ -261,7 +261,7 @@ def insseg_to_bitmasks(
 ) -> None:
     """Converting instance segmentation poly2d to bitmasks."""
     os.makedirs(out_base, exist_ok=True)
-    img_shape = config.image_size
+    img_shape = config.imageSize
 
     out_paths: List[str] = []
     shapes: List[ImageSize] = []
@@ -323,7 +323,7 @@ def panseg_to_bitmasks(
 ) -> None:
     """Converting panoptic segmentation poly2d to bitmasks."""
     os.makedirs(out_base, exist_ok=True)
-    img_shape = config.image_size
+    img_shape = config.imageSize
 
     out_paths: List[str] = []
     shapes: List[ImageSize] = []
@@ -390,7 +390,7 @@ def segtrack_to_bitmasks(
 ) -> None:
     """Converting segmentation tracking poly2d to bitmasks."""
     frames_list = group_and_sort(frames)
-    img_shape = config.image_size
+    img_shape = config.imageSize
 
     out_paths: List[str] = []
     shapes: List[ImageSize] = []
@@ -406,7 +406,7 @@ def segtrack_to_bitmasks(
         global_instance_id: int = 1
         instance_id_maps: Dict[str, int] = dict()
 
-        video_name = video_anns[0].video_name
+        video_name = video_anns[0].videoName
         out_dir = os.path.join(out_base, video_name)
         if not os.path.isdir(out_dir):
             os.makedirs(out_dir)

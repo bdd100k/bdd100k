@@ -316,7 +316,7 @@ Submission format
 ^^^^^^^^^^^^^^^^^
 
 The submission should be a zipped nested folder for bitmask images.
-Moreover, images belonging to the same video should be placed in the same folder, named by ${video_name}.
+Moreover, images belonging to the same video should be placed in the same folder, named by ${videoName}.
 
 You can find an example bitmask file in `bbd100k.eval.testcases.mots <https://github.com/bdd100k/bdd100k/blob/master/bdd100k/eval/testcases/mots/example_bitmask.png>`_
 
