@@ -39,10 +39,10 @@ from typing import AbstractSet, Dict, List, Optional, Union
 
 import numpy as np
 from PIL import Image
+from tqdm import tqdm
 from scalabel.common.parallel import NPROC
 from scalabel.eval.result import OVERALL, Result, Scores, ScoresList
 from scalabel.label.coco_typing import PanopticCatType
-from tqdm import tqdm
 
 from ..common.bitmask import (
     bitmask_intersection_rate,
@@ -86,7 +86,7 @@ class PanSegResult(Result):
         exclude: Optional[AbstractSet[str]] = None,
     ) -> Scores:
         """Convert the pan_seg data into a flattened dict as the summary."""
-        summary_dict: Dict[str, Union[int, float]] = dict()
+        summary_dict: Dict[str, Union[int, float]] = {}
         for metric, scores_list in self.dict(
             include=include, exclude=exclude  # type: ignore
         ).items():
@@ -247,12 +247,12 @@ def evaluate_pan_seg(
     ]
     basic_category_names = [category["name"] for category in categories]
 
-    res_dict: Dict[str, ScoresList] = dict()
+    res_dict: Dict[str, ScoresList] = {}
     for category_name, category in zip(basic_category_names, categories):
         result = pq_stat.pq_average([category])
         for metric, score in result.items():
             if metric not in res_dict:
-                res_dict[metric] = [dict(), dict(), dict()]
+                res_dict[metric] = [{}, {}, {}]
             res_dict[metric][0][category_name] = score
 
     result = pq_stat.pq_average(categories_stuff)

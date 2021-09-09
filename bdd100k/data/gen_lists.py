@@ -31,7 +31,7 @@ def gen_list(
     if not osp.exists(list_dir):
         os.makedirs(list_dir)
     logger.info("Writing %s", out_path)
-    with open(out_path, "w") as fp:
+    with open(out_path, "w", encoding="utf-8") as fp:
         fp.write("\n".join(images))
 
 

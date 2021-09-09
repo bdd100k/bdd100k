@@ -11,10 +11,10 @@ from typing import AbstractSet, Dict, List, Optional, Set, Tuple, Union, cast
 
 import numpy as np
 from PIL import Image
+from tqdm import tqdm
 from scalabel.common.parallel import NPROC
 from scalabel.common.typing import NDArrayF64, NDArrayI32, NDArrayU8
 from scalabel.eval.result import AVERAGE, Result, Scores, ScoresList
-from tqdm import tqdm
 
 from ..common.logger import logger
 from ..common.utils import reorder_preds
@@ -48,7 +48,7 @@ class SegResult(Result):
         exclude: Optional[AbstractSet[str]] = None,
     ) -> Scores:
         """Convert the seg result into a flattened dict as the summary."""
-        summary_dict: Dict[str, Union[int, float]] = dict()
+        summary_dict: Dict[str, Union[int, float]] = {}
         for metric, scores_list in self.dict(
             include=include, exclude=exclude  # type: ignore
         ).items():

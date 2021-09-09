@@ -164,7 +164,7 @@ def create_test_file() -> None:
                 ],
             }
         ]
-        with open(dt_json, "w") as fp:
+        with open(dt_json, "w", encoding="utf-8") as fp:
             json.dump(dt_pred, fp)
 
 

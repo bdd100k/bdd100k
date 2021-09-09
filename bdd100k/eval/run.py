@@ -183,7 +183,7 @@ def run() -> None:
         out_folder = os.path.split(args.out_file)[0]
         if not os.path.exists(out_folder):
             os.makedirs(out_folder)
-        with open(args.out_file, "w") as fp:
+        with open(args.out_file, "w", encoding="utf-8") as fp:
             json.dump(dict(results), fp, indent=2)
 
 

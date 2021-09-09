@@ -22,7 +22,7 @@ class TestFromCocoPanSeg(unittest.TestCase):
         json_name = "{}/testcases/panseg_coco/panseg_coco.json".format(
             self.cur_dir
         )
-        with open(json_name) as fp:
+        with open(json_name, encoding="utf-8") as fp:
             annotation: PanopticAnnType = json.load(fp)
         pan_mask_base = "{}/testcases/panseg_coco".format(self.cur_dir)
         mask_base = self.test_out

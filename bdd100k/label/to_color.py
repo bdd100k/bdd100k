@@ -8,8 +8,8 @@ from typing import List
 
 import numpy as np
 from PIL import Image
-from scalabel.common.parallel import NPROC
 from tqdm import tqdm
+from scalabel.common.parallel import NPROC
 
 from ..common.logger import logger
 from ..common.utils import group_and_sort_files, list_files

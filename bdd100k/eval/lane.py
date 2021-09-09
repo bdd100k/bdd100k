@@ -65,11 +65,11 @@ from typing import AbstractSet, Callable, Dict, List, Optional, Union
 
 import numpy as np
 from PIL import Image
+from skimage.morphology import binary_dilation, disk  # type: ignore
+from tqdm import tqdm
 from scalabel.common.parallel import NPROC
 from scalabel.common.typing import NDArrayF64, NDArrayU8
 from scalabel.eval.result import AVERAGE, Result, Scores, ScoresList
-from skimage.morphology import binary_dilation, disk  # type: ignore
-from tqdm import tqdm
 
 from ..common.logger import logger
 from ..common.utils import reorder_preds
@@ -178,7 +178,7 @@ class LaneResult(Result):
         exclude: Optional[AbstractSet[str]] = None,
     ) -> Scores:
         """Convert the lane_mark data into a flattened dict as the summary."""
-        summary_dict: Dict[str, Union[int, float]] = dict()
+        summary_dict: Dict[str, Union[int, float]] = {}
         for metric, scores_list in self.dict(
             include=include, exclude=exclude  # type: ignore
         ).items():
@@ -190,7 +190,7 @@ class LaneResult(Result):
 
 def eval_lane_per_frame(gt_path: str, pred_path: str) -> Dict[str, NDArrayF64]:
     """Compute mean,recall and decay from per-frame evaluation."""
-    task2arr: Dict[str, NDArrayF64] = dict()  # str -> 2d array
+    task2arr: Dict[str, NDArrayF64] = {}  # str -> 2d array
     gt_byte = np.asarray(Image.open(gt_path), dtype=np.uint8)
     if not pred_path:
         pred_byte = np.zeros_like(gt_byte, dtype=np.uint8)
@@ -241,7 +241,7 @@ def merge_results(
 def generate_results(task2arr: Dict[str, NDArrayF64]) -> LaneResult:
     """Render the evaluation results."""
     res_dict: Dict[str, ScoresList] = {
-        "F1_pix{}".format(bound_pixel): [dict() for _ in range(5)]
+        "F1_pix{}".format(bound_pixel): [{} for _ in range(5)]
         for bound_pixel in BOUND_PIXELS
     }
 

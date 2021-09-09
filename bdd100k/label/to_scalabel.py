@@ -1,10 +1,10 @@
 """Convert BDD100K to Scalabel format."""
 
 from typing import Dict, List, Optional
+from tqdm import tqdm
 
 from scalabel.label.typing import Frame, Label
 from scalabel.label.utils import get_leaf_categories
-from tqdm import tqdm
 
 from ..common.typing import BDD100KConfig
 
@@ -35,7 +35,7 @@ def deal_bdd100k_category(
             assert category_name in bdd100k_config.ignored_mapping
             category_name = bdd100k_config.ignored_mapping[category_name]
             if label.attributes is None:
-                label.attributes = dict()
+                label.attributes = {}
             label.attributes[IGNORED] = True
             label.category = category_name
             result = label

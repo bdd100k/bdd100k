@@ -9,6 +9,7 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 from PIL import Image
+from tqdm import tqdm
 from scalabel.common.parallel import NPROC
 from scalabel.label.coco_typing import AnnType, GtType, ImgType, VidType
 from scalabel.label.io import group_and_sort, load
@@ -24,7 +25,6 @@ from scalabel.label.utils import (
     check_ignored,
     get_leaf_categories,
 )
-from tqdm import tqdm
 
 from ..common.logger import logger
 from ..common.typing import BDD100KConfig, InstanceType
@@ -413,7 +413,7 @@ def bdd100k2coco_seg_track(
 
     for video_anns in tqdm(frames_list):
         global_instance_id: int = 1
-        instance_id_maps: Dict[str, int] = dict()
+        instance_id_maps: Dict[str, int] = {}
 
         video_name = video_anns[0].videoName
         video_id += 1
@@ -546,7 +546,7 @@ def main() -> None:
         coco = convert_func(frames=frames, config=bdd100k_config.scalabel)
 
     logger.info("Saving converted annotations to disk...")
-    with open(args.output, "w") as f:
+    with open(args.output, "w", encoding="utf-8") as f:
         json.dump(coco, f)
     logger.info("Finished!")
 

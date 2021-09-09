@@ -8,6 +8,7 @@ from typing import Dict, List
 
 import numpy as np
 from PIL import Image
+from tqdm import tqdm
 from scalabel.common.parallel import NPROC
 from scalabel.label.coco_typing import (
     ImgType,
@@ -16,7 +17,6 @@ from scalabel.label.coco_typing import (
     PanopticGtType,
     PanopticSegType,
 )
-from tqdm import tqdm
 
 from ..common.logger import logger
 from ..common.utils import list_files
@@ -69,7 +69,7 @@ def bitmask2pan_json(image: ImgType, mask_name: str) -> PanopticAnnType:
     image["height"] = img_shape.height
     image["width"] = img_shape.width
 
-    cat_id_to_idx: Dict[int, int] = dict()
+    cat_id_to_idx: Dict[int, int] = {}
 
     segments_info: List[PanopticSegType] = []
     for instance in instances:
@@ -169,7 +169,7 @@ def main() -> None:
     logger.info("Start format converting...")
     coco = bitmask2coco_pan_seg(args.input, args.pan_mask_base, args.nproc)
     logger.info("Saving converted annotations to disk...")
-    with open(args.output, "w") as fp:
+    with open(args.output, "w", encoding="utf-8") as fp:
         json.dump(coco, fp)
     logger.info("Finished!")
 
