@@ -163,9 +163,6 @@ class LaneResult(Result):
     def __init__(self, **data: ScoresList) -> None:
         """Set extra parameters."""
         super().__init__(**data)
-        self._formatters = {
-            metric: "{:.1f}".format for metric in self.__fields__
-        }
 
     # pylint: disable=useless-super-delegation
     def __eq__(self, other: "LaneResult") -> bool:  # type: ignore

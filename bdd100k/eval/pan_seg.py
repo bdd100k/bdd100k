@@ -68,12 +68,6 @@ class PanSegResult(Result):
     def __init__(self, **data: ScoresList) -> None:
         """Set extra parameters."""
         super().__init__(**data)
-        self._formatters = {
-            "PQ": "{:.1f}".format,
-            "SQ": "{:.1f}".format,
-            "RQ": "{:.1f}".format,
-            "N": "{:d}".format,
-        }
 
     # pylint: disable=useless-super-delegation
     def __eq__(self, other: "PanSegResult") -> bool:  # type: ignore
