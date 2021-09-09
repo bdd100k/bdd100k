@@ -8,9 +8,9 @@ from multiprocessing import Pool
 
 import numpy as np
 from PIL import Image
-from tqdm import tqdm
 from scalabel.common.parallel import NPROC
 from scalabel.label.coco_typing import PanopticAnnType, PanopticGtType
+from tqdm import tqdm
 
 from ..common.logger import logger
 

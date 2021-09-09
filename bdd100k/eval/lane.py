@@ -65,11 +65,11 @@ from typing import AbstractSet, Callable, Dict, List, Optional, Union
 
 import numpy as np
 from PIL import Image
-from skimage.morphology import binary_dilation, disk  # type: ignore
-from tqdm import tqdm
 from scalabel.common.parallel import NPROC
 from scalabel.common.typing import NDArrayF64, NDArrayU8
 from scalabel.eval.result import AVERAGE, Result, Scores, ScoresList
+from skimage.morphology import binary_dilation, disk  # type: ignore
+from tqdm import tqdm
 
 from ..common.logger import logger
 from ..common.utils import reorder_preds

@@ -10,7 +10,6 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 from PIL import Image
-from tqdm import tqdm
 from scalabel.common.parallel import NPROC
 from scalabel.common.typing import (
     DictStrAny,
@@ -21,6 +20,7 @@ from scalabel.common.typing import (
 from scalabel.eval.detect import COCOevalV2, DetResult
 from scalabel.label.transforms import get_coco_categories
 from scalabel.label.typing import Config
+from tqdm import tqdm
 
 from ..common.bitmask import bitmask_intersection_rate, parse_bitmask
 from ..common.logger import logger

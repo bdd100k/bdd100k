@@ -1,10 +1,10 @@
 """Convert BDD100K to Scalabel format."""
 
 from typing import Dict, List, Optional
-from tqdm import tqdm
 
 from scalabel.label.typing import Frame, Label
 from scalabel.label.utils import get_leaf_categories
+from tqdm import tqdm
 
 from ..common.typing import BDD100KConfig
 

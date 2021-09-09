@@ -9,7 +9,6 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 from PIL import Image
-from tqdm import tqdm
 from scalabel.common.parallel import NPROC
 from scalabel.label.coco_typing import AnnType, GtType, ImgType, VidType
 from scalabel.label.io import group_and_sort, load
@@ -25,6 +24,7 @@ from scalabel.label.utils import (
     check_ignored,
     get_leaf_categories,
 )
+from tqdm import tqdm
 
 from ..common.logger import logger
 from ..common.typing import BDD100KConfig, InstanceType

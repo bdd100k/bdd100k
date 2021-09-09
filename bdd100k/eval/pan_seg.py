@@ -39,10 +39,10 @@ from typing import AbstractSet, Dict, List, Optional, Union
 
 import numpy as np
 from PIL import Image
-from tqdm import tqdm
 from scalabel.common.parallel import NPROC
 from scalabel.eval.result import OVERALL, Result, Scores, ScoresList
 from scalabel.label.coco_typing import PanopticCatType
+from tqdm import tqdm
 
 from ..common.bitmask import (
     bitmask_intersection_rate,

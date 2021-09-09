@@ -11,10 +11,10 @@ from typing import AbstractSet, Dict, List, Optional, Set, Tuple, Union, cast
 
 import numpy as np
 from PIL import Image
-from tqdm import tqdm
 from scalabel.common.parallel import NPROC
 from scalabel.common.typing import NDArrayF64, NDArrayI32, NDArrayU8
 from scalabel.eval.result import AVERAGE, Result, Scores, ScoresList
+from tqdm import tqdm
 
 from ..common.logger import logger
 from ..common.utils import reorder_preds
