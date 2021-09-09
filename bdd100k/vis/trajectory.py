@@ -32,7 +32,7 @@ def visualize_file(in_file: str, out_file: str, apikey: str) -> None:
         apikey:   Google Map API key
     """
     # open info json
-    with open(in_file, "r") as f:
+    with open(in_file, "r", encoding="utf-8") as f:
         info = json.loads(f.read())
 
     latitude_list = []

@@ -53,7 +53,7 @@ class TestToCocoPanSeg(unittest.TestCase):
         image = ImgType(id=255, file_name="panseg_mask.jpg")
         pan_ann = bitmask2pan_json(image, mask_name)
 
-        with open(gt_json_name) as fp:
+        with open(gt_json_name, encoding="utf-8") as fp:
             gt_pan_ann = json.load(fp)
 
         self.assertDictEqual(dict(pan_ann), gt_pan_ann)

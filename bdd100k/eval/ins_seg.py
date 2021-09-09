@@ -87,8 +87,8 @@ class BDD100KInsSegEval(COCOevalV2):
         self.dt_base = dt_base
         self.dt_json = dt_json
         self.nproc = nproc
-        self.img_names: List[str] = list()
-        self.img2score: Dict[str, List[Tuple[int, float]]] = dict()
+        self.img_names: List[str] = []
+        self.img2score: Dict[str, List[Tuple[int, float]]] = {}
         self.evalImgs: List[DictStrAny] = []
         self.iou_res: List[DictStrAny] = []
 
@@ -107,7 +107,7 @@ class BDD100KInsSegEval(COCOevalV2):
         self.img_names = gt_imgs
         self.params.imgIds = self.img_names
 
-        with open(self.dt_json) as fp:
+        with open(self.dt_json, encoding="utf-8") as fp:
             dt_pred = json.load(fp)
         for image in dt_pred:
             img_name = image["name"].replace(".jpg", ".png")
@@ -118,7 +118,7 @@ class BDD100KInsSegEval(COCOevalV2):
                 self.img2score[img_name].append(
                     (label["index"], label["score"])
                 )
-        self.iou_res = [dict() for i in range(len(self))]
+        self.iou_res = [{} for i in range(len(self))]
         if self.nproc > 1:
             with Pool(self.nproc) as pool:
                 to_updates: List[DictStrAny] = pool.map(
@@ -145,7 +145,7 @@ class BDD100KInsSegEval(COCOevalV2):
             to_updates = list(map(self.compute_match, range(len(self))))
 
         eval_num = len(p.catIds) * len(p.areaRng) * len(self)
-        self.evalImgs = [dict() for _ in range(eval_num)]
+        self.evalImgs = [{} for _ in range(eval_num)]
         for to_update in to_updates:
             for ind, item in to_update.items():
                 self.evalImgs[ind].update(item)
@@ -193,7 +193,7 @@ class BDD100KInsSegEval(COCOevalV2):
         thr_num = len(p.iouThrs)
         img_num = len(self)
 
-        to_updates = dict()
+        to_updates = {}
         for cat_ind, cat_id in enumerate(p.catIds):
             gt_inds_c = res["gt_cat_ids"] == cat_id
             gt_areas_c = res["gt_areas"][gt_inds_c]

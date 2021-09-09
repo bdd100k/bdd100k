@@ -84,7 +84,7 @@ def parse_args() -> argparse.Namespace:
         help="Path to store the prediction scoring file",
     )
     parser.add_argument(
-        "--quite",
+        "--quiet",
         "-q",
         action="store_true",
         help="without logging",
@@ -113,7 +113,6 @@ def run() -> None:
             ),
             bdd100k_config.scalabel,
             nproc=args.nproc,
-            with_logs=not args.quite,
         )
     elif args.task == "ins_seg":
         results = evaluate_ins_seg(
@@ -122,7 +121,6 @@ def run() -> None:
             args.score_file,
             bdd100k_config.scalabel,
             nproc=args.nproc,
-            with_logs=not args.quite,
         )
     elif args.task == "box_track":
         results = evaluate_track(
@@ -141,7 +139,6 @@ def run() -> None:
             iou_thr=args.iou_thr,
             ignore_iof_thr=args.ignore_iof_thr,
             nproc=args.nproc,
-            with_logs=not args.quite,
         )
     elif args.task == "seg_track":
         results = evaluate_track(
@@ -156,26 +153,25 @@ def run() -> None:
             iou_thr=args.iou_thr,
             ignore_iof_thr=args.ignore_iof_thr,
             nproc=args.nproc,
-            with_logs=not args.quite,
         )
 
     gt_paths = list_files(args.gt, ".png", with_prefix=True)
     pred_paths = list_files(args.result, ".png", with_prefix=True)
     if args.task == "drivable":
         results = evaluate_drivable(
-            gt_paths, pred_paths, nproc=args.nproc, with_logs=not args.quite
+            gt_paths, pred_paths, nproc=args.nproc, with_logs=not args.quiet
         )
     elif args.task == "lane_mark":
         results = evaluate_lane_marking(
-            gt_paths, pred_paths, nproc=args.nproc, with_logs=not args.quite
+            gt_paths, pred_paths, nproc=args.nproc, with_logs=not args.quiet
         )
     elif args.task == "sem_seg":
         results = evaluate_sem_seg(
-            gt_paths, pred_paths, nproc=args.nproc, with_logs=not args.quite
+            gt_paths, pred_paths, nproc=args.nproc, with_logs=not args.quiet
         )
     elif args.task == "pan_seg":
         results = evaluate_pan_seg(
-            gt_paths, pred_paths, nproc=args.nproc, with_logs=not args.quite
+            gt_paths, pred_paths, nproc=args.nproc, with_logs=not args.quiet
         )
 
     logger.info(results)
@@ -183,7 +179,7 @@ def run() -> None:
         out_folder = os.path.split(args.out_file)[0]
         if not os.path.exists(out_folder):
             os.makedirs(out_folder)
-        with open(args.out_file, "w") as fp:
+        with open(args.out_file, "w", encoding="utf-8") as fp:
             json.dump(dict(results), fp, indent=2)
 
 

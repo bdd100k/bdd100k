@@ -65,16 +65,6 @@ class PanSegResult(Result):
     RQ: List[Dict[str, float]]
     N: List[Dict[str, int]]  # pylint: disable=invalid-name
 
-    def __init__(self, **data: ScoresList) -> None:
-        """Set extra parameters."""
-        super().__init__(**data)
-        self._formatters = {
-            "PQ": "{:.1f}".format,
-            "SQ": "{:.1f}".format,
-            "RQ": "{:.1f}".format,
-            "N": "{:d}".format,
-        }
-
     # pylint: disable=useless-super-delegation
     def __eq__(self, other: "PanSegResult") -> bool:  # type: ignore
         """Check whether two instances are equal."""
@@ -86,7 +76,7 @@ class PanSegResult(Result):
         exclude: Optional[AbstractSet[str]] = None,
     ) -> Scores:
         """Convert the pan_seg data into a flattened dict as the summary."""
-        summary_dict: Dict[str, Union[int, float]] = dict()
+        summary_dict: Dict[str, Union[int, float]] = {}
         for metric, scores_list in self.dict(
             include=include, exclude=exclude  # type: ignore
         ).items():
@@ -247,12 +237,12 @@ def evaluate_pan_seg(
     ]
     basic_category_names = [category["name"] for category in categories]
 
-    res_dict: Dict[str, ScoresList] = dict()
+    res_dict: Dict[str, ScoresList] = {}
     for category_name, category in zip(basic_category_names, categories):
         result = pq_stat.pq_average([category])
         for metric, score in result.items():
             if metric not in res_dict:
-                res_dict[metric] = [dict(), dict(), dict()]
+                res_dict[metric] = [{}, {}, {}]
             res_dict[metric][0][category_name] = score
 
     result = pq_stat.pq_average(categories_stuff)

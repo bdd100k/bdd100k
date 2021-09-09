@@ -30,13 +30,6 @@ class SegResult(Result):
     fIoU: float
     pAcc: float
 
-    def __init__(self, **data: Union[float, ScoresList]) -> None:
-        """Set extra parameters."""
-        super().__init__(**data)
-        self._formatters = {
-            metric: "{:.1f}".format for metric in self.__fields__
-        }
-
     # pylint: disable=useless-super-delegation
     def __eq__(self, other: "SegResult") -> bool:  # type: ignore
         """Check whether two instances are equal."""
@@ -48,7 +41,7 @@ class SegResult(Result):
         exclude: Optional[AbstractSet[str]] = None,
     ) -> Scores:
         """Convert the seg result into a flattened dict as the summary."""
-        summary_dict: Dict[str, Union[int, float]] = dict()
+        summary_dict: Dict[str, Union[int, float]] = {}
         for metric, scores_list in self.dict(
             include=include, exclude=exclude  # type: ignore
         ).items():

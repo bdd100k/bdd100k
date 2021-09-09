@@ -93,7 +93,7 @@ def coco_pan_seg2bitmask(
 def main() -> None:
     """Main function."""
     args = parse_args()
-    with open(args.input) as fp:
+    with open(args.input, encoding="utf-8") as fp:
         coco_pan_seg = json.load(fp)
 
     logger.info("Start format converting...")

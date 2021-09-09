@@ -35,7 +35,7 @@ def deal_bdd100k_category(
             assert category_name in bdd100k_config.ignored_mapping
             category_name = bdd100k_config.ignored_mapping[category_name]
             if label.attributes is None:
-                label.attributes = dict()
+                label.attributes = {}
             label.attributes[IGNORED] = True
             label.category = category_name
             result = label

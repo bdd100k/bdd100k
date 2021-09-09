@@ -404,7 +404,7 @@ def segtrack_to_bitmasks(
 
     for video_anns in tqdm(frames_list):
         global_instance_id: int = 1
-        instance_id_maps: Dict[str, int] = dict()
+        instance_id_maps: Dict[str, int] = {}
 
         video_name = video_anns[0].videoName
         out_dir = os.path.join(out_base, video_name)
