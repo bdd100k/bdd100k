@@ -30,10 +30,6 @@ class SegResult(Result):
     fIoU: float
     pAcc: float
 
-    def __init__(self, **data: Union[float, ScoresList]) -> None:
-        """Set extra parameters."""
-        super().__init__(**data)
-
     # pylint: disable=useless-super-delegation
     def __eq__(self, other: "SegResult") -> bool:  # type: ignore
         """Check whether two instances are equal."""

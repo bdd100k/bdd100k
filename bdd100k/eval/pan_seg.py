@@ -65,10 +65,6 @@ class PanSegResult(Result):
     RQ: List[Dict[str, float]]
     N: List[Dict[str, int]]  # pylint: disable=invalid-name
 
-    def __init__(self, **data: ScoresList) -> None:
-        """Set extra parameters."""
-        super().__init__(**data)
-
     # pylint: disable=useless-super-delegation
     def __eq__(self, other: "PanSegResult") -> bool:  # type: ignore
         """Check whether two instances are equal."""
