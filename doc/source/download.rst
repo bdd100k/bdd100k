@@ -356,3 +356,22 @@ Multi-object tracking and segmentation videos in frames released in 2020. This i
                 - train
                 - val
                 - test
+
+Pose Estimation Labels
+~~~~~~~~~~~~~~~~~~~~~~
+
+Pose estimation training and validation labels.
+
++------+----------------------------------+
+| Size | 17MB                             |
++------+----------------------------------+
+| md5  | 2e8738d3fd0ac432e64d9a72df2f7aa4 |
++------+----------------------------------+
+
+:: 
+
+    - bdd100k
+        - labels
+            - pose_21
+                - pose_train.json
+                - pose_val.json
