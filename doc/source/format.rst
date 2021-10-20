@@ -17,19 +17,19 @@ Categories
 Object Detection
 ^^^^^^^^^^^^^^^^^^
 
-For object detection, 10 classes are evalued, they are:
+For object detection, 10 classes are evaluated. They are:
 ::
 
-    1: pedestrian
-    2: rider
-    3: car
-    4: truck
-    5: bus
-    6: train
-    7: motorcycle
-    8: bicycle
-    9: traffic light
-    10: traffic sign
+    0: pedestrian
+    1: rider
+    2: car
+    3: truck
+    4: bus
+    5: train
+    6: motorcycle
+    7: bicycle
+    8: traffic light
+    9: traffic sign
 
 Note that, the field `category_id` range from **1** instead of 0.
 
@@ -42,19 +42,19 @@ only the first **8** classes are used and evaluated.
 Semantic Segmentation
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Meanwhile, for the semantic segmentation task, 19 classes are evaluated, they are:
+Meanwhile, for the semantic segmentation task, 19 classes are evaluated. They are:
 ::
 
-    0: road 
-    1: sidewalk
-    2: building
-    3: wall
-    4: fence
-    5: pole
-    6: traffic light
-    7: traffic sign
-    8: vegetation
-    9: terrain
+    0:  road 
+    1:  sidewalk
+    2:  building
+    3:  wall
+    4:  fence
+    5:  pole
+    6:  traffic light
+    7:  traffic sign
+    8:  vegetation
+    9:  terrain
     10: sky
     11: person
     12: rider
@@ -72,19 +72,19 @@ Meanwhile, for the semantic segmentation task, 19 classes are evaluated, they ar
 Panoptic Segmentation
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Meanwhile, for the instance segmentation task, 19 classes are evaluated, they are:
+Meanwhile, for the instance segmentation task, 19 classes are evaluated. They are:
 ::
 
-    0: unlabeled
-    1: dynamic
-    2: ego vehicle
-    3: ground
-    4: static
-    5: parking
-    6: rail track
-    7: road
-    8: sidewalk
-    9: bridge
+    0:  unlabeled
+    1:  dynamic
+    2:  ego vehicle
+    3:  ground
+    4:  static
+    5:  parking
+    6:  rail track
+    7:  road
+    8:  sidewalk
+    9:  bridge
     10: building
     11: fence
     12: garage
@@ -165,6 +165,32 @@ Lane Styles
     0: solid
     1: dashed
     2: background
+
+
+Pose Estimation
+^^^^^^^^^^^^^^^^^^^^^^^
+
+For pose estimation, 18 classes (joints) are evaluated. They are:
+::
+
+    0:  head
+    1:  neck
+    2:  right_shoulder
+    3:  right_elbow
+    4:  right_wrist
+    5:  left_shoulder
+    6:  left_elbow
+    7:  left_wrist
+    8:  right_hip
+    9:  right_knee
+    10: right_ankle
+    11: left_hip
+    12: left_knee
+    13: left_ankle
+    14: right_hand
+    15: left_hand
+    16: right_foot
+    17: left_foot
 
 
 
