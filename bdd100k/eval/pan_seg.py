@@ -80,8 +80,8 @@ class PanSegResult(Result):
         for metric, scores_list in self.dict(
             include=include, exclude=exclude  # type: ignore
         ).items():
-            summary_dict["{}/{}".format(metric, STUFF)] = scores_list[1][STUFF]
-            summary_dict["{}/{}".format(metric, THING)] = scores_list[1][THING]
+            summary_dict[f"{metric}/{STUFF}"] = scores_list[1][STUFF]
+            summary_dict[f"{metric}/{THING}"] = scores_list[1][THING]
             summary_dict[metric] = scores_list[-1][OVERALL]
         return summary_dict
 
@@ -257,6 +257,6 @@ def evaluate_pan_seg(
 
     t_delta = time.time() - start_time
     if with_logs:
-        logger.info("Time elapsed: {:0.2f} seconds".format(t_delta))
+        logger.info("Time elapsed: %0.2f seconds", t_delta)
 
     return PanSegResult(**res_dict)

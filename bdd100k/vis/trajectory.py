@@ -123,18 +123,18 @@ def main() -> None:
     args = parse_args()
 
     if args.isdir:
-        file_list = glob("%s/*.json" % args.input)
+        file_list = glob(f"{args.input}/*.json")
 
         for in_file in file_list:
-            out_file = "%s/%s.html" % (
-                args.output,
-                in_file.split("/")[-1].replace(".json", ""),
+            out_file = (
+                f"{args.output}/"
+                f"{in_file.split('/')[-1].replace('.json', '')}.html"
             )
             visualize_file(in_file, out_file, args.apikey)
     else:
-        out_file = "%s/%s.html" % (
-            args.output,
-            args.input.split("/")[-1].replace(".json", ""),
+        out_file = (
+            f"{args.output}/"
+            f"{args.input.split('/')[-1].replace('.json', '')}.html"
         )
         visualize_file(args.input, out_file, args.apikey)
 

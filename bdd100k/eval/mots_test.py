@@ -17,8 +17,8 @@ class TestEvaluteMOTS(unittest.TestCase):
     """Test Cases for BDD100K MOTS evaluation.."""
 
     cur_dir = os.path.dirname(os.path.abspath(__file__))
-    a_path = "{}/testcases/mots/gt".format(cur_dir)
-    b_path = "{}/testcases/mots/result".format(cur_dir)
+    a_path = f"{cur_dir}/testcases/mots/gt"
+    b_path = f"{cur_dir}/testcases/mots/result"
 
     gts = group_and_sort_files(list_files(a_path, ".png", with_prefix=True))
     results = group_and_sort_files(

@@ -334,9 +334,9 @@ Available arguments:
 
 ::
    
-    python3 -m bdd100k.label.to_coco -m det|box_track -i ${in_path} -o ${out_path}  
+    python3 -m bdd100k.label.to_coco -m det|box_track|pose -i ${in_path} -o ${out_path}
 
-For instance segmentation and segmentation tracking, converting from "JOSN + Bitmasks" and from "Bitmask" are both supported.
+For instance segmentation and segmentation tracking, converting from "JSON + Bitmasks" and from "Bitmask" are both supported.
 For the first choice, use this command:
 
 ::

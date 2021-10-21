@@ -176,7 +176,7 @@ class LaneResult(Result):
             include=include, exclude=exclude  # type: ignore
         ).items():
             for category, score in scores_list[-2].items():
-                summary_dict["{}/{}".format(metric, category)] = score
+                summary_dict[f"{metric}/{category}"] = score
             summary_dict[metric] = scores_list[-1][AVERAGE]
         return summary_dict
 
@@ -234,7 +234,7 @@ def merge_results(
 def generate_results(task2arr: Dict[str, NDArrayF64]) -> LaneResult:
     """Render the evaluation results."""
     res_dict: Dict[str, ScoresList] = {
-        "F1_pix{}".format(bound_pixel): [{} for _ in range(5)]
+        f"F1_pix{bound_pixel}": [{} for _ in range(5)]
         for bound_pixel in BOUND_PIXELS
     }
 
@@ -244,9 +244,7 @@ def generate_results(task2arr: Dict[str, NDArrayF64]) -> LaneResult:
             continue
         for cat_name, arr1d in zip(sub_task_cats[task_name], arr2d):
             for bound_pixel, f_score in zip(BOUND_PIXELS, arr1d):
-                res_dict["F1_pix{}".format(bound_pixel)][cur_ind][
-                    cat_name
-                ] = f_score
+                res_dict[f"F1_pix{bound_pixel}"][cur_ind][cat_name] = f_score
         cur_ind += 1
 
     for task_name, arr2d in task2arr.items():
@@ -255,10 +253,10 @@ def generate_results(task2arr: Dict[str, NDArrayF64]) -> LaneResult:
             continue
         arr1d = arr2d[-1]
         for bound_pixel, f_score in zip(BOUND_PIXELS, arr1d):
-            res_dict["F1_pix{}".format(bound_pixel)][-2][task_name] = f_score
+            res_dict[f"F1_pix{bound_pixel}"][-2][task_name] = f_score
 
     for bound_pixel, f_score in zip(BOUND_PIXELS, task2arr[AVERAGE]):
-        res_dict["F1_pix{}".format(bound_pixel)][-1][AVERAGE] = f_score
+        res_dict[f"F1_pix{bound_pixel}"][-1][AVERAGE] = f_score
 
     return LaneResult(**res_dict)
 

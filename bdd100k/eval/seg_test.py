@@ -42,8 +42,8 @@ class TestPerImageHist(unittest.TestCase):
 
     def test_general_case(self) -> None:
         """Test the general case."""
-        gt_path = "{}/testcases/seg/gt/a.png".format(self.cur_dir)
-        pred_path = "{}/testcases/seg/pred/a.png".format(self.cur_dir)
+        gt_path = f"{self.cur_dir}/testcases/seg/gt/a.png"
+        pred_path = f"{self.cur_dir}/testcases/seg/pred/a.png"
 
         hist, id_set = per_image_hist(gt_path, pred_path, 3)
         gt_hist = np.array([[93, 1], [4, 2]])
@@ -53,7 +53,7 @@ class TestPerImageHist(unittest.TestCase):
 
     def test_blank_pred(self) -> None:
         """Test the blank prediction case."""
-        gt_path = "{}/testcases/seg/gt/a.png".format(self.cur_dir)
+        gt_path = f"{self.cur_dir}/testcases/seg/gt/a.png"
         pred_path = ""
 
         hist, id_set = per_image_hist(gt_path, pred_path, 3)
@@ -70,8 +70,8 @@ class TestEvaluateSegmentation(unittest.TestCase):
 
     def test_ious_miou(self) -> None:
         """Test the general case."""
-        a_dir = "{}/testcases/seg/gt".format(self.cur_dir)
-        b_dir = "{}/testcases/seg/pred".format(self.cur_dir)
+        a_dir = f"{self.cur_dir}/testcases/seg/gt"
+        b_dir = f"{self.cur_dir}/testcases/seg/pred"
 
         result = evaluate_segmentation(
             list_files(a_dir, ".png", with_prefix=True),
@@ -91,8 +91,8 @@ class TestEvaluateSegmentation(unittest.TestCase):
 
     def test_blank_dir(self) -> None:
         """Test the missing prediction scenario."""
-        a_dir = "{}/testcases/seg/gt+".format(self.cur_dir)
-        b_dir = "{}/testcases/seg/pred".format(self.cur_dir)
+        a_dir = f"{self.cur_dir}/testcases/seg/gt+"
+        b_dir = f"{self.cur_dir}/testcases/seg/pred"
 
         result = evaluate_segmentation(
             list_files(a_dir, ".png", with_prefix=True),

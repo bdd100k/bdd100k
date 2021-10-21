@@ -18,7 +18,7 @@ def gen_list(
     """Generate the list."""
     phase_dir = osp.join(data_root, data_dir, phase)
     if not osp.exists(phase_dir):
-        raise ValueError("Can not find folder {}".format(phase_dir))
+        raise ValueError(f"Can not find folder {phase_dir}")
     images = sorted(
         [
             osp.join(data_dir, phase, n)
@@ -27,7 +27,7 @@ def gen_list(
         ]
     )
     logger.info("Found %d items in %s %s", len(images), data_dir, phase)
-    out_path = osp.join(list_dir, "{}_{}.txt".format(phase, list_type))
+    out_path = osp.join(list_dir, f"{phase}_{list_type}.txt")
     if not osp.exists(list_dir):
         os.makedirs(list_dir)
     logger.info("Writing %s", out_path)

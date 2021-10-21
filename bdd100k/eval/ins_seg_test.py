@@ -14,9 +14,9 @@ class TestBDD100KInsSegEval(unittest.TestCase):
     """Test cases for BDD100K detection evaluation."""
 
     cur_dir = os.path.dirname(os.path.abspath(__file__))
-    gt_base = "{}/testcases/ins_seg/gt".format(cur_dir)
-    pred_base = "{}/testcases/ins_seg/pred".format(cur_dir)
-    pred_json = "{}/testcases/ins_seg/pred.json".format(cur_dir)
+    gt_base = f"{cur_dir}/testcases/ins_seg/gt"
+    pred_base = f"{cur_dir}/testcases/ins_seg/pred"
+    pred_json = f"{cur_dir}/testcases/ins_seg/pred.json"
     bdd100k_config = load_bdd100k_config("ins_seg")
     result = evaluate_ins_seg(
         gt_base, pred_base, pred_json, bdd100k_config.scalabel, nproc=1
@@ -115,9 +115,9 @@ class TestBDD100KInsSegEval(unittest.TestCase):
 def create_test_file() -> None:
     """Creat mocking files for the InsSeg test case."""
     cur_dir = os.path.dirname(os.path.abspath(__file__))
-    gt_base = "{}/testcases/ins_seg/gt".format(cur_dir)
-    dt_base = "{}/testcases/ins_seg/pred".format(cur_dir)
-    dt_json = "{}/testcases/ins_seg/pred.json".format(cur_dir)
+    gt_base = f"{cur_dir}/testcases/ins_seg/gt"
+    dt_base = f"{cur_dir}/testcases/ins_seg/pred"
+    dt_json = f"{cur_dir}/testcases/ins_seg/pred.json"
 
     if not os.path.isdir(gt_base):
         os.makedirs(gt_base)
