@@ -72,8 +72,8 @@ class TestEvaluateLaneMarking(unittest.TestCase):
     def test_mock_cases(self) -> None:
         """Check the peformance of the mock case."""
         cur_dir = os.path.dirname(os.path.abspath(__file__))
-        gt_dir = "{}/testcases/lane/gts".format(cur_dir)
-        res_dir = "{}/testcases/lane/res".format(cur_dir)
+        gt_dir = f"{cur_dir}/testcases/lane/gts"
+        res_dir = f"{cur_dir}/testcases/lane/res"
         result = evaluate_lane_marking(
             list_files(gt_dir, ".png", with_prefix=True),
             list_files(res_dir, ".png", with_prefix=True),

@@ -7,6 +7,7 @@ import os
 from scalabel.common.parallel import NPROC
 from scalabel.eval.detect import evaluate_det
 from scalabel.eval.mot import acc_single_video_mot, evaluate_track
+from scalabel.eval.pose import evaluate_pose
 from scalabel.eval.result import Result
 from scalabel.label.io import group_and_sort, load
 
@@ -39,6 +40,7 @@ def parse_args() -> argparse.Namespace:
             "lane_mark",
             "box_track",
             "seg_track",
+            "pose",
         ],
         required=True,
     )
@@ -100,7 +102,7 @@ def run() -> None:
     args = parse_args()
     if args.config is not None:
         bdd100k_config = load_bdd100k_config(args.config)
-    elif args.task in ["det", "ins_seg", "box_track", "seg_track"]:
+    elif args.task in ["det", "ins_seg", "box_track", "seg_track", "pose"]:
         bdd100k_config = load_bdd100k_config(args.task)
 
     if args.task == "det":
@@ -152,6 +154,17 @@ def run() -> None:
             config=bdd100k_config.scalabel,
             iou_thr=args.iou_thr,
             ignore_iof_thr=args.ignore_iof_thr,
+            nproc=args.nproc,
+        )
+    elif args.task == "pose":
+        results = evaluate_pose(
+            bdd100k_to_scalabel(
+                load(args.gt, args.nproc).frames, bdd100k_config
+            ),
+            bdd100k_to_scalabel(
+                load(args.result, args.nproc).frames, bdd100k_config
+            ),
+            bdd100k_config.scalabel,
             nproc=args.nproc,
         )
 

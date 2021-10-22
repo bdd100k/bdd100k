@@ -1,0 +1,12 @@
+[scalabel]
+    poseSigmas = [
+        0.079, 0.079, 0.079, 0.072, 0.062, 0.079, 0.072, 0.062, 0.107, 0.087,
+        0.089, 0.107, 0.087, 0.089, 0.062, 0.062, 0.062, 0.062
+    ]
+
+    [scalabel.imageSize]
+    height = 720
+    width = 1280
+
+    [[scalabel.categories]]
+    name = "pedestrian"

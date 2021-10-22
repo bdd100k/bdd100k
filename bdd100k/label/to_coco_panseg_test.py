@@ -25,13 +25,9 @@ class TestToCocoPanSeg(unittest.TestCase):
 
     def test_bitmask2pan_mask(self) -> None:
         """Check bitmask to panoptic mask png."""
-        mask_name = "{}/testcases/panseg_bdd100k/{}".format(
-            self.cur_dir, MASK_NAME
-        )
-        gt_pan_name = "{}/testcases/panseg_coco/panseg_mask.png".format(
-            self.cur_dir
-        )
-        pan_name = "{}/{}".format(self.test_out, MASK_NAME)
+        mask_name = f"{self.cur_dir}/testcases/panseg_bdd100k/{MASK_NAME}"
+        gt_pan_name = f"{self.cur_dir}/testcases/panseg_coco/panseg_mask.png"
+        pan_name = f"{self.test_out}/{MASK_NAME}"
 
         os.makedirs(self.test_out, exist_ok=True)
         bitmask2pan_mask(mask_name, pan_name)
@@ -43,12 +39,8 @@ class TestToCocoPanSeg(unittest.TestCase):
 
     def test_bitmask2pan_json(self) -> None:
         """Check bitmask to panoptic json file."""
-        mask_name = "{}/testcases/panseg_bdd100k/{}".format(
-            self.cur_dir, MASK_NAME
-        )
-        gt_json_name = "{}/testcases/panseg_coco/panseg_coco.json".format(
-            self.cur_dir
-        )
+        mask_name = f"{self.cur_dir}/testcases/panseg_bdd100k/{MASK_NAME}"
+        gt_json_name = f"{self.cur_dir}/testcases/panseg_coco/panseg_coco.json"
 
         image = ImgType(id=255, file_name="panseg_mask.jpg")
         pan_ann = bitmask2pan_json(image, mask_name)
@@ -60,7 +52,7 @@ class TestToCocoPanSeg(unittest.TestCase):
 
     def test_bitmask2coco_pan_seg(self) -> None:
         """Check bitmask dataset to panoptic mask pngs."""
-        mask_base = "{}/testcases/panseg_bdd100k".format(self.cur_dir)
+        mask_base = f"{self.cur_dir}/testcases/panseg_bdd100k"
         pan_mask_base = self.test_out
 
         os.makedirs(self.test_out, exist_ok=True)

@@ -15,6 +15,7 @@ from scalabel.label.io import group_and_sort, load
 from scalabel.label.to_coco import (
     scalabel2coco_box_track,
     scalabel2coco_detection,
+    scalabel2coco_pose,
     set_seg_object_geometry,
 )
 from scalabel.label.transforms import get_coco_categories, mask_to_bbox
@@ -517,10 +518,11 @@ def main() -> None:
             args.input, bdd100k_config.scalabel, args.nproc
         )
     else:
-        if args.mode in ["det", "box_track"]:
+        if args.mode in ["det", "box_track", "pose"]:
             convert_func = dict(
                 det=scalabel2coco_detection,
                 box_track=scalabel2coco_box_track,
+                pose=scalabel2coco_pose,
             )[args.mode]
         else:
             convert_func = partial(

@@ -46,8 +46,8 @@ class TestPQPerImage(unittest.TestCase):
     """Test cases for the pq_per_image function."""
 
     cur_dir = os.path.dirname(os.path.abspath(__file__))
-    gt_base = "{}/testcases/pan_seg/gt".format(cur_dir)
-    pred_base = "{}/testcases/pan_seg/pred".format(cur_dir)
+    gt_base = f"{cur_dir}/testcases/pan_seg/gt"
+    pred_base = f"{cur_dir}/testcases/pan_seg/pred"
 
     def test_general_case(self) -> None:
         """Test a general case."""
@@ -107,8 +107,8 @@ class TestEvalPanopticSeg(unittest.TestCase):
     """Test cases for the evaluate_pan_seg function."""
 
     cur_dir = os.path.dirname(os.path.abspath(__file__))
-    gt_base = "{}/testcases/pan_seg/gt".format(cur_dir)
-    pred_base = "{}/testcases/pan_seg/pred".format(cur_dir)
+    gt_base = f"{cur_dir}/testcases/pan_seg/gt"
+    pred_base = f"{cur_dir}/testcases/pan_seg/pred"
 
     def test_general_case(self) -> None:
         """Test a general case."""
@@ -139,7 +139,7 @@ class TestEvalPanopticSeg(unittest.TestCase):
 
     def test_evaluate_pan_seg(self) -> None:
         """Test for the case that some predictions are missed."""
-        gt_base = "{}/testcases/pan_seg/gt+".format(self.cur_dir)
+        gt_base = f"{self.cur_dir}/testcases/pan_seg/gt+"
         result = evaluate_pan_seg(
             list_files(gt_base, suffix=".png", with_prefix=True),
             list_files(self.pred_base, suffix=".png", with_prefix=True),

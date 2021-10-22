@@ -35,12 +35,12 @@ class TestParseBitmask(unittest.TestCase):
         """Check the non-stacked case."""
         cur_dir = os.path.dirname(os.path.abspath(__file__))
         bitmask = np.asarray(
-            Image.open("{}/testcases/example_bitmask.png".format(cur_dir)),
+            Image.open(f"{cur_dir}/testcases/example_bitmask.png"),
             dtype=np.uint8,
         )
         cvt_maps = parse_bitmask(bitmask)
         gt_maps = [
-            np.load("{}/testcases/gt_{}.npy".format(cur_dir, name))
+            np.load(f"{cur_dir}/testcases/gt_{name}.npy")
             for name in ["masks", "ins_ids", "attrs", "cat_ids"]
         ]
 
@@ -51,11 +51,11 @@ class TestParseBitmask(unittest.TestCase):
         """Check the stacked case."""
         cur_dir = os.path.dirname(os.path.abspath(__file__))
         bitmask = np.asarray(
-            Image.open("{}/testcases/example_bitmask.png".format(cur_dir))
+            Image.open(f"{cur_dir}/testcases/example_bitmask.png")
         )
         cvt_maps = parse_bitmask(bitmask)
         gt_maps = [
-            np.load("{}/testcases/gt_{}.npy".format(cur_dir, name))
+            np.load(f"{cur_dir}/testcases/gt_{name}.npy")
             for name in ["stacked_masks", "ins_ids", "attrs", "cat_ids"]
         ]
 

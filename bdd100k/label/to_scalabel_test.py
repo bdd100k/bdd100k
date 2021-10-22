@@ -15,9 +15,7 @@ class TestBDD100KToScalabel(unittest.TestCase):
     def test_bdd100k_to_scalabel(self) -> None:
         """Test bdd100k_to_scalabel function."""
         cur_dir = os.path.dirname(os.path.abspath(__file__))
-        dataset = load(
-            "{}/testcases/example_ignore_annotation.json".format(cur_dir)
-        )
+        dataset = load(f"{cur_dir}/testcases/example_ignore_annotation.json")
         frames = dataset.frames
         bdd100k_config = load_bdd100k_config("box_track")
         new_frames = bdd100k_to_scalabel(copy.deepcopy(frames), bdd100k_config)

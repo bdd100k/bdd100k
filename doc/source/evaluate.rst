@@ -24,7 +24,8 @@ Specifically, these fields are required:
             - x2: float
             - y2: float
 
-When you submit your results, save your results in a JSON file and then compress it into a zip file.
+You can submit your predictions to our `evaluation server <https://eval.ai/web/challenges/challenge-page/1260>`__ hosted on EvalAI.
+The submission file needs to be a JSON file.
 
 Run Evaluation on Your Own
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -34,13 +35,11 @@ You can evaluate your algorithm with public annotations by running
     
     python3 -m bdd100k.eval.run -t det -g ${gt_file} -r ${res_file} 
 
-- ``gt_file``: ground truth file in JSON, either in Scalabel format or COCO format. If using COCO format, add a flag `--ann-format coco`
+- ``gt_file``: ground truth file in JSON in Scalabel format.
 - ``res_file``: prediction results file in JSON, format as described above.
 
 Other options.
-- If you want to evaluate the detection performance on the BDD100K MOT set, 
-you can add a flag `--mode track`. 
-- You can also specify the output directory to save the evaluation results by updating `--out-dir ${out_dir}`.
+- You can specify the output file to save the evaluation results to by adding `--out-file ${out_file}`.
 
 Evaluation Metrics
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -60,7 +59,7 @@ Concretely, in DET, it is computed using box IoU. While for InsSeg, the mask IoU
 Submission format
 ^^^^^^^^^^^^^^^^^^^^^^
 
-To evaluate your algorithms on the BDD100K detection benchmark, you may prepare predictions in bitmask format,
+To evaluate your algorithms on the BDD100K instance segmentation benchmark, you may prepare predictions in bitmask format,
 which is illustrated in :ref:`Instance Segmentaiton Bitmask <bitmask>`.
 Moreover, a score file is needed, with the following format:
 ::
@@ -73,7 +72,8 @@ Moreover, a score file is needed, with the following format:
 
 - `index`: the value correspondence to the "ann_id" stored in B and A channels.
 
-To be evaluated on the Codalab server, the submission file needs to be a zipped nested folder with the following structure:
+You can submit your predictions to our `evaluation server <https://eval.ai/web/challenges/challenge-page/1294>`__ hosted on EvalAI.
+The submission file needs to be a zipped nested folder with the following structure:
 ::
 
     - score.json
@@ -94,6 +94,63 @@ You can evaluate your algorithm with public annotations by running
 - `res_path`: the path to the results bitmask images folder.
 - `res_score_file`: the json file with the confidence scores.
 
+Other options.
+- You can specify the output file to save the evaluation results to by adding `--out-file ${out_file}`.
+
+
+Pose Estimation
+~~~~~~~~~~~~~~~~~~~~~
+
+We use the same metrics set as DET and InsSeg above. The only difference lies in the computation of distance matrixes.
+Concretely, in DET, it is computed using box IoU. While for InsSeg, the mask IoU is used.
+For Pose, object keypoint similarity is used (OKS).
+
+Submission format
+^^^^^^^^^^^^^^^^^^^^^^
+
+To evaluate your algorithms on the BDD100K pose estimation benchmark, you may prepare
+your prediction results using the `Scalabel Format <https://doc.scalabel.ai/format.html>`_.
+Specifically, these fields are required:
+::
+
+    - name: str
+    - labels []:
+        - id: str, not used here, but required for loading
+        - category: "pedestrian"
+        - score: float
+        - graph:
+            - nodes []:
+                - location: (int, int), (x, y) position of node
+                - category: str, joint name
+                - id: int, unique id for node used for defining edges
+                - score: float
+            - edges []:
+                - source: str, source node id
+                - target: str, target node id
+                - type: str, type of edge
+            - type: "Pose2D-18Joints_Pred"
+
+Run Evaluation on Your Own
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can evaluate your algorithm with public annotations by running 
+::
+    
+    python3 -m bdd100k.eval.run -t pose -g ${gt_file} -r ${res_file} 
+
+- ``gt_file``: ground truth file in JSON in Scalabel format.
+- ``res_file``: prediction results file in JSON, format as described above.
+
+Other options.
+- You can specify the output file to save the evaluation results to by adding `--out-file ${out_file}`.
+
+Evaluation Metrics
+^^^^^^^^^^^^^^^^^^^^^^
+
+Similar to COCO evaluation, we report 10 scores as 
+"AP", "AP_50", "AP_75", "AP_medium", "AP_large", "AR", "AR_50",
+"AR_75", "AR_medium", "AR_large" across all the classes. 
+
 
 
 Panoptic Segmentation
@@ -105,7 +162,7 @@ PQ, RQ and SQ are computed for things, stuffs and all.
 Submission format
 ^^^^^^^^^^^^^^^^^^^^^^
 
-To evaluate your algorithms on the BDD100K detection benchmark, you may prepare predictions in bitmask format,
+To evaluate your algorithms on the BDD100K panoptic segmentation benchmark, you may prepare predictions in bitmask format,
 which is illustrated in :ref:`Panoptic Segmentaiton Bitmask <bitmask>`.
 To be evaluated on the Codalab server, the submission file needs to be a zipped folder.
 
@@ -122,6 +179,8 @@ You can evaluate your algorithm with public annotations by running
 - `gt_path`: the path to ground-truch bitmask images folder.
 - `res_path`: the path to the results bitmask images folder.
 
+Other options.
+- You can specify the output file to save the evaluation results to by adding `--out-file ${out_file}`.
 
 
 Semantic Segmentation
@@ -133,7 +192,9 @@ Moreover, IoU for each class are also displayed for reference.
 Submission format
 ^^^^^^^^^^^^^^^^^^^^^^
 
-To evaluate your algorithms on the BDD100K detection benchmark, you may prepare predictions in 1-channel png files.
+To evaluate your algorithms on the BDD100K semantic segmentation benchmark, you may prepare predictions in 1-channel png files.
+
+You can submit your predictions to our `evaluation server <https://eval.ai/web/challenges/challenge-page/1257>`__ hosted on EvalAI.
 
 Run Evaluation on Your Own
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -146,6 +207,9 @@ You can evaluate your algorithm with public annotations by running
 - `gt_path`: the path to ground-truch bitmask images folder.
 - `res_path`: the path to the results bitmask images folder.
 
+Other options.
+- You can specify the output file to save the evaluation results to by adding `--out-file ${out_file}`.
+
 
 Drivable Area
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -155,6 +219,12 @@ One notable difference is that they have different class definitions and numbers
 Another is that the prediction of background pixels matters for drivable area.
 Unlike semantic segmentation, which ignores *unknown* pixels, drivable area instead takes consideration of
 *background* pixels when computing IoUs. Though the *background* class is not counted into the final mIoU.
+
+Submission
+^^^^^^^^^^^^^^^^
+
+You can submit your predictions to our `evaluation server <https://eval.ai/web/challenges/challenge-page/1280>`__ hosted on EvalAI.
+
 
 Run Evaluation on Your Own
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -166,6 +236,9 @@ You can evaluate your algorithm with public annotations by running
 
 - `gt_path`: the path to ground-truch bitmask images folder.
 - `res_path`: the path to the results bitmask images folder.
+
+Other options.
+- You can specify the output file to save the evaluation results to by adding `--out-file ${out_file}`.
 
 
 Lane Marking
@@ -193,6 +266,9 @@ You can evaluate your algorithm with public annotations by running
 ::
     
     python3 -m bdd100k.eval.run -t lane_mark -g ${gt_path} -r ${res_path}
+
+Other options.
+- You can specify the output file to save the evaluation results to by adding `--out-file ${out_file}`.
 
 
 Multiple Object Tracking
@@ -224,6 +300,8 @@ The JSON file for each video should contain a list of per-frame result dictionar
 
 You can find an example result file in `bbd100k.eval.testcases <https://github.com/bdd100k/bdd100k/blob/master/bdd100k/eval/testcases/track_predictions.json>`_
 
+You can submit your predictions to our `evaluation server <https://eval.ai/web/challenges/challenge-page/1259>`__ hosted on EvalAI.
+
 Run Evaluation on Your Own
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -231,6 +309,9 @@ You can evaluate your algorithms with public annotations by running
 ::
 
     python -m bdd100k.eval.run -t box_track -g ${gt_file} -r ${res_file} 
+
+Other options.
+- You can specify the output file to save the evaluation results to by adding `--out-file ${out_file}`.
 
 
 Evaluation Metrics
@@ -313,12 +394,14 @@ We use the same metrics set as MOT above. The only difference lies in the comput
 Concretely, in MOT, it is computed using box IoU. While for MOTS, the mask IoU is used.
 
 Submission format
-^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^
 
 The submission should be a zipped nested folder for bitmask images.
 Moreover, images belonging to the same video should be placed in the same folder, named by ${videoName}.
 
 You can find an example bitmask file in `bbd100k.eval.testcases.mots <https://github.com/bdd100k/bdd100k/blob/master/bdd100k/eval/testcases/mots/example_bitmask.png>`_
+
+You can submit your predictions to our `evaluation server <https://eval.ai/web/challenges/challenge-page/1295>`__ hosted on EvalAI.
 
 Run Evaluation on Your Own
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -330,3 +413,6 @@ You can evaluate your algorithms with public annotations by running
 
 - `gt_path`: the path to the ground-truch bitmask images folder.
 - `res_path`: the path to the results bitmask images folder.
+
+Other options.
+- You can specify the output file to save the evaluation results to by adding `--out-file ${out_file}`.

@@ -19,20 +19,18 @@ class TestFromCocoPanSeg(unittest.TestCase):
 
     def test_pansseg2bitmask(self) -> None:
         """Check bitmask to panoptic json file."""
-        json_name = "{}/testcases/panseg_coco/panseg_coco.json".format(
-            self.cur_dir
-        )
+        json_name = f"{self.cur_dir}/testcases/panseg_coco/panseg_coco.json"
         with open(json_name, encoding="utf-8") as fp:
             annotation: PanopticAnnType = json.load(fp)
-        pan_mask_base = "{}/testcases/panseg_coco".format(self.cur_dir)
+        pan_mask_base = f"{self.cur_dir}/testcases/panseg_coco"
         mask_base = self.test_out
 
         os.makedirs(self.test_out, exist_ok=True)
         panseg2bitmask(annotation, pan_mask_base, mask_base)
 
-        mask_name = "{}/panseg_mask.png".format(self.test_out)
-        gt_mask_name = "{}/testcases/panseg_bdd100k/panseg_mask.png".format(
-            self.cur_dir
+        mask_name = f"{self.test_out}/panseg_mask.png"
+        gt_mask_name = (
+            f"{self.cur_dir}/testcases/panseg_bdd100k/panseg_mask.png"
         )
         bitmask = np.asarray(Image.open(mask_name), dtype=np.uint8)
         gt_bitmask = np.asarray(Image.open(gt_mask_name), dtype=np.uint8)

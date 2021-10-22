@@ -50,12 +50,10 @@ class TestToMasks(unittest.TestCase):
 
         if task_name == "pan_seg":
             json_path = (
-                "{}/testcases/panseg_bdd100k/panseg_bdd100k.json".format(
-                    cur_dir
-                )
+                f"{cur_dir}/testcases/panseg_bdd100k/panseg_bdd100k.json"
             )
         else:
-            json_path = "{}/testcases/example_annotation.json".format(cur_dir)
+            json_path = f"{cur_dir}/testcases/example_annotation.json"
         frames = load(json_path).frames
         bdd100k_config = load_bdd100k_config(task_name)
         convert_func(frames, self.test_out, bdd100k_config.scalabel, 1)
@@ -63,7 +61,7 @@ class TestToMasks(unittest.TestCase):
         mask = np.asarray(Image.open(output_path), dtype=np.uint8)
 
         gt_mask = np.asarray(
-            Image.open("{}/testcases/{}".format(cur_dir, file_name)),
+            Image.open(f"{cur_dir}/testcases/{file_name}"),
             dtype=np.uint8,
         )
 
