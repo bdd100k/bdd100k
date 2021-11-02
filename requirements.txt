@@ -20,4 +20,4 @@ tabulate
 toml
 tqdm
 
-git+git://github.com/scalabel/scalabel.git
+git+https://github.com/scalabel/scalabel.git
