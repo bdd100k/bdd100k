@@ -1,5 +1,5 @@
-"""Convert poly2d to mask/bitmask."""
-
+"""Convert poly2d to rle."""
+import argparse
 import os
 from functools import partial
 from multiprocessing import Pool
@@ -14,10 +14,54 @@ from tqdm import tqdm
 from ..common.logger import logger
 from ..common.typing import BDD100KConfig
 from ..common.utils import load_bdd100k_config
-from .to_coco import parse_args
 from .to_scalabel import bdd100k_to_scalabel
 
 ToRLEsFunc = Callable[[List[Frame], str, Config, int], None]
+
+
+def parse_args() -> argparse.Namespace:
+    """Parse arguments."""
+    parser = argparse.ArgumentParser(description="poly2d/mask to rle format")
+    parser.add_argument(
+        "-i",
+        "--input",
+        help=(
+            "root directory of bdd100k label Json files or path to a label "
+            "json file"
+        ),
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        help="path to save rle formatted label file",
+    )
+    parser.add_argument(
+        "-m",
+        "--mode",
+        default="sem_seg",
+        choices=[
+            "sem_seg",
+            "drivable",
+            "lane_mark",
+            "pan_seg",
+            "ins_seg",
+            "seg_track",
+        ],
+        help="conversion mode.",
+    )
+    parser.add_argument(
+        "--nproc",
+        type=int,
+        default=NPROC,
+        help="number of processes for conversion",
+    )
+    parser.add_argument(
+        "--config",
+        type=str,
+        default=None,
+        help="Configuration file",
+    )
+    return parser.parse_args()
 
 
 def frames_to_rle(

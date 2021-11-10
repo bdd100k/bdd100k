@@ -4,4 +4,58 @@
     width = 1280
 
     [[scalabel.categories]]
-    name = "None"
+    name = "road"
+
+    [[scalabel.categories]]
+    name = "sidewalk"
+
+    [[scalabel.categories]]
+    name = "building"
+
+    [[scalabel.categories]]
+    name = "wall"
+
+    [[scalabel.categories]]
+    name = "fence"
+
+    [[scalabel.categories]]
+    name = "pole"
+
+    [[scalabel.categories]]
+    name = "traffic light"
+
+    [[scalabel.categories]]
+    name = "traffic sign"
+
+    [[scalabel.categories]]
+    name = "vegetation"
+
+    [[scalabel.categories]]
+    name = "terrain"
+
+    [[scalabel.categories]]
+    name = "sky"
+
+    [[scalabel.categories]]
+    name = "person"
+
+    [[scalabel.categories]]
+    name = "rider"
+
+    [[scalabel.categories]]
+    name = "car"
+
+    [[scalabel.categories]]
+    name = "truck"
+
+    [[scalabel.categories]]
+    name = "bus"
+
+    [[scalabel.categories]]
+    name = "train"
+
+    [[scalabel.categories]]
+    name = "motorcycle"
+
+    [[scalabel.categories]]
+    name = "bicycle"
