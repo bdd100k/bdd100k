@@ -147,17 +147,16 @@ def main() -> None:
     assert args.mode in [
         "sem_seg",
         "drivable",
-        # "lane_mark",
+        "lane_mark",
         "pan_seg",
         "ins_seg",
         "seg_track",
     ]
-    os.environ["QT_QPA_PLATFORM"] = "offscreen"  # matplotlib offscreen render
 
     convert_funcs: Dict[str, ToRLEsFunc] = dict(
         sem_seg=seg_to_rles,
         drivable=seg_to_rles,
-        # lane_mark=lanemark_to_rles,
+        lane_mark=seg_to_rles,
         pan_seg=seg_to_rles,
         ins_seg=seg_to_rles,
         seg_track=segtrack_to_rles,
