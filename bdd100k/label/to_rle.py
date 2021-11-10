@@ -122,6 +122,7 @@ def segtrack_to_rles(
 ) -> None:
     """Converting segmentation tracking poly2d to rles."""
     frames_list = group_and_sort(frames)
+    os.makedirs(out_base, exist_ok=True)
     img_shape = config.imageSize
     assert img_shape is not None, "Conversion requires imageSize in config."
 
@@ -133,7 +134,7 @@ def segtrack_to_rles(
         assert (
             video_name is not None
         ), "SegTrack conversion requires videoName in annotations"
-        out_paths.append(os.path.join(out_base, video_name))
+        out_paths.append(os.path.join(out_base, f"{video_name}.json"))
         shapes.append(img_shape)
 
     logger.info("Start Conversion for SegTrack to RLEs")
