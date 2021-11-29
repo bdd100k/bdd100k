@@ -60,13 +60,10 @@ def parse_args() -> argparse.Namespace:
         default="det",
         choices=[
             "det",
-            "sem_seg",
-            "drivable",
-            "lane_mark",
-            "pan_seg",
             "ins_seg",
             "box_track",
             "seg_track",
+            "pose",
         ],
         help="conversion mode.",
     )
@@ -502,7 +499,6 @@ def bdd100k2coco_seg_track(
 def main() -> None:
     """Main function."""
     args = parse_args()
-    assert args.mode in ["det", "box_track", "ins_seg", "seg_track"]
 
     if args.only_mask:
         assert args.mode in ["ins_seg", "seg_track"]
