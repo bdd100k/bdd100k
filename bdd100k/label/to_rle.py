@@ -7,42 +7,22 @@ from typing import List
 import numpy as np
 from PIL import Image
 from pycocotools import mask as mask_utils
+from scalabel.common.parallel import NPROC
 from scalabel.common.typing import NDArrayU8
 from scalabel.label.io import load, save
+from scalabel.label.transforms import mask_to_rle
 from scalabel.label.typing import RLE, Dataset, Frame, Label
+from scalabel.label.utils import get_leaf_categories
 
 from ..common.bitmask import parse_bitmask
+from ..common.typing import BDD100KConfig
 from ..common.utils import list_files, load_bdd100k_config
 from ..eval.ins_seg import parse_res_bitmask
+from .to_scalabel import bdd100k_to_scalabel
 
 
-def get_categories(config: str) -> List[str]:
-    """Load category configs by mode."""
-    # TODO: Category for sem_seg is stale
-    categories = []
-    for c in load_bdd100k_config(config).scalabel.categories:
-        if c.subcategories:
-            categories.extend([s.name for s in c.subcategories])
-        else:
-            categories.append(c.name)
-    return categories
-
-
-def mask_to_rle(mask: NDArrayU8) -> RLE:
-    assert np.count_nonzero(mask) > 0
-    rle = mask_utils.encode(np.array(mask[:, :, None], order="F", dtype="uint8"))[0]
-    rle_label = dict(counts=rle["counts"].decode("utf-8"), size=rle["size"])
-    return RLE(**rle_label)
-
-
-def img_to_label_id(img_name: str, idx: int) -> str:
-    id = img_name.split('.')[0]
-    if idx < 10:
-        return f"{id}-0{idx}"
-    return f"{id}-{idx}"
-
-
-def main() -> None:
+def parse_args() -> argparse.Namespace:
+    """Parse arguments."""
     parser = argparse.ArgumentParser(description="")
     parser.add_argument(
         "-i",
@@ -55,6 +35,11 @@ def main() -> None:
         "-o",
         "--output",
         help="path to save coco formatted label file",
+    )
+    parser.add_argument(
+        "-s",
+        "--score-file",
+        help="path to score file",
     )
     parser.add_argument(
         "-m",
@@ -72,23 +57,43 @@ def main() -> None:
         default=None,
         help="Configuration for COCO categories",
     )
-    args = parser.parse_args()
+    parser.add_argument(
+        "--nproc",
+        type=int,
+        default=NPROC,
+        help="number of processes for conversion",
+    )
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
 
     assert args.config is not None
     assert args.input is not None
     assert args.output is not None
 
-    categories = get_categories(args.config)
+    dataset = load(args.input, args.nproc)
+    if args.config is not None:
+        bdd100k_config = load_bdd100k_config(args.config)
+    elif dataset.config is not None:
+        bdd100k_config = BDD100KConfig(config=dataset.config)
+    else:
+        bdd100k_config = load_bdd100k_config(args.mode)
+
+    categories = get_leaf_categories(bdd100k_config.scalabel.categories)
 
     if args.mode == "ins_seg":
-        dataset = load(args.input)
+        assert args.score_file is not None
+
+        dataset = load(args.score_file)
         ann_score = {}
 
         for frame in dataset.frames:
             img_name = frame.name.replace(".jpg", ".png")
             ann_score[img_name] = []
             bitmask = np.array(
-                Image.open(os.path.join(args.input, "bitmasks", img_name)),
+                Image.open(os.path.join(args.input, img_name)),
                 dtype=np.uint8,
             )
 
@@ -97,16 +102,23 @@ def main() -> None:
             for label in frame.labels:
                 ann_score[img_name].append((label.index, label.score))
 
-            masks, ann_ids, _, category_ids = parse_res_bitmask(
+            masks, ann_ids, scores, category_ids = parse_res_bitmask(
                 ann_score[img_name], bitmask
             )
 
-            for idx, id in enumerate(ann_ids):
-                label = frame.labels[id - 1]
-                label.category = categories[category_ids[idx] - 1]
+            labels = []
+            for ann_id in ann_ids:
+                label = Label(
+                    id=ann_id,
+                    category=categories[category_ids[ann_id - 1] - 1].name,
+                    score=scores[ann_id - 1],
+                )
 
                 # RLE
-                label.rle = mask_to_rle((masks == idx + 1).astype(np.uint8))
+                label.rle = mask_to_rle((masks == ann_id).astype(np.uint8))
+
+                labels.append(label)
+            frame.labels = labels
     else:  # sem_seg
         files = list_files(args.input)
         frames = []
@@ -118,19 +130,21 @@ def main() -> None:
 
         dataset = Dataset(frames=frames)
 
+        instance_id = 1
         for frame in dataset.frames:
             img_name = frame.name
             bitmask = np.array(
-                Image.open(os.path.join(args.input, "masks", img_name)),
+                Image.open(os.path.join(args.input, img_name)),
                 dtype=np.uint8,
             )
             category_ids = np.unique(bitmask[bitmask > 0])
 
-            for idx, id in enumerate(category_ids):
-                label = Label(id=img_to_label_id(img_name, idx))
-                label.category = categories[id - 1]
-                label.rle = mask_to_rle((bitmask == id).astype(np.uint8))
+            for category_id in category_ids:
+                label = Label(id=str(instance_id))
+                label.category = categories[category_id - 1]
+                label.rle = mask_to_rle((bitmask == category_id).astype(np.uint8))
                 frame.labels.append(label)
+                instance_id += 1
 
     save(args.output, dataset.frames)
 
