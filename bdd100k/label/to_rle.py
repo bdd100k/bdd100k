@@ -158,7 +158,7 @@ def main() -> None:
         for file in files:
             if not file.endswith(".png"):
                 continue
-            frame = Frame(name=file.split("/")[-1], labels=[])
+            frame = Frame(name=file, labels=[])
             frames.append(frame)
 
     if args.nproc > 1:
