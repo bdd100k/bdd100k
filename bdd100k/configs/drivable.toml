@@ -1,9 +1,10 @@
-[imageSize]
-height = 720
-width = 1280
+[scalabel]
+    [scalabel.imageSize]
+    height = 720
+    width = 1280
 
-[[categories]]
-name = "direct"
+    [[scalabel.categories]]
+    name = "direct"
 
-[[categories]]
-name = "alternative"
+    [[scalabel.categories]]
+    name = "alternative"

@@ -25,13 +25,13 @@ def parse_args() -> argparse.Namespace:
         "-i",
         "--input",
         help=(
-            "root directory of bdd100k label Json files or path to a label " "json file"
+            "directory of bitmasks to convert"
         ),
     )
     parser.add_argument(
         "-o",
         "--output",
-        help="path to save coco formatted label file",
+        help="path to save scalabel formatted label file with RLEs",
     )
     parser.add_argument(
         "-s",
@@ -46,13 +46,13 @@ def parse_args() -> argparse.Namespace:
             "sem_seg",
             "ins_seg",
         ],
-        help="conversion mode.",
+        help="conversion mode",
     )
     parser.add_argument(
         "--config",
         type=str,
         default=None,
-        help="Configuration for COCO categories",
+        help="configuration for the chosen mode",
     )
     parser.add_argument(
         "--nproc",
@@ -120,9 +120,7 @@ def semseg_to_rle(frames: List[Frame], input: str, categories: List[Category]) -
 def main() -> None:
     args = parse_args()
 
-    assert args.config is not None
-    assert args.input is not None
-    assert args.output is not None
+    assert os.path.isdir(args.input)
 
     dataset = load(args.input, args.nproc)
     if args.config is not None:
@@ -141,7 +139,11 @@ def main() -> None:
 
     if args.mode == "ins_seg":
         assert args.score_file is not None
-        dataset = load(args.score_file)
+        frames = load(args.score_file).frames
+
+        assert all(
+            os.path.exists(os.path.join(args.input, frame.name)) for frame in frames
+        ), "Missing some bitmasks."
     else:  # sem_seg
         files = list_files(args.input)
         frames = []
@@ -151,10 +153,8 @@ def main() -> None:
             frame = Frame(name=file.split('/')[1], labels=[])
             frames.append(frame)
 
-        dataset = Dataset(frames=frames)
-
     convert_funcs[args.mode](dataset.frames, args.input, categories)
-    save(args.output, dataset.frames)
+    save(args.output, frames)
 
 
 if __name__ == "__main__":
