@@ -20,8 +20,6 @@ from ..eval.ins_seg import parse_res_bitmask
 
 ToRLEFunc = Callable[[Frame, str, List[Category]], None]
 
-INSTANCE_ID = 1
-
 
 def parse_args() -> argparse.Namespace:
     """Parse arguments."""
@@ -105,21 +103,22 @@ def insseg_to_rle(
 def semseg_to_rle(
     frame: Frame, input: str = "", categories: List[Category] = []
 ) -> Frame:
+
     frame.labels = []
     img_name = frame.name
     bitmask = np.array(
         Image.open(os.path.join(input, img_name)),
         dtype=np.uint8,
     )
-    category_ids = np.unique(bitmask[bitmask > 0])
+    category_ids = np.unique(bitmask)
 
-    global INSTANCE_ID
+    label_id = 0
     for category_id in category_ids:
-        label = Label(id=str(INSTANCE_ID))
-        label.category = categories[category_id - 1].name
+        label = Label(id=str(label_id))
+        label.category = categories[category_id].name
         label.rle = mask_to_rle((bitmask == category_id).astype(np.uint8))
         frame.labels.append(label)
-        INSTANCE_ID += 1
+        label_id += 1
 
     return frame
 
