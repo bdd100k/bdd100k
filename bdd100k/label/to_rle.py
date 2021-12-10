@@ -18,7 +18,7 @@ from ..common.typing import BDD100KConfig
 from ..common.utils import list_files, load_bdd100k_config
 from ..eval.ins_seg import parse_res_bitmask
 
-ToRLEFunc = Callable[[Frame, str, List[Category]], None]
+ToRLEFunc = Callable[[Frame, str, List[Category]], Frame]
 
 
 def parse_args() -> argparse.Namespace:
@@ -44,8 +44,9 @@ def parse_args() -> argparse.Namespace:
         "--mode",
         default="ins_seg",
         choices=[
-            "sem_seg",
             "ins_seg",
+            "sem_seg",
+            "seg_track",
         ],
         help="conversion mode",
     )
@@ -76,7 +77,7 @@ def insseg_to_rle(
     )
 
     if frame.labels is None:
-        return
+        return frame
     for label in frame.labels:
         ann_score[img_name].append((label.index, label.score))
 
@@ -103,9 +104,8 @@ def insseg_to_rle(
 def semseg_to_rle(
     frame: Frame, input: str = "", categories: List[Category] = []
 ) -> Frame:
-
     frame.labels = []
-    img_name = frame.name
+    img_name = frame.name.replace(".jpg", ".png")
     bitmask = np.array(
         Image.open(os.path.join(input, img_name)),
         dtype=np.uint8,
@@ -139,8 +139,9 @@ def main() -> None:
     categories = get_leaf_categories(bdd100k_config.scalabel.categories)
 
     convert_funcs: Dict[str, ToRLEFunc] = dict(
-        sem_seg=semseg_to_rle,
         ins_seg=insseg_to_rle,
+        sem_seg=semseg_to_rle,
+        seg_track=semseg_to_rle,
     )
 
     if args.mode == "ins_seg":
@@ -151,7 +152,7 @@ def main() -> None:
             os.path.exists(os.path.join(args.input, frame.name.replace(".jpg", ".png")))
             for frame in frames
         ), "Missing some bitmasks."
-    else:  # sem_seg
+    elif args.mode == "sem_seg":
         files = list_files(args.input)
         frames = []
         for file in files:
@@ -159,6 +160,10 @@ def main() -> None:
                 continue
             frame = Frame(name=file, labels=[])
             frames.append(frame)
+    elif args.mode == "seg_track":
+        frames = []
+    else:
+        return
 
     if args.nproc > 1:
         with Pool(args.nproc) as pool:
