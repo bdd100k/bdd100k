@@ -14,8 +14,12 @@ from scalabel.label.typing import Category, Frame, Label
 from scalabel.label.utils import get_leaf_categories
 from tqdm import tqdm
 
+from ..common.bitmask import parse_bitmask
 from ..common.typing import BDD100KConfig
-from ..common.utils import list_files, load_bdd100k_config
+from ..common.utils import (
+    list_files,
+    load_bdd100k_config,
+)
 from ..eval.ins_seg import parse_res_bitmask
 
 ToRLEFunc = Callable[[Frame, str, List[Category]], Frame]
@@ -66,13 +70,15 @@ def parse_args() -> argparse.Namespace:
 
 
 def insseg_to_rle(
-    frame: Frame, input: str = "", categories: List[Category] = []
+    frame: Frame, input_dir: str = "", categories: List[Category] = None
 ) -> Frame:
+    """Convert ins_seg to rle."""
+    categories = categories or []
     ann_score = {}
     img_name = frame.name.replace(".jpg", ".png")
     ann_score[img_name] = []
     bitmask = np.array(
-        Image.open(os.path.join(input, img_name)),
+        Image.open(os.path.join(input_dir, img_name)),
         dtype=np.uint8,
     )
 
@@ -102,12 +108,14 @@ def insseg_to_rle(
 
 
 def semseg_to_rle(
-    frame: Frame, input: str = "", categories: List[Category] = []
+    frame: Frame, input_dir: str = "", categories: List[Category] = None
 ) -> Frame:
+    """Convert sem_seg to rle."""
+    categories = categories or []
     frame.labels = []
     img_name = frame.name.replace(".jpg", ".png")
     bitmask = np.array(
-        Image.open(os.path.join(input, img_name)),
+        Image.open(os.path.join(input_dir, img_name)),
         dtype=np.uint8,
     )
     category_ids = np.unique(bitmask)
@@ -119,6 +127,33 @@ def semseg_to_rle(
         label.rle = mask_to_rle((bitmask == category_id).astype(np.uint8))
         frame.labels.append(label)
         label_id += 1
+
+    return frame
+
+
+def segtrack_to_rle(
+    frame: Frame, input_dir: str = "", categories: List[Category] = None
+) -> Frame:
+    """Convert seg_track to rle."""
+    categories = categories or []
+    frame.labels = []
+    img_name = frame.name.replace(".jpg", ".png")
+    bitmask = np.array(
+        Image.open(os.path.join(input_dir, img_name)),
+        dtype=np.uint8,
+    )
+    masks, instance_ids, _, category_ids = parse_bitmask(bitmask)
+
+    # Video parameters
+    frame.name = frame.name.split("/")[-1]
+    frame.videoName = img_name.split("/")[0]
+    frame.frameIndex = int(img_name.split("-")[-1].split(".")[0])
+
+    for i, _ in enumerate(instance_ids):
+        label = Label(id=str(instance_ids[i]))
+        label.category = categories[category_ids[i] - 1].name
+        label.rle = mask_to_rle((masks == instance_ids[i]).astype(np.uint8))
+        frame.labels.append(label)
 
     return frame
 
@@ -141,7 +176,7 @@ def main() -> None:
     convert_funcs: Dict[str, ToRLEFunc] = dict(
         ins_seg=insseg_to_rle,
         sem_seg=semseg_to_rle,
-        seg_track=semseg_to_rle,
+        seg_track=segtrack_to_rle,
     )
 
     if args.mode == "ins_seg":
@@ -152,16 +187,14 @@ def main() -> None:
             os.path.exists(os.path.join(args.input, frame.name.replace(".jpg", ".png")))
             for frame in frames
         ), "Missing some bitmasks."
-    elif args.mode == "sem_seg":
+    elif args.mode in ("sem_seg", "seg_track"):
         files = list_files(args.input)
         frames = []
         for file in files:
-            if not file.endswith(".png"):
+            if not file.endswith(".png") and not file.endswith(".jpg"):
                 continue
             frame = Frame(name=file, labels=[])
             frames.append(frame)
-    elif args.mode == "seg_track":
-        frames = []
     else:
         return
 
@@ -170,7 +203,7 @@ def main() -> None:
             frames = pool.map(
                 partial(
                     convert_funcs[args.mode],
-                    input=args.input,
+                    input_dir=args.input,
                     categories=categories,
                 ),
                 tqdm(frames),
