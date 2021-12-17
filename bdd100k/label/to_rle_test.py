@@ -57,10 +57,10 @@ class TestToRLE(unittest.TestCase):
 
         self.assertEqual(len(new_frames[0].labels), 10)
         self.assertEqual(new_frames[0].videoName, "0")
-        self.assertEqual(new_frames[0].frameIndex, 1)
+        self.assertEqual(new_frames[0].frameIndex, 0)
         self.assertEqual(len(new_frames[1].labels), 10)
         self.assertEqual(new_frames[1].videoName, "0")
-        self.assertEqual(new_frames[1].frameIndex, 2)
+        self.assertEqual(new_frames[1].frameIndex, 1)
 
 
 if __name__ == "__main__":

@@ -16,10 +16,7 @@ from tqdm import tqdm
 
 from ..common.bitmask import parse_bitmask
 from ..common.typing import BDD100KConfig
-from ..common.utils import (
-    list_files,
-    load_bdd100k_config,
-)
+from ..common.utils import list_files, load_bdd100k_config
 from ..eval.ins_seg import parse_res_bitmask
 
 ToRLEFunc = Callable[[Frame, str, List[Category]], Frame]
@@ -147,7 +144,7 @@ def segtrack_to_rle(
     # Video parameters
     frame.name = frame.name.split("/")[-1]
     frame.videoName = img_name.split("/")[0]
-    frame.frameIndex = int(img_name.split("-")[-1].split(".")[0])
+    frame.frameIndex = int(img_name.split("-")[-1].split(".")[0]) - 1
 
     for i, _ in enumerate(instance_ids):
         label = Label(id=str(instance_ids[i]))
