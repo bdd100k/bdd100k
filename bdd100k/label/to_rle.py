@@ -149,7 +149,7 @@ def segtrack_to_rle(
     for i, _ in enumerate(instance_ids):
         label = Label(id=str(instance_ids[i]))
         label.category = categories[category_ids[i] - 1].name
-        label.rle = mask_to_rle((masks == instance_ids[i]).astype(np.uint8))
+        label.rle = mask_to_rle((masks == i + 1).astype(np.uint8))
         frame.labels.append(label)
 
     return frame
