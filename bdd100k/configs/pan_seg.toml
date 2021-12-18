@@ -1,15 +1,4 @@
-remove_ignored = false
-ignored_as_class = false
-
-[ignored_mapping]
-"other person" = "pedestrian"
-"other vehicle" = "car"
-
-[name_mapping]
-bike = "bicycle"
-motor = "motorcycle"
-person = "pedestrian"
-van = "car"
+remove_ignored = true
 
 [scalabel]
     [scalabel.imageSize]

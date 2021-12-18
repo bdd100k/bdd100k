@@ -77,6 +77,7 @@ def load_bdd100k_config(cfg_path: str) -> BDD100KConfig:
             "configs",
             cfg_path + ".toml",
         )
+    assert osp.exists(cfg_path), f"Task config {cfg_path} does not exist."
     config = load_config(cfg_path)
     return BDD100KConfig(**config)
 
