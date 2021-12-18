@@ -1,0 +1,10 @@
+[scalabel]
+    [scalabel.imageSize]
+    height = 720
+    width = 1280
+
+    [[scalabel.categories]]
+    name = "direct"
+
+    [[scalabel.categories]]
+    name = "alternative"

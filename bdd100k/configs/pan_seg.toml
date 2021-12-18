@@ -1,17 +1,4 @@
-remove_ignored = false
-ignored_as_class = false
-
-[ignored_mapping]
-"other person" = "pedestrian"
-"other vehicle" = "car"
-"trailer" = "truck"
-
-[name_mapping]
-bike = "bicycle"
-caravan = "car"
-motor = "motorcycle"
-person = "pedestrian"
-van = "car"
+remove_ignored = true
 
 [scalabel]
     [scalabel.imageSize]
@@ -24,31 +11,161 @@ van = "car"
     tag = "c"
 
     [[scalabel.categories]]
-    name = "human"
-        [[scalabel.categories.subcategories]]
-        name = "pedestrian"
-
-        [[scalabel.categories.subcategories]]
-        name = "rider"
+    name = "dynamic"
+    isThing = false
 
     [[scalabel.categories]]
-    name = "vehicle"
-        [[scalabel.categories.subcategories]]
-            name = "car"
-
-        [[scalabel.categories.subcategories]]
-            name = "truck"
-
-        [[scalabel.categories.subcategories]]
-            name = "bus"
-
-        [[scalabel.categories.subcategories]]
-        name = "train"
+    name = "ego vehicle"
+    isThing = false
 
     [[scalabel.categories]]
-    name = "bike"
-        [[scalabel.categories.subcategories]]
-        name = "motorcycle"
+    name = "ground"
+    isThing = false
 
-        [[scalabel.categories.subcategories]]
-        name = "bicycle"
+    [[scalabel.categories]]
+    name = "static"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "parking"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "rail track"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "road"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "sidewalk"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "bridge"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "building"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "fence"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "garage"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "guard rail"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "tunnel"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "wall"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "banner"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "billboard"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "lane divider"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "parking sign"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "pole"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "polegroup"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "street light"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "traffic cone"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "traffic device"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "traffic light"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "traffic sign"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "traffic sign frame"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "terrain"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "vegetation"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "sky"
+    isThing = false
+
+    [[scalabel.categories]]
+    name = "person"
+    isThing = true
+
+    [[scalabel.categories]]
+    name = "rider"
+    isThing = true
+
+    [[scalabel.categories]]
+    name = "bicycle"
+    isThing = true
+
+    [[scalabel.categories]]
+    name = "bus"
+    isThing = true
+
+    [[scalabel.categories]]
+    name = "car"
+    isThing = true
+
+    [[scalabel.categories]]
+    name = "caravan"
+    isThing = true
+
+    [[scalabel.categories]]
+    name = "motorcycle"
+    isThing = true
+
+    [[scalabel.categories]]
+    name = "trailer"
+    isThing = true
+
+    [[scalabel.categories]]
+    name = "train"
+    isThing = true
+
+    [[scalabel.categories]]
+    name = "truck"
+    isThing = true
