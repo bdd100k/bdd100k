@@ -24,9 +24,11 @@ class TestToRLE(unittest.TestCase):
             load_bdd100k_config("ins_seg").scalabel.categories
         )
         frame = load(score).frames[0]
+        assert frame.labels is not None
 
         new_frame = insseg_to_rle(frame, mask_dir, categories)
 
+        assert new_frame.labels is not None
         self.assertEqual(len(new_frame.labels), 22)
         for i, label in enumerate(new_frame.labels):
             self.assertEqual(label.score, frame.labels[i].score)
@@ -42,6 +44,7 @@ class TestToRLE(unittest.TestCase):
 
         new_frame = semseg_to_rle(frame, mask_dir, categories)
 
+        assert new_frame.labels is not None
         self.assertEqual(len(new_frame.labels), 11)
 
     def test_segtrack_to_rle(self) -> None:
@@ -53,14 +56,15 @@ class TestToRLE(unittest.TestCase):
         )
         frames = [Frame(name=mask) for mask in masks]
 
-        new_frames = [segtrack_to_rle(frame, mask_dir, categories) for frame in frames]
-
-        self.assertEqual(len(new_frames[0].labels), 10)
-        self.assertEqual(new_frames[0].videoName, "0")
-        self.assertEqual(new_frames[0].frameIndex, 0)
-        self.assertEqual(len(new_frames[1].labels), 10)
-        self.assertEqual(new_frames[1].videoName, "0")
-        self.assertEqual(new_frames[1].frameIndex, 1)
+        new_frames = [
+            segtrack_to_rle(frame, mask_dir, categories) for frame in frames
+        ]
+        for i in range(2):
+            labels = new_frames[i].labels
+            assert labels is not None
+            self.assertEqual(len(labels), 10)
+            self.assertEqual(new_frames[i].videoName, "0")
+            self.assertEqual(new_frames[i].frameIndex, i)
 
 
 if __name__ == "__main__":

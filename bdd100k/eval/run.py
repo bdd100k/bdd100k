@@ -20,7 +20,7 @@ from ..common.utils import (
 from ..label.to_scalabel import bdd100k_to_scalabel
 from .ins_seg import evaluate_ins_seg
 from .lane import evaluate_lane_marking
-from .mots import acc_single_video_mots
+from .mots import evaluate_seg_track
 from .pan_seg import evaluate_pan_seg
 from .seg import evaluate_drivable, evaluate_sem_seg
 
@@ -143,8 +143,7 @@ def run() -> None:
             nproc=args.nproc,
         )
     elif args.task == "seg_track":
-        results = evaluate_track(
-            acc_single_video_mots,
+        results = evaluate_seg_track(
             gts=group_and_sort_files(
                 list_files(args.gt, ".png", with_prefix=True)
             ),

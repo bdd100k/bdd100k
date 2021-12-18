@@ -3,7 +3,7 @@ import argparse
 import os
 from functools import partial
 from multiprocessing import Pool
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Tuple
 
 import numpy as np
 from PIL import Image
@@ -67,11 +67,10 @@ def parse_args() -> argparse.Namespace:
 
 
 def insseg_to_rle(
-    frame: Frame, input_dir: str = "", categories: List[Category] = None
+    frame: Frame, input_dir: str, categories: List[Category]
 ) -> Frame:
-    """Convert ins_seg to rle."""
-    categories = categories or []
-    ann_score = {}
+    """Convert ins_seg bitmasks to rle."""
+    ann_score: Dict[str, List[Tuple[int, float]]] = {}
     img_name = frame.name.replace(".jpg", ".png")
     ann_score[img_name] = []
     bitmask = np.array(
@@ -82,6 +81,8 @@ def insseg_to_rle(
     if frame.labels is None:
         return frame
     for label in frame.labels:
+        assert label.index is not None
+        assert label.score is not None
         ann_score[img_name].append((label.index, label.score))
 
     masks, ann_ids, scores, category_ids = parse_res_bitmask(
@@ -95,20 +96,16 @@ def insseg_to_rle(
             category=categories[category_ids[ann_id - 1] - 1].name,
             score=scores[ann_id - 1],
         )
-
-        # RLE
         label.rle = mask_to_rle((masks == ann_id).astype(np.uint8))
-
         labels.append(label)
     frame.labels = labels
     return frame
 
 
 def semseg_to_rle(
-    frame: Frame, input_dir: str = "", categories: List[Category] = None
+    frame: Frame, input_dir: str, categories: List[Category]
 ) -> Frame:
-    """Convert sem_seg to rle."""
-    categories = categories or []
+    """Convert sem_seg bitmasks to rle."""
     frame.labels = []
     img_name = frame.name.replace(".jpg", ".png")
     bitmask = np.array(
@@ -129,10 +126,9 @@ def semseg_to_rle(
 
 
 def segtrack_to_rle(
-    frame: Frame, input_dir: str = "", categories: List[Category] = None
+    frame: Frame, input_dir: str, categories: List[Category]
 ) -> Frame:
-    """Convert seg_track to rle."""
-    categories = categories or []
+    """Convert seg_track bitmasks to rle."""
     frame.labels = []
     img_name = frame.name.replace(".jpg", ".png")
     bitmask = np.array(
@@ -141,7 +137,7 @@ def segtrack_to_rle(
     )
     masks, instance_ids, _, category_ids = parse_bitmask(bitmask)
 
-    # Video parameters
+    # video parameters
     frame.name = frame.name.split("/")[-1]
     frame.videoName = img_name.split("/")[0]
     frame.frameIndex = int(img_name.split("-")[-1].split(".")[0]) - 1
@@ -156,6 +152,7 @@ def segtrack_to_rle(
 
 
 def main() -> None:
+    """Main."""
     args = parse_args()
 
     assert os.path.isdir(args.input)
@@ -181,7 +178,9 @@ def main() -> None:
         frames = load(args.score_file).frames
 
         assert all(
-            os.path.exists(os.path.join(args.input, frame.name.replace(".jpg", ".png")))
+            os.path.exists(
+                os.path.join(args.input, frame.name.replace(".jpg", ".png"))
+            )
             for frame in frames
         ), "Missing some bitmasks."
     elif args.mode in ("sem_seg", "seg_track"):

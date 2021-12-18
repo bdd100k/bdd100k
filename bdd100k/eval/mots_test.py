@@ -3,14 +3,13 @@ import os
 import unittest
 
 import numpy as np
-from scalabel.eval.mot import evaluate_track
 
 from ..common.utils import (
     group_and_sort_files,
     list_files,
     load_bdd100k_config,
 )
-from .mots import acc_single_video_mots
+from .mots import evaluate_seg_track
 
 
 class TestEvaluteMOTS(unittest.TestCase):
@@ -25,8 +24,7 @@ class TestEvaluteMOTS(unittest.TestCase):
         list_files(b_path, ".png", with_prefix=True)
     )
     bdd100k_config = load_bdd100k_config("seg_track")
-    result = evaluate_track(
-        acc_single_video_mots,
+    result = evaluate_seg_track(
         gts,
         results,
         bdd100k_config.scalabel,
