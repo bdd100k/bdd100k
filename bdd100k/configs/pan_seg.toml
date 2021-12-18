@@ -4,11 +4,9 @@ ignored_as_class = false
 [ignored_mapping]
 "other person" = "pedestrian"
 "other vehicle" = "car"
-"trailer" = "truck"
 
 [name_mapping]
 bike = "bicycle"
-caravan = "car"
 motor = "motorcycle"
 person = "pedestrian"
 van = "car"
