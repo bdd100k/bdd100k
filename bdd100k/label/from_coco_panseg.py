@@ -9,6 +9,7 @@ from multiprocessing import Pool
 import numpy as np
 from PIL import Image
 from scalabel.common.parallel import NPROC
+from scalabel.common.typing import NDArrayI32
 from scalabel.label.coco_typing import PanopticAnnType, PanopticGtType
 from tqdm import tqdm
 
@@ -45,7 +46,9 @@ def panseg2bitmask(
 ) -> None:
     """Convert COCO panoptic annotations of an image to BDD100K format."""
     pan_name = os.path.join(pan_mask_base, annotation["file_name"])
-    pan_fmt = np.asarray(Image.open(pan_name)).astype(dtype=np.int32)
+    pan_fmt: NDArrayI32 = np.asarray(Image.open(pan_name)).astype(
+        dtype=np.int32
+    )
     instance_map = pan_fmt[..., 0] + (pan_fmt[..., 1] << 8)
 
     height, width = pan_fmt.shape[:2]
