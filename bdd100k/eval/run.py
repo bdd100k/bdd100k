@@ -1,4 +1,4 @@
-"""Evaluation helper functoins."""
+"""Evaluation helper functions."""
 
 import argparse
 import json
@@ -9,6 +9,7 @@ from scalabel.eval.detect import evaluate_det
 from scalabel.eval.mot import acc_single_video_mot, evaluate_track
 from scalabel.eval.pose import evaluate_pose
 from scalabel.eval.result import Result
+from scalabel.eval.sem_seg import evaluate_sem_seg as sc_eval_sem_seg
 from scalabel.label.io import group_and_sort, load
 
 from ..common.logger import logger
@@ -104,6 +105,16 @@ def run() -> None:
         bdd100k_config = load_bdd100k_config(args.config)
     elif args.task in ["det", "ins_seg", "box_track", "seg_track", "pose"]:
         bdd100k_config = load_bdd100k_config(args.task)
+    else:
+        return
+
+    # Determine if the input contains bitmasks or JSON files
+    if len(list_files(args.result, ".png")) > 0:
+        use_scalabel = False
+    elif len(list_files(args.result, ".json")) > 0:
+        use_scalabel = True
+    else:
+        return
 
     if args.task == "det":
         results: Result = evaluate_det(
@@ -178,13 +189,27 @@ def run() -> None:
             gt_paths, pred_paths, nproc=args.nproc, with_logs=not args.quiet
         )
     elif args.task == "sem_seg":
-        results = evaluate_sem_seg(
-            gt_paths, pred_paths, nproc=args.nproc, with_logs=not args.quiet
-        )
+        if not use_scalabel:
+            results = evaluate_sem_seg(
+                gt_paths, pred_paths, nproc=args.nproc, with_logs=not args.quiet
+            )
+        else:
+            results = sc_eval_sem_seg(
+                bdd100k_to_scalabel(
+                    load(args.gt, args.nproc).frames, bdd100k_config
+                ),
+                bdd100k_to_scalabel(
+                    load(args.result, args.nproc).frames, bdd100k_config
+                ),
+                bdd100k_config.scalabel,
+                nproc=args.nproc,
+            )
     elif args.task == "pan_seg":
         results = evaluate_pan_seg(
             gt_paths, pred_paths, nproc=args.nproc, with_logs=not args.quiet
         )
+    else:
+        return
 
     logger.info(results)
     if args.out_file:
