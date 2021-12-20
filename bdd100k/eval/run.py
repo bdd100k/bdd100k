@@ -6,6 +6,7 @@ import os
 
 from scalabel.common.parallel import NPROC
 from scalabel.eval.detect import evaluate_det
+from scalabel.eval.ins_seg import evaluate_ins_seg as sc_eval_ins_seg
 from scalabel.eval.mot import acc_single_video_mot, evaluate_track
 from scalabel.eval.pose import evaluate_pose
 from scalabel.eval.result import Result
@@ -128,13 +129,25 @@ def run() -> None:
             nproc=args.nproc,
         )
     elif args.task == "ins_seg":
-        results = evaluate_ins_seg(
-            args.gt,
-            args.result,
-            args.score_file,
-            bdd100k_config.scalabel,
-            nproc=args.nproc,
-        )
+        if not use_scalabel:
+            results = evaluate_ins_seg(
+                args.gt,
+                args.result,
+                args.score_file,
+                bdd100k_config.scalabel,
+                nproc=args.nproc,
+            )
+        else:
+            results = sc_eval_ins_seg(
+                bdd100k_to_scalabel(
+                    load(args.gt, args.nproc).frames, bdd100k_config
+                ),
+                bdd100k_to_scalabel(
+                    load(args.result, args.nproc).frames, bdd100k_config
+                ),
+                bdd100k_config.scalabel,
+                nproc=args.nproc,
+            )
     elif args.task == "box_track":
         results = evaluate_track(
             acc_single_video_mot,
