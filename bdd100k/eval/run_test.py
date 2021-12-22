@@ -5,26 +5,13 @@ import unittest
 from typing import List
 from unittest.mock import MagicMock, patch
 
-import numpy as np
-import scalabel.eval.sem_seg as sc_sem_seg
-from scalabel.eval.detect import evaluate_det
-from scalabel.eval.ins_seg import evaluate_ins_seg as sc_eval_ins_seg
-from scalabel.eval.mot import acc_single_video_mot, evaluate_track
-from scalabel.eval.mots import (
-    acc_single_video_mots,
-    evaluate_seg_track as sc_eval_seg_track,
-)
-from scalabel.eval.pan_seg import evaluate_pan_seg as sc_eval_pan_seg
-from scalabel.eval.pose import evaluate_pose
-from scalabel.eval.result import Result
 from scalabel.label.typing import Dataset, Frame
-
-import bdd100k.eval.run as eval_run
 
 from .run import parse_args, run
 
 
-def _mock_load(*_):
+def mock_load(*_) -> Dataset:  # type: ignore
+    """Mock load to return a dummy dataset with one frame."""
     return Dataset(
         frames=[
             Frame(
@@ -41,10 +28,18 @@ class TestEvalRun(unittest.TestCase):
     """Test cases for the run function."""
 
     cur_dir = os.path.dirname(os.path.abspath(__file__))
+    parse_args_patch = MagicMock()
+    load_patch = MagicMock()
+    sem_seg_patch = MagicMock()
+    ins_seg_patch = MagicMock()
+    seg_track_patch = MagicMock()
+    pan_seg_patch = MagicMock()
+    drivable_patch = MagicMock()
 
     def mock_rle(self, task: str) -> None:
         """Mock out RLE evaluation functions for testing."""
-        def _mock_parse_args(_) -> argparse.Namespace:
+
+        def _mock_parse_args(_: List[str]) -> argparse.Namespace:
             return parse_args(
                 [
                     "-t",
@@ -58,10 +53,8 @@ class TestEvalRun(unittest.TestCase):
                 ]
             )
 
-        self.parse_args_patch = patch(
-            "bdd100k.eval.run.parse_args", _mock_parse_args
-        ).__enter__()
-        self.load_patch = patch("bdd100k.eval.run.load", _mock_load).__enter__()
+        patch("bdd100k.eval.run.parse_args", _mock_parse_args).__enter__()
+        patch("bdd100k.eval.run.load", mock_load).__enter__()
         self.sem_seg_patch = patch(
             "bdd100k.eval.run.sc_eval_sem_seg"
         ).__enter__()
@@ -77,7 +70,8 @@ class TestEvalRun(unittest.TestCase):
 
     def mock_bitmask(self, task: str) -> None:
         """Mock out bitmask evaluation functions for testing."""
-        def _mock_parse_args(_) -> argparse.Namespace:
+
+        def _mock_parse_args(_: List[str]) -> argparse.Namespace:
             return parse_args(
                 [
                     "-t",
@@ -91,10 +85,8 @@ class TestEvalRun(unittest.TestCase):
                 ]
             )
 
-        self.parse_args_patch = patch(
-            "bdd100k.eval.run.parse_args", _mock_parse_args
-        ).__enter__()
-        self.load_patch = patch("bdd100k.eval.run.load", _mock_load).__enter__()
+        patch("bdd100k.eval.run.parse_args", _mock_parse_args).__enter__()
+        patch("bdd100k.eval.run.load", mock_load).__enter__()
         self.sem_seg_patch = patch(
             "bdd100k.eval.run.evaluate_sem_seg"
         ).__enter__()
@@ -112,7 +104,7 @@ class TestEvalRun(unittest.TestCase):
         ).__enter__()
 
     def test_rle_sem_seg(self) -> None:
-        """Test that run calls scalabel sem_seg evaluation."""
+        """Test that run calls RLE sem_seg evaluation."""
         self.mock_rle("sem_seg")
         run()
         self.sem_seg_patch.assert_called_once()
@@ -121,7 +113,7 @@ class TestEvalRun(unittest.TestCase):
         self.pan_seg_patch.assert_not_called()
 
     def test_rle_ins_seg(self) -> None:
-        """Test that run calls scalabel ins_seg evaluation."""
+        """Test that run calls RLE ins_seg evaluation."""
         self.mock_rle("ins_seg")
         run()
         self.ins_seg_patch.assert_called_once()
@@ -130,7 +122,7 @@ class TestEvalRun(unittest.TestCase):
         self.pan_seg_patch.assert_not_called()
 
     def test_rle_seg_track(self) -> None:
-        """Test that run calls scalabel seg_track evaluation."""
+        """Test that run calls RLE seg_track evaluation."""
         self.mock_rle("seg_track")
         run()
         self.seg_track_patch.assert_called_once()
@@ -139,7 +131,7 @@ class TestEvalRun(unittest.TestCase):
         self.pan_seg_patch.assert_not_called()
 
     def test_rle_drivable(self) -> None:
-        """Test that run calls scalabel drivable evaluation."""
+        """Test that run calls RLE drivable evaluation."""
         self.mock_rle("drivable")
         run()
         self.sem_seg_patch.assert_called_once()
@@ -148,7 +140,7 @@ class TestEvalRun(unittest.TestCase):
         self.pan_seg_patch.assert_not_called()
 
     def test_rle_pan_seg(self) -> None:
-        """Test that run calls scalabel pan_seg evaluation."""
+        """Test that run calls RLE pan_seg evaluation."""
         self.mock_rle("pan_seg")
         run()
         self.pan_seg_patch.assert_called_once()
@@ -157,7 +149,7 @@ class TestEvalRun(unittest.TestCase):
         self.seg_track_patch.assert_not_called()
 
     def test_bitmask_sem_seg(self) -> None:
-        """Test that run calls bdd100k sem_seg evaluation."""
+        """Test that run calls bitmask sem_seg evaluation."""
         self.mock_bitmask("sem_seg")
         run()
         self.sem_seg_patch.assert_called_once()
@@ -167,7 +159,7 @@ class TestEvalRun(unittest.TestCase):
         self.drivable_patch.assert_not_called()
 
     def test_bitmask_ins_seg(self) -> None:
-        """Test that run calls bdd100k ins_seg evaluation."""
+        """Test that run calls bitmask ins_seg evaluation."""
         self.mock_bitmask("ins_seg")
         run()
         self.ins_seg_patch.assert_called_once()
@@ -177,7 +169,7 @@ class TestEvalRun(unittest.TestCase):
         self.drivable_patch.assert_not_called()
 
     def test_bitmask_seg_track(self) -> None:
-        """Test that run calls bdd100k seg_track evaluation."""
+        """Test that run calls bitmask seg_track evaluation."""
         self.mock_bitmask("seg_track")
         run()
         self.seg_track_patch.assert_called_once()
@@ -187,7 +179,7 @@ class TestEvalRun(unittest.TestCase):
         self.drivable_patch.assert_not_called()
 
     def test_bitmask_drivable(self) -> None:
-        """Test that run calls bdd100k drivable evaluation."""
+        """Test that run calls bitmask drivable evaluation."""
         self.mock_bitmask("drivable")
         run()
         self.drivable_patch.assert_called_once()
@@ -197,7 +189,7 @@ class TestEvalRun(unittest.TestCase):
         self.pan_seg_patch.assert_not_called()
 
     def test_bitmask_pan_seg(self) -> None:
-        """Test that run calls bdd100k pan_seg evaluation."""
+        """Test that run calls bitmask pan_seg evaluation."""
         self.mock_bitmask("pan_seg")
         run()
         self.pan_seg_patch.assert_called_once()

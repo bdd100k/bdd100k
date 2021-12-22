@@ -4,16 +4,14 @@ import argparse
 import json
 import os
 import sys
-from typing import List
+from typing import List, Optional
 
 from scalabel.common.parallel import NPROC
 from scalabel.eval.detect import evaluate_det
 from scalabel.eval.ins_seg import evaluate_ins_seg as sc_eval_ins_seg
 from scalabel.eval.mot import acc_single_video_mot, evaluate_track
-from scalabel.eval.mots import (
-    acc_single_video_mots,
-    evaluate_seg_track as sc_eval_seg_track,
-)
+from scalabel.eval.mots import acc_single_video_mots
+from scalabel.eval.mots import evaluate_seg_track as sc_eval_seg_track
 from scalabel.eval.pan_seg import evaluate_pan_seg as sc_eval_pan_seg
 from scalabel.eval.pose import evaluate_pose
 from scalabel.eval.result import Result
@@ -109,7 +107,7 @@ def parse_args(args: List[str]) -> argparse.Namespace:
 def run_bitmask(
     config: BDD100KConfig,
     task: str,
-    gt: str,
+    ground_truth: str,
     result: str,
     score_file: str,
     iou_thr: float,
@@ -118,10 +116,10 @@ def run_bitmask(
     nproc: int,
 ) -> Result:
     """Run eval for bitmask input."""
-    results = None
+    results: Optional[Result] = None
     if task == "ins_seg":
         results = evaluate_ins_seg(
-            gt,
+            ground_truth,
             result,
             score_file,
             config.scalabel,
@@ -129,7 +127,9 @@ def run_bitmask(
         )
     elif task == "seg_track":
         results = evaluate_seg_track(
-            gts=group_and_sort_files(list_files(gt, ".png", with_prefix=True)),
+            gts=group_and_sort_files(
+                list_files(ground_truth, ".png", with_prefix=True)
+            ),
             results=group_and_sort_files(
                 list_files(result, ".png", with_prefix=True)
             ),
@@ -139,7 +139,7 @@ def run_bitmask(
             nproc=nproc,
         )
 
-    gt_paths = list_files(gt, ".png", with_prefix=True)
+    gt_paths = list_files(ground_truth, ".png", with_prefix=True)
     pred_paths = list_files(result, ".png", with_prefix=True)
     if task == "sem_seg":
         results = evaluate_sem_seg(
@@ -163,16 +163,17 @@ def run_bitmask(
 def run_rle(
     config: BDD100KConfig,
     task: str,
-    gt: List[Frame],
+    ground_truth: List[Frame],
     result: List[Frame],
     iou_thr: float,
     ignore_iof_thr: float,
     nproc: int,
 ) -> Result:
     """Run eval for rle input."""
+    results: Result
     if task == "ins_seg":
         results = sc_eval_ins_seg(
-            gt,
+            ground_truth,
             result,
             config.scalabel,
             nproc=nproc,
@@ -180,7 +181,7 @@ def run_rle(
     elif task == "seg_track":
         results = sc_eval_seg_track(
             acc_single_video_mots,
-            gts=group_and_sort(gt),
+            gts=group_and_sort(ground_truth),
             results=group_and_sort(result),
             config=config.scalabel,
             iou_thr=iou_thr,
@@ -189,14 +190,14 @@ def run_rle(
         )
     elif task in ("sem_seg", "drivable"):
         results = sc_eval_sem_seg(
-            gt,
+            ground_truth,
             result,
             config.scalabel,
             nproc=nproc,
         )
     elif task == "pan_seg":
         results = sc_eval_pan_seg(
-            gt,
+            ground_truth,
             result,
             config.scalabel,
             nproc=nproc,
