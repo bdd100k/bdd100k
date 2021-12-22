@@ -3,7 +3,6 @@
 import argparse
 import json
 import os
-import sys
 from typing import List, Optional, Tuple
 
 from scalabel.common.parallel import NPROC
@@ -34,7 +33,7 @@ from .pan_seg import evaluate_pan_seg
 from .seg import evaluate_drivable, evaluate_sem_seg
 
 
-def parse_args(args: List[str]) -> argparse.Namespace:
+def parse_args() -> argparse.Namespace:
     """Use argparse to get command line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -99,7 +98,7 @@ def parse_args(args: List[str]) -> argparse.Namespace:
         help="without logging",
     )
 
-    return parser.parse_args(args)
+    return parser.parse_args()
 
 
 def run_bitmask(
@@ -220,7 +219,7 @@ def _load_frames(
 
 def run() -> None:
     """Main."""
-    args = parse_args(sys.argv[1:])
+    args = parse_args()
     if args.config is not None:
         bdd100k_config = load_bdd100k_config(args.config)
     elif args.task != "lane_mark":

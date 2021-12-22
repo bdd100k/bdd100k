@@ -2,12 +2,11 @@
 import argparse
 import os
 import unittest
-from typing import List
 from unittest.mock import MagicMock, patch
 
 from scalabel.label.typing import Dataset, Frame
 
-from .run import parse_args, run
+from .run import run
 
 
 def mock_load(*_) -> Dataset:  # type: ignore
@@ -21,6 +20,24 @@ def mock_load(*_) -> Dataset:  # type: ignore
                 frameIndex=0,
             )
         ]
+    )
+
+
+def construct_args(
+    task: str, config: str, ground_truth: str, result: str
+) -> argparse.Namespace:
+    """Construct command-line arguments for tests."""
+    return argparse.Namespace(
+        task=task,
+        config=config,
+        gt=ground_truth,
+        result=result,
+        nproc=1,
+        iou_thr=0.0,
+        ignore_iof_thr=False,
+        out_file=None,
+        score_file="",
+        quiet=True,
     )
 
 
@@ -39,18 +56,12 @@ class TestEvalRun(unittest.TestCase):
     def mock_rle(self, task: str) -> None:
         """Mock out RLE evaluation functions for testing."""
 
-        def _mock_parse_args(_: List[str]) -> argparse.Namespace:
-            return parse_args(
-                [
-                    "-t",
-                    task,
-                    "--config",
-                    f"{self.cur_dir}/../configs/sem_seg.toml",
-                    "-g",
-                    f"{self.cur_dir}/testcases/rle/seg/gt",
-                    "-r",
-                    f"{self.cur_dir}/testcases/rle/seg/pred",
-                ]
+        def _mock_parse_args() -> argparse.Namespace:
+            return construct_args(
+                task=task,
+                config=f"{self.cur_dir}/../configs/sem_seg.toml",
+                ground_truth=f"{self.cur_dir}/testcases/rle/seg/gt",
+                result=f"{self.cur_dir}/testcases/rle/seg/pred",
             )
 
         patch("bdd100k.eval.run.parse_args", _mock_parse_args).__enter__()
@@ -71,18 +82,12 @@ class TestEvalRun(unittest.TestCase):
     def mock_bitmask(self, task: str) -> None:
         """Mock out bitmask evaluation functions for testing."""
 
-        def _mock_parse_args(_: List[str]) -> argparse.Namespace:
-            return parse_args(
-                [
-                    "-t",
-                    task,
-                    "--config",
-                    f"{self.cur_dir}/../configs/sem_seg.toml",
-                    "-g",
-                    f"{self.cur_dir}/testcases/seg/gt",
-                    "-r",
-                    f"{self.cur_dir}/testcases/seg/pred",
-                ]
+        def _mock_parse_args() -> argparse.Namespace:
+            return construct_args(
+                task=task,
+                config=f"{self.cur_dir}/../configs/sem_seg.toml",
+                ground_truth=f"{self.cur_dir}/testcases/seg/gt",
+                result=f"{self.cur_dir}/testcases/seg/pred",
             )
 
         patch("bdd100k.eval.run.parse_args", _mock_parse_args).__enter__()
