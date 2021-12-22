@@ -24,6 +24,7 @@ from tqdm import tqdm
 
 from ..common.bitmask import bitmask_intersection_rate, parse_bitmask
 from ..common.logger import logger
+from ..common.utils import reorder_preds
 
 
 def parse_res_bitmask(
@@ -286,6 +287,7 @@ def evaluate_ins_seg(
     categories = get_coco_categories(config)
     cat_ids = [category["id"] for category in categories]
     cat_names = [category["name"] for category in categories]
+    pred_paths = reorder_preds(gt_paths, pred_paths)
     bdd_eval = BDD100KInsSegEval(
         gt_paths, pred_paths, pred_score_file, cat_names, nproc
     )
