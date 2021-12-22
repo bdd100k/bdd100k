@@ -24,7 +24,6 @@ from tqdm import tqdm
 
 from ..common.bitmask import bitmask_intersection_rate, parse_bitmask
 from ..common.logger import logger
-from ..common.utils import list_files
 
 
 def parse_res_bitmask(
@@ -75,16 +74,16 @@ class BDD100KInsSegEval(COCOevalV2):
 
     def __init__(
         self,
-        gt_base: str,  # pylint: disable=redefined-outer-name
-        dt_base: str,
+        gt_paths: List[str],
+        dt_paths: List[str],
         dt_json: str,
         cat_names: List[str],
         nproc: int = NPROC,
     ) -> None:
         """Initialize InsSeg eval."""
         super().__init__(cat_names)
-        self.gt_base = gt_base
-        self.dt_base = dt_base
+        self.gt_paths = {os.path.basename(p): p for p in gt_paths}
+        self.dt_paths = {os.path.basename(p): p for p in dt_paths}
         self.dt_json = dt_json
         self.nproc = nproc
         self.img_names: List[str] = []
@@ -100,12 +99,11 @@ class BDD100KInsSegEval(COCOevalV2):
 
     def _prepare(self) -> None:
         """Prepare file list for evaluation."""
-        gt_imgs = list_files(self.gt_base, ".png")
-        dt_imgs = list_files(self.dt_base, ".png")
-        for gt_img, dt_img in zip(gt_imgs, dt_imgs):
-            assert gt_img == dt_img
-        self.img_names = gt_imgs
+        self.img_names = list(self.gt_paths.keys())
         self.params.imgIds = self.img_names
+        assert len(self.gt_paths) == len(self.dt_paths)
+        for img_name in self.img_names:
+            assert img_name in self.gt_paths and img_name in self.dt_paths
 
         with open(self.dt_json, encoding="utf-8") as fp:
             dt_pred = json.load(fp)
@@ -157,14 +155,14 @@ class BDD100KInsSegEval(COCOevalV2):
         img_name = self.img_names[img_ind]
         ann_score = self.img2score[img_name]
 
-        gt_path = os.path.join(self.gt_base, img_name)
+        gt_path = self.gt_paths[img_name]
         gt_bitmask = np.asarray(Image.open(gt_path), dtype=np.uint8)
         gt_masks, _, gt_attrs, gt_cat_ids = parse_bitmask(gt_bitmask)
         gt_areas = get_mask_areas(gt_masks)
         gt_crowds = np.bitwise_and(gt_attrs, 2)
         gt_ignores = np.bitwise_and(gt_attrs, 1)
 
-        dt_path = os.path.join(self.dt_base, img_name)
+        dt_path = self.dt_paths[img_name]
         dt_bitmask = np.asarray(Image.open(dt_path), dtype=np.uint8)
         dt_masks, _, dt_scores, dt_cat_ids = parse_res_bitmask(
             ann_score, dt_bitmask
@@ -265,8 +263,8 @@ class BDD100KInsSegEval(COCOevalV2):
 
 
 def evaluate_ins_seg(
-    ann_base: str,
-    pred_base: str,  # pylint: disable=redefined-outer-name
+    gt_paths: List[str],
+    pred_paths: List[str],
     pred_score_file: str,
     config: Config,
     nproc: int = NPROC,
@@ -275,8 +273,8 @@ def evaluate_ins_seg(
     """Load the ground truth and prediction results.
 
     Args:
-        ann_base: path to the ground truth bitmasks folder.
-        pred_base: path to the prediciton bitmasks folder.
+        gt_paths: paths to the ground truth bitmasks.
+        pred_paths: paths to the prediciton bitmasks.
         pred_score_file: path tothe prediction scores.
         config: Config instance.
         nproc: number of processes.
@@ -289,7 +287,7 @@ def evaluate_ins_seg(
     cat_ids = [category["id"] for category in categories]
     cat_names = [category["name"] for category in categories]
     bdd_eval = BDD100KInsSegEval(
-        ann_base, pred_base, pred_score_file, cat_names, nproc
+        gt_paths, pred_paths, pred_score_file, cat_names, nproc
     )
     bdd_eval.params.catIds = cat_ids
     if with_logs:
