@@ -248,7 +248,7 @@ def run() -> None:
                 ignore_iof_thr=args.ignore_iof_thr,
                 nproc=args.nproc,
             )
-        elif args.task == "pose":
+        else: # pose
             results = evaluate_pose(
                 gt_frames,
                 result_frames,
