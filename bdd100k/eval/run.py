@@ -3,6 +3,8 @@
 import argparse
 import json
 import os
+import sys
+from typing import List
 
 from scalabel.common.parallel import NPROC
 from scalabel.eval.detect import evaluate_det
@@ -17,10 +19,10 @@ from scalabel.eval.pose import evaluate_pose
 from scalabel.eval.result import Result
 from scalabel.eval.sem_seg import evaluate_sem_seg as sc_eval_sem_seg
 from scalabel.label.io import group_and_sort, load
-
-from bdd100k.common.typing import BDD100KConfig
+from scalabel.label.typing import Frame
 
 from ..common.logger import logger
+from ..common.typing import BDD100KConfig
 from ..common.utils import (
     group_and_sort_files,
     list_files,
@@ -34,7 +36,7 @@ from .pan_seg import evaluate_pan_seg
 from .seg import evaluate_drivable, evaluate_sem_seg
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(args: List[str]) -> argparse.Namespace:
     """Use argparse to get command line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -83,16 +85,16 @@ def parse_args() -> argparse.Namespace:
         default=NPROC,
         help="number of processes for evaluation",
     )
-    # Flags for detection and instance segmentation
+    # flags for detection and instance segmentation
     parser.add_argument(
-        "--out-file", type=str, default=None, help="Path to store output files"
+        "--out-file", type=str, default=None, help="path to store output files"
     )
-    # Flags for instance segmentation
+    # flags for instance segmentation
     parser.add_argument(
         "--score-file",
         type=str,
         default=".",
-        help="Path to store the prediction scoring file",
+        help="path to store the prediction scoring file",
     )
     parser.add_argument(
         "--quiet",
@@ -101,9 +103,7 @@ def parse_args() -> argparse.Namespace:
         help="without logging",
     )
 
-    args = parser.parse_args()
-
-    return args
+    return parser.parse_args(args)
 
 
 def run_bitmask(
@@ -118,33 +118,13 @@ def run_bitmask(
     nproc: int,
 ) -> Result:
     """Run eval for bitmask input."""
-    if task == "det":
-        results: Result = evaluate_det(
-            bdd100k_to_scalabel(load(gt, nproc).frames, config),
-            bdd100k_to_scalabel(load(result, nproc).frames, config),
-            config.scalabel,
-            nproc=nproc,
-        )
-    elif task == "ins_seg":
+    results = None
+    if task == "ins_seg":
         results = evaluate_ins_seg(
             gt,
             result,
             score_file,
             config.scalabel,
-            nproc=nproc,
-        )
-    elif task == "box_track":
-        results = evaluate_track(
-            acc_single_video_mot,
-            gts=group_and_sort(
-                bdd100k_to_scalabel(load(gt, nproc).frames, config)
-            ),
-            results=group_and_sort(
-                bdd100k_to_scalabel(load(result, nproc).frames, config)
-            ),
-            config=config.scalabel,
-            iou_thr=iou_thr,
-            ignore_iof_thr=ignore_iof_thr,
             nproc=nproc,
         )
     elif task == "seg_track":
@@ -158,34 +138,24 @@ def run_bitmask(
             ignore_iof_thr=ignore_iof_thr,
             nproc=nproc,
         )
-    elif task == "pose":
-        results = evaluate_pose(
-            bdd100k_to_scalabel(load(gt, nproc).frames, config),
-            bdd100k_to_scalabel(load(result, nproc).frames, config),
-            config.scalabel,
-            nproc=nproc,
-        )
 
     gt_paths = list_files(gt, ".png", with_prefix=True)
     pred_paths = list_files(result, ".png", with_prefix=True)
-    if task == "drivable":
-        results = evaluate_drivable(
-            gt_paths, pred_paths, nproc=nproc, with_logs=not quiet
-        )
-    elif task == "lane_mark":
-        results = evaluate_lane_marking(
-            gt_paths, pred_paths, nproc=nproc, with_logs=not quiet
-        )
-    elif task == "sem_seg":
+    if task == "sem_seg":
         results = evaluate_sem_seg(
+            gt_paths, pred_paths, nproc=nproc, with_logs=not quiet
+        )
+    elif task == "drivable":
+        results = evaluate_drivable(
             gt_paths, pred_paths, nproc=nproc, with_logs=not quiet
         )
     elif task == "pan_seg":
         results = evaluate_pan_seg(
             gt_paths, pred_paths, nproc=nproc, with_logs=not quiet
         )
-    else:
-        assert False, f"{task} not supported by run_rle"
+
+    if not results:
+        assert False, f"{task} evaluation with bitmask format not supported!"
 
     return results
 
@@ -193,8 +163,8 @@ def run_bitmask(
 def run_rle(
     config: BDD100KConfig,
     task: str,
-    gt: str,
-    result: str,
+    gt: List[Frame],
+    result: List[Frame],
     iou_thr: float,
     ignore_iof_thr: float,
     nproc: int,
@@ -202,64 +172,91 @@ def run_rle(
     """Run eval for rle input."""
     if task == "ins_seg":
         results = sc_eval_ins_seg(
-            bdd100k_to_scalabel(load(gt, nproc).frames, config),
-            bdd100k_to_scalabel(load(result, nproc).frames, config),
+            gt,
+            result,
             config.scalabel,
             nproc=nproc,
         )
     elif task == "seg_track":
         results = sc_eval_seg_track(
             acc_single_video_mots,
-            gts=group_and_sort(
-                bdd100k_to_scalabel(load(gt, nproc).frames, config)
-            ),
-            results=group_and_sort(
-                bdd100k_to_scalabel(load(result, nproc).frames, config)
-            ),
+            gts=group_and_sort(gt),
+            results=group_and_sort(result),
             config=config.scalabel,
             iou_thr=iou_thr,
             ignore_iof_thr=ignore_iof_thr,
             nproc=nproc,
         )
-    elif task == "drivable":
+    elif task in ("sem_seg", "drivable"):
         results = sc_eval_sem_seg(
-            bdd100k_to_scalabel(load(gt, nproc).frames, config),
-            bdd100k_to_scalabel(load(result, nproc).frames, config),
-            config.scalabel,
-            nproc=nproc,
-        )
-    elif task == "sem_seg":
-        results = sc_eval_sem_seg(
-            bdd100k_to_scalabel(load(gt, nproc).frames, config),
-            bdd100k_to_scalabel(load(result, nproc).frames, config),
+            gt,
+            result,
             config.scalabel,
             nproc=nproc,
         )
     elif task == "pan_seg":
         results = sc_eval_pan_seg(
-            bdd100k_to_scalabel(load(gt, nproc).frames, config),
-            bdd100k_to_scalabel(load(result, nproc).frames, config),
+            gt,
+            result,
             config.scalabel,
             nproc=nproc,
         )
     else:
-        assert False, f"{task} not supported by run_rle"
+        assert False, f"{task} evaluation with RLE format not supported!"
 
     return results
 
 
 def run() -> None:
     """Main."""
-    args = parse_args()
+    args = parse_args(sys.argv[1:])
     if args.config is not None:
         bdd100k_config = load_bdd100k_config(args.config)
-    elif args.task in ["det", "ins_seg", "box_track", "seg_track", "pose"]:
+    elif args.task != "lane_mark":
         bdd100k_config = load_bdd100k_config(args.task)
     else:
         return
 
-    # Determine if the input contains bitmasks or JSON files
-    if len(list_files(args.result, ".png")) > 0:
+    gt_frames = bdd100k_to_scalabel(
+        load(args.gt, args.nproc).frames, bdd100k_config
+    )
+    result_frames = bdd100k_to_scalabel(
+        load(args.result, args.nproc).frames, bdd100k_config
+    )
+    gt_paths = list_files(args.gt, ".png", with_prefix=True)
+    pred_paths = list_files(args.result, ".png", with_prefix=True)
+
+    if args.task == "det":
+        results: Result = evaluate_det(
+            gt_frames,
+            result_frames,
+            bdd100k_config.scalabel,
+            nproc=args.nproc,
+        )
+    elif args.task == "box_track":
+        results = evaluate_track(
+            acc_single_video_mot,
+            gts=group_and_sort(gt_frames),
+            results=group_and_sort(result_frames),
+            config=bdd100k_config.scalabel,
+            iou_thr=args.iou_thr,
+            ignore_iof_thr=args.ignore_iof_thr,
+            nproc=args.nproc,
+        )
+    elif args.task == "pose":
+        results = evaluate_pose(
+            gt_frames,
+            result_frames,
+            bdd100k_config.scalabel,
+            nproc=args.nproc,
+        )
+    elif args.task == "lane_mark":
+        results = evaluate_lane_marking(
+            gt_paths, pred_paths, nproc=args.nproc, with_logs=not args.quiet
+        )
+
+    # determine if the input contains bitmasks or JSON files
+    elif all(f.endswith(".png") for f in list_files(args.result)):
         results = run_bitmask(
             bdd100k_config,
             args.task,
@@ -271,18 +268,21 @@ def run() -> None:
             args.quiet,
             args.nproc,
         )
-    elif len(list_files(args.result, ".json")) > 0:
+    elif all(f.endswith(".json") for f in list_files(args.result)):
         results = run_rle(
             bdd100k_config,
             args.task,
-            args.gt,
-            args.result,
+            gt_frames,
+            result_frames,
             args.iou_thr,
             args.ignore_iof_thr,
             args.nproc,
         )
     else:
-        assert False, "Input not valid"
+        assert False, (
+            "Input should either be a directory of only bitmasks or a JSON "
+            "file / directory of only JSON files"
+        )
 
     logger.info(results)
     if args.out_file:
