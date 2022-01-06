@@ -3,6 +3,7 @@ import os
 import unittest
 
 import numpy as np
+from scalabel.common.typing import NDArrayF64, NDArrayU8
 
 from ..common.utils import list_files
 from .lane import (
@@ -43,8 +44,8 @@ class TestEvalLanePerThreshold(unittest.TestCase):
 
     def test_two_parallel_lines(self) -> None:
         """Check the correctness of the function in general cases."""
-        a = np.zeros((10, 10), dtype=bool)
-        b = np.zeros((10, 10), dtype=bool)
+        a: NDArrayU8 = np.zeros((10, 10), dtype=bool)
+        b: NDArrayU8 = np.zeros((10, 10), dtype=bool)
         a[3, 3:7] = True
         b[7, 3:7] = True
 
@@ -55,8 +56,8 @@ class TestEvalLanePerThreshold(unittest.TestCase):
 
     def test_two_vertical_lines(self) -> None:
         """Check the correctness of the function in general cases."""
-        a = np.zeros((10, 10), dtype=bool)
-        b = np.zeros((10, 10), dtype=bool)
+        a: NDArrayU8 = np.zeros((10, 10), dtype=bool)
+        b: NDArrayU8 = np.zeros((10, 10), dtype=bool)
         a[3, 3:6] = True
         b[5:8, 7] = True
 
@@ -81,7 +82,7 @@ class TestEvaluateLaneMarking(unittest.TestCase):
         )
         data_frame = result.pd_frame()
         data_arr = data_frame.to_numpy()
-        gt_data_arr = np.array(
+        gt_data_arr: NDArrayF64 = np.array(
             [
                 [70.53328267, 80.9831119, 100.0],
                 [100.0, 100.0, 100.0],
@@ -99,7 +100,8 @@ class TestEvaluateLaneMarking(unittest.TestCase):
                 [85.26664133, 90.49155595, 100.0],
                 [92.17697636, 95.70112753, 100.0],
                 [87.57008634, 92.22807981, 100.0],
-            ]
+            ],
+            dtype=np.float64,
         )
         data_arr = data_frame.to_numpy()
         self.assertTrue(np.isclose(data_arr, gt_data_arr).all())

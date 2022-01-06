@@ -53,7 +53,7 @@ def parse_res_bitmask(
         ann_ids.append(i)
         scores.append(score)
 
-        category_ids_i = np.unique(category_map[mask_inds_i])
+        category_ids_i: NDArrayI32 = np.unique(category_map[mask_inds_i])
         assert category_ids_i.shape[0] == 1
         category_ids.append(category_ids_i[0])
 

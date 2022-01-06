@@ -3,6 +3,7 @@ import os
 import unittest
 
 import numpy as np
+from scalabel.common.typing import NDArrayF64
 
 from ..common.utils import (
     group_and_sort_files,
@@ -54,7 +55,7 @@ class TestEvaluteMOTS(unittest.TestCase):
         self.assertSetEqual(categories, set(data_frame.index.values))
 
         data_arr = data_frame.to_numpy()
-        APs = np.array(  # pylint: disable=invalid-name
+        aps: NDArrayF64 = np.array(
             [
                 66.66666667,
                 -1.0,
@@ -69,14 +70,16 @@ class TestEvaluteMOTS(unittest.TestCase):
                 -1.0,
                 8.33333333,
                 66.66666667,
-            ]
+            ],
+            dtype=np.float64,
         )
         self.assertTrue(
-            np.isclose(np.nan_to_num(data_arr[:, 0], nan=-1.0), APs).all()
+            np.isclose(np.nan_to_num(data_arr[:, 0], nan=-1.0), aps).all()
         )
 
-        overall_scores = np.array(
-            [66.66666667, 75.0, 80.0, 0.0, 1.0, 0.0, 2.0, 0.0, 1.0, 0.0]
+        overall_scores: NDArrayF64 = np.array(
+            [66.66666667, 75.0, 80.0, 0.0, 1.0, 0.0, 2.0, 0.0, 1.0, 0.0],
+            dtype=np.float64,
         )
         self.assertTrue(
             np.isclose(

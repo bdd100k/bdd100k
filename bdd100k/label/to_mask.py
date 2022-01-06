@@ -47,12 +47,17 @@ def frame_to_mask(
     assert len(colors) == len(poly2ds)
     height, width = shape.height, shape.width
 
+    assert back_color >= 0
     if with_instances:
         img: NDArrayU8 = (
-            np.ones([height, width, 4], dtype=np.uint8) * back_color
+            np.ones([height, width, 4], dtype=np.uint8)
+            * back_color  # type: ignore
         )
     else:
-        img = np.ones([height, width, 1], dtype=np.uint8) * back_color
+        img = (
+            np.ones([height, width, 1], dtype=np.uint8)
+            * back_color  # type: ignore
+        )
 
     if len(colors) == 0:
         pil_img = Image.fromarray(img.squeeze())
@@ -222,7 +227,7 @@ def seg_to_masks(
 
             category_id = cat_name2id[label.category]
             if mode in ["sem_seg", "drivable"]:
-                color = np.array([category_id])
+                color: NDArrayU8 = np.array([category_id], dtype=np.uint8)
             else:
                 color = set_lane_color(label, category_id)
             colors.append(color)

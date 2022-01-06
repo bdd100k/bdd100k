@@ -6,6 +6,7 @@ from typing import Callable, List
 
 import numpy as np
 from PIL import Image
+from scalabel.common.typing import NDArrayU8
 from scalabel.label.io import load
 from scalabel.label.typing import Config, Frame, Label
 
@@ -29,7 +30,7 @@ class TestUtilFunctions(unittest.TestCase):
             attributes=dict(truncated=True, crowd=False),
         )
         color = set_instance_color(label, 15, 300)
-        gt_color = np.array([15, 8, 1, 44])
+        gt_color: NDArrayU8 = np.array([15, 8, 1, 44], dtype=np.uint8)
         self.assertTrue((color == gt_color).all())
 
 

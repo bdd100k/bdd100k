@@ -48,11 +48,11 @@ def parse_bitmask(
         else:
             masks[mask_inds_i, i] = 1
 
-        attributes_i = np.unique(attributes_map[mask_inds_i])
+        attributes_i: NDArrayI32 = np.unique(attributes_map[mask_inds_i])
         assert attributes_i.shape[0] == 1
         attributes[i] = attributes_i[0]
 
-        category_ids_i = np.unique(category_map[mask_inds_i])
+        category_ids_i: NDArrayI32 = np.unique(category_map[mask_inds_i])
         assert category_ids_i.shape[0] == 1
         category_ids[i] = category_ids_i[0]
 

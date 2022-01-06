@@ -10,6 +10,7 @@ from typing import Dict, List, Tuple
 import numpy as np
 from PIL import Image
 from scalabel.common.parallel import NPROC
+from scalabel.common.typing import NDArrayI32
 from scalabel.label.coco_typing import AnnType, GtType, ImgType, VidType
 from scalabel.label.io import group_and_sort, load
 from scalabel.label.to_coco import (
@@ -107,7 +108,7 @@ def bitmasks_loader(mask_name: str) -> Tuple[List[InstanceType], ImageSize]:
 
     instances: List[InstanceType] = []
 
-    identities = np.unique(indentity_map)
+    identities: NDArrayI32 = np.unique(indentity_map)
     for identity in identities:
         mask = np.equal(indentity_map, identity)
         category_id = (identity >> 24) & 255

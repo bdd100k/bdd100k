@@ -5,6 +5,7 @@ import unittest
 
 import numpy as np
 from PIL import Image
+from scalabel.common.typing import NDArrayF64
 
 from ..common.utils import list_files, load_bdd100k_config
 from .ins_seg import evaluate_ins_seg
@@ -45,7 +46,7 @@ class TestBDD100KInsSegEval(unittest.TestCase):
         self.assertSetEqual(categories, set(data_frame.index.values))
 
         data_arr = data_frame.to_numpy()
-        APs = np.array(  # pylint: disable=invalid-name
+        aps: NDArrayF64 = np.array(
             [
                 100.0,
                 90.0,
@@ -56,13 +57,14 @@ class TestBDD100KInsSegEval(unittest.TestCase):
                 -1.0,
                 -1.0,
                 68.60561056,
-            ]
+            ],
+            dtype=np.float64,
         )
         self.assertTrue(
-            np.isclose(np.nan_to_num(data_arr[:, 0], nan=-1.0), APs).all()
+            np.isclose(np.nan_to_num(data_arr[:, 0], nan=-1.0), aps).all()
         )
 
-        overall_scores = np.array(
+        overall_scores: NDArrayF64 = np.array(
             [
                 68.60561056,
                 89.68646865,
@@ -76,7 +78,8 @@ class TestBDD100KInsSegEval(unittest.TestCase):
                 70.83333333,
                 70.83333333,
                 70.83333333,
-            ]
+            ],
+            dtype=np.float64,
         )
         self.assertTrue(
             np.isclose(

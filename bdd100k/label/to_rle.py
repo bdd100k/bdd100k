@@ -8,6 +8,7 @@ from typing import Callable, Dict, List, Tuple
 import numpy as np
 from PIL import Image
 from scalabel.common.parallel import NPROC
+from scalabel.common.typing import NDArrayU8
 from scalabel.label.io import load, save
 from scalabel.label.transforms import mask_to_rle
 from scalabel.label.typing import Category, Frame, Label
@@ -112,7 +113,7 @@ def semseg_to_rle(
         Image.open(os.path.join(input_dir, img_name)),
         dtype=np.uint8,
     )
-    category_ids = np.unique(bitmask)
+    category_ids: NDArrayU8 = np.unique(bitmask)
 
     label_id = 0
     for category_id in category_ids:

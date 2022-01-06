@@ -225,7 +225,7 @@ def merge_results(
         arr_mean = arr2d.mean(axis=0, keepdims=True)
         task2arr[task_name] = np.concatenate([arr2d, arr_mean], axis=0)
 
-    avg_arr = np.stack([arr2d[-1] for arr2d in task2arr.values()])
+    avg_arr: NDArrayF64 = np.stack([arr2d[-1] for arr2d in task2arr.values()])
     task2arr[AVERAGE] = avg_arr.mean(axis=0)
 
     return task2arr
