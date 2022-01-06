@@ -39,7 +39,7 @@ def parse_res_bitmask(
     scores = []
     category_ids = []
 
-    masks = np.zeros(bitmask.shape[:2], dtype=np.int32)
+    masks: NDArrayI32 = np.zeros(bitmask.shape[:2], dtype=np.int32)
     i = 0
     ann_score = sorted(ann_score, key=lambda pair: pair[1], reverse=True)
     for ann_id, score in ann_score:
@@ -157,14 +157,14 @@ class BDD100KInsSegEval(COCOevalV2):
         ann_score = self.img2score[img_name]
 
         gt_path = self.gt_paths[img_name]
-        gt_bitmask = np.asarray(Image.open(gt_path), dtype=np.uint8)
+        gt_bitmask: NDArrayU8 = np.asarray(Image.open(gt_path), dtype=np.uint8)
         gt_masks, _, gt_attrs, gt_cat_ids = parse_bitmask(gt_bitmask)
         gt_areas = get_mask_areas(gt_masks)
         gt_crowds = np.bitwise_and(gt_attrs, 2)
         gt_ignores = np.bitwise_and(gt_attrs, 1)
 
         dt_path = self.dt_paths[img_name]
-        dt_bitmask = np.asarray(Image.open(dt_path), dtype=np.uint8)
+        dt_bitmask: NDArrayU8 = np.asarray(Image.open(dt_path), dtype=np.uint8)
         dt_masks, _, dt_scores, dt_cat_ids = parse_res_bitmask(
             ann_score, dt_bitmask
         )

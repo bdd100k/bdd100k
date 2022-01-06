@@ -110,7 +110,7 @@ def per_image_hist(
     """Calculate per image hist."""
     assert num_classes >= 2
     assert num_classes <= IGNORE_LABEL
-    gt = np.asarray(Image.open(gt_path), dtype=np.uint8)
+    gt: NDArrayU8 = np.asarray(Image.open(gt_path), dtype=np.uint8)
     gt = gt.copy()
     gt[gt == IGNORE_LABEL] = num_classes - 1
     gt_id_set = set(np.unique(gt).tolist())

@@ -98,7 +98,7 @@ def bitmasks_loader(mask_name: str) -> Tuple[List[InstanceType], ImageSize]:
     """Parse instances from the bitmask."""
     if mask_name.endswith(".jpg"):
         mask_name = mask_name.replace(".jpg", ".png")
-    bitmask = np.asarray(Image.open(mask_name), dtype=np.int32)
+    bitmask: NDArrayI32 = np.asarray(Image.open(mask_name), dtype=np.int32)
     category_map = bitmask[:, :, 0]
     attributes_map = bitmask[:, :, 1]
     instance_map = (bitmask[:, :, 2] << 8) + bitmask[:, :, 3]
@@ -189,7 +189,7 @@ def bitmask2coco_with_ids(
     instance_ids: List[int],
 ) -> List[AnnType]:
     """Convert bitmasks annotations of an image to RLEs or polygons."""
-    bitmask = np.asarray(Image.open(mask_name), dtype=np.int32)
+    bitmask: NDArrayI32 = np.asarray(Image.open(mask_name), dtype=np.int32)
     category_map = bitmask[..., 0]
     instance_map = (bitmask[..., 2] << 2) + bitmask[..., 3]
     for annotation, category_id, instance_id in zip(

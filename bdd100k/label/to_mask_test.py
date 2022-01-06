@@ -59,9 +59,9 @@ class TestToMasks(unittest.TestCase):
         bdd100k_config = load_bdd100k_config(task_name)
         convert_func(frames, self.test_out, bdd100k_config.scalabel, 1)
         output_path = os.path.join(self.test_out, output_name)
-        mask = np.asarray(Image.open(output_path), dtype=np.uint8)
+        mask: NDArrayU8 = np.asarray(Image.open(output_path), dtype=np.uint8)
 
-        gt_mask = np.asarray(
+        gt_mask: NDArrayU8 = np.asarray(
             Image.open(f"{cur_dir}/testcases/{file_name}"),
             dtype=np.uint8,
         )

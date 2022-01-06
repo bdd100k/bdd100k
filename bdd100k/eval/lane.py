@@ -184,9 +184,9 @@ class LaneResult(Result):
 def eval_lane_per_frame(gt_path: str, pred_path: str) -> Dict[str, NDArrayF64]:
     """Compute mean,recall and decay from per-frame evaluation."""
     task2arr: Dict[str, NDArrayF64] = {}  # str -> 2d array
-    gt_byte = np.asarray(Image.open(gt_path), dtype=np.uint8)
+    gt_byte: NDArrayU8 = np.asarray(Image.open(gt_path), dtype=np.uint8)
     if not pred_path:
-        pred_byte = np.zeros_like(gt_byte, dtype=np.uint8)
+        pred_byte: NDArrayU8 = np.zeros_like(gt_byte, dtype=np.uint8)
     else:
         pred_byte = np.asarray(Image.open(pred_path), dtype=np.uint8)
     gt_foreground = get_foreground(gt_byte)

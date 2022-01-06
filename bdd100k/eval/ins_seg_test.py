@@ -5,7 +5,7 @@ import unittest
 
 import numpy as np
 from PIL import Image
-from scalabel.common.typing import NDArrayF64
+from scalabel.common.typing import NDArrayF64, NDArrayU8
 
 from ..common.utils import list_files, load_bdd100k_config
 from .ins_seg import evaluate_ins_seg
@@ -128,7 +128,7 @@ def create_test_file() -> None:
 
     if not os.path.isdir(gt_base):
         os.makedirs(gt_base)
-        gt_mask = np.zeros((100, 100, 4), dtype=np.uint8)
+        gt_mask: NDArrayU8 = np.zeros((100, 100, 4), dtype=np.uint8)
         gt_mask[:10, :10] = np.array([1, 0, 0, 1], dtype=np.uint8)
         gt_mask[20:40, 10:20] = np.array([2, 0, 0, 2], dtype=np.uint8)
         gt_mask[20:40, 20:30] = np.array([3, 0, 0, 3], dtype=np.uint8)
@@ -139,7 +139,7 @@ def create_test_file() -> None:
 
     if not os.path.isdir(dt_base):
         os.makedirs(dt_base)
-        dt_mask = np.zeros((100, 100, 4), dtype=np.uint8)
+        dt_mask: NDArrayU8 = np.zeros((100, 100, 4), dtype=np.uint8)
         dt_mask[:10, :10] = np.array([1, 0, 0, 1], dtype=np.uint8)
         dt_mask[20:40, 10:19] = np.array([2, 0, 0, 2], dtype=np.uint8)
         dt_mask[20:40, 20:27] = np.array([3, 0, 0, 4], dtype=np.uint8)

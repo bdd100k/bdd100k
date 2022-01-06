@@ -74,7 +74,7 @@ def insseg_to_rle(
     ann_score: Dict[str, List[Tuple[int, float]]] = {}
     img_name = frame.name.replace(".jpg", ".png")
     ann_score[img_name] = []
-    bitmask = np.array(
+    bitmask: NDArrayU8 = np.array(
         Image.open(os.path.join(input_dir, img_name)),
         dtype=np.uint8,
     )
@@ -109,7 +109,7 @@ def semseg_to_rle(
     """Convert sem_seg bitmasks to rle."""
     frame.labels = []
     img_name = frame.name.replace(".jpg", ".png")
-    bitmask = np.array(
+    bitmask: NDArrayU8 = np.array(
         Image.open(os.path.join(input_dir, img_name)),
         dtype=np.uint8,
     )
@@ -132,7 +132,7 @@ def segtrack_to_rle(
     """Convert seg_track bitmasks to rle."""
     frame.labels = []
     img_name = frame.name.replace(".jpg", ".png")
-    bitmask = np.array(
+    bitmask: NDArrayU8 = np.array(
         Image.open(os.path.join(input_dir, img_name)),
         dtype=np.uint8,
     )

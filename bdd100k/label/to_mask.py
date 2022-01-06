@@ -90,7 +90,7 @@ def frame_to_mask(
             )
 
     fig.canvas.draw()
-    out = np.frombuffer(fig.canvas.tostring_rgb(), np.uint8)
+    out: NDArrayU8 = np.frombuffer(fig.canvas.tostring_rgb(), np.uint8)
     out = out.reshape((height, width, -1)).astype(np.int32)
     out = (out[..., 0] << 8) + out[..., 1]
     plt.close()
@@ -114,7 +114,7 @@ def set_instance_color(
         occluded = int(attributes.get("occluded", False))
         crowd = int(check_crowd(label))
         ignored = int(check_ignored(label))
-    color = np.array(
+    color: NDArrayU8 = np.array(
         [
             category_id & 255,
             (truncated << 3) + (occluded << 2) + (crowd << 1) + ignored,
@@ -138,7 +138,7 @@ def set_lane_color(label: Label, category_id: int) -> NDArrayU8:
         lane_style = LANE_STYLE_MAP[str(attributes.get("laneStyle", "solid"))]
 
     value = category_id + (lane_direction << 5) + (lane_style << 4)
-    color = np.array([value], dtype=np.uint8)
+    color: NDArrayU8 = np.array([value], dtype=np.uint8)
     return color
 
 

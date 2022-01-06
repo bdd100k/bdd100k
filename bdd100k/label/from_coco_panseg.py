@@ -9,7 +9,7 @@ from multiprocessing import Pool
 import numpy as np
 from PIL import Image
 from scalabel.common.parallel import NPROC
-from scalabel.common.typing import NDArrayI32
+from scalabel.common.typing import NDArrayI32, NDArrayU8
 from scalabel.label.coco_typing import PanopticAnnType, PanopticGtType
 from tqdm import tqdm
 
@@ -52,7 +52,7 @@ def panseg2bitmask(
     instance_map = pan_fmt[..., 0] + (pan_fmt[..., 1] << 8)
 
     height, width = pan_fmt.shape[:2]
-    bitmask = np.zeros((height, width, 4), dtype=np.uint8)
+    bitmask: NDArrayU8 = np.zeros((height, width, 4), dtype=np.uint8)
     bitmask[..., 3] = pan_fmt[..., 0]
     bitmask[..., 2] = pan_fmt[..., 1]
 

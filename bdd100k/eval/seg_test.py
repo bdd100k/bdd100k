@@ -3,7 +3,7 @@ import os
 import unittest
 
 import numpy as np
-from scalabel.common.typing import NDArrayI32
+from scalabel.common.typing import NDArrayI32, NDArrayU8
 
 from ..common.utils import list_files
 from .seg import evaluate_segmentation, fast_hist, per_image_hist
@@ -14,9 +14,9 @@ class TestFastHist(unittest.TestCase):
 
     def test_a_mock_case(self) -> None:
         """Test the correctness for fast_hist."""
-        a_bitmask = np.zeros((10, 10), dtype=np.uint8)
+        a_bitmask: NDArrayU8 = np.zeros((10, 10), dtype=np.uint8)
         a_bitmask[4:, 4:] = 1
-        b_bitmask = np.ones((10, 10), dtype=np.uint8)
+        b_bitmask: NDArrayU8 = np.ones((10, 10), dtype=np.uint8)
         b_bitmask[:7, :7] = 0
 
         hist = fast_hist(a_bitmask, b_bitmask, 3)[:-1, :-1]
@@ -25,9 +25,9 @@ class TestFastHist(unittest.TestCase):
 
     def test_pred_overflow(self) -> None:
         """Test the blank prediction overflows."""
-        a_bitmask = np.zeros((10, 10), dtype=np.uint8)
+        a_bitmask: NDArrayU8 = np.zeros((10, 10), dtype=np.uint8)
         a_bitmask[4:, 4:] = 1
-        b_bitmask = np.ones((10, 10), dtype=np.uint8)
+        b_bitmask: NDArrayU8 = np.ones((10, 10), dtype=np.uint8)
         b_bitmask *= 3
         b_bitmask[:7, :7] = 0
 

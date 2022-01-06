@@ -14,7 +14,7 @@ class TestMaskIntersectionRate(unittest.TestCase):
 
     def test_mask_intersection_rate(self) -> None:
         """Check mask intersection rate correctness."""
-        a_bitmask = np.ones((10, 10), dtype=np.int32)
+        a_bitmask: NDArrayI32 = np.ones((10, 10), dtype=np.int32)
         a_bitmask[4:, 4:] = 2
         b_bitmask: NDArrayI32 = np.ones((10, 10), dtype=np.int32)
         b_bitmask *= 2

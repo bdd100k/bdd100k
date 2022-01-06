@@ -9,7 +9,7 @@ from typing import Dict, List
 import numpy as np
 from PIL import Image
 from scalabel.common.parallel import NPROC
-from scalabel.common.typing import NDArrayI32
+from scalabel.common.typing import NDArrayI32, NDArrayU8
 from scalabel.label.coco_typing import (
     ImgType,
     PanopticAnnType,
@@ -58,7 +58,7 @@ def bitmask2pan_mask(mask_name: str, pan_name: str) -> None:
     )
     height, width = bitmask.shape[:2]
 
-    pan_fmt = np.zeros((height, width, 3), dtype=np.uint8)
+    pan_fmt: NDArrayU8 = np.zeros((height, width, 3), dtype=np.uint8)
     pan_fmt[..., 0] = bitmask[..., 3]
     pan_fmt[..., 1] = bitmask[..., 2]
 

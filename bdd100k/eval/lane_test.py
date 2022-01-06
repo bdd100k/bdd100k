@@ -21,7 +21,7 @@ class TestGetLaneClass(unittest.TestCase):
     def test_partialled_classes(self) -> None:
         """Check the function that partial get_lane_class."""
         for num in range(255):
-            byte = np.array(num, dtype=np.uint8)
+            byte: NDArrayU8 = np.array(num, dtype=np.uint8)
             if num & 8:
                 self.assertTrue(get_lane_class(byte, 1, 3, 1))
             else:
