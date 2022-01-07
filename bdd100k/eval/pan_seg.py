@@ -40,6 +40,7 @@ from typing import AbstractSet, Dict, List, Optional, Union
 import numpy as np
 from PIL import Image
 from scalabel.common.parallel import NPROC
+from scalabel.common.typing import NDArrayU8
 from scalabel.eval.result import OVERALL, Result, Scores, ScoresList
 from scalabel.label.coco_typing import PanopticCatType
 from tqdm import tqdm
@@ -148,7 +149,7 @@ class PQStat:
 
 def pq_per_image(gt_path: str, pred_path: str = "") -> PQStat:
     """Calculate PQStar for each image."""
-    gt_bitmask = np.asarray(Image.open(gt_path), dtype=np.uint8)
+    gt_bitmask: NDArrayU8 = np.asarray(Image.open(gt_path), dtype=np.uint8)
     if not pred_path:
         pred_bitmask = gen_blank_bitmask(gt_bitmask.shape)
     else:

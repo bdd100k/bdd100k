@@ -258,7 +258,8 @@ def run() -> None:
     else:
         # for segmentation tasks, determine if the input contains bitmasks or
         # JSON files and call corresponding evaluation function
-        if all(f.endswith(".png") for f in list_files(args.result)):
+        res_files = list_files(args.result)
+        if len(res_files) > 0 and all(f.endswith(".png") for f in res_files):
             gt_paths = list_files(args.gt, ".png", with_prefix=True)
             pred_paths = list_files(args.result, ".png", with_prefix=True)
             results = run_bitmask(
@@ -272,7 +273,9 @@ def run() -> None:
                 args.quiet,
                 args.nproc,
             )
-        elif all(f.endswith(".json") for f in list_files(args.result)):
+        elif args.result.endswith(".json") or all(
+            f.endswith(".json") for f in res_files
+        ):
             gt_frames, result_frames = _load_frames(
                 args.gt, args.result, bdd100k_config, args.nproc
             )

@@ -9,6 +9,7 @@ import motmetrics as mm
 import numpy as np
 from PIL import Image
 from scalabel.common.parallel import NPROC
+from scalabel.common.typing import NDArrayU8
 from scalabel.eval.mot import (
     METRIC_MAPS,
     TrackResult,
@@ -47,7 +48,7 @@ def acc_single_video_mots(
         assert os.path.isfile(gt)
         assert os.path.isfile(result)
 
-        gt_bitmask = np.asarray(Image.open(gt), np.uint8)
+        gt_bitmask: NDArrayU8 = np.asarray(Image.open(gt), np.uint8)
         if not result:
             res_bitmask = gen_blank_bitmask(gt_bitmask.shape)
         else:
@@ -82,7 +83,7 @@ def acc_single_video_mots(
             gt_invalid = np.logical_not(gt_valids)
             if (gt_invalid).any():
                 # 1. assign gt and preds
-                fps = np.ones(pred_ids_c.shape[0], dtype=bool)
+                fps: NDArrayU8 = np.ones(pred_ids_c.shape[0], dtype=bool)
                 le, ri = mm.lap.linear_sum_assignment(distances)
                 for m, n in zip(le, ri):
                     if np.isfinite(distances[m, n]):

@@ -3,6 +3,7 @@ import os
 import unittest
 
 import numpy as np
+from scalabel.common.typing import NDArrayI32, NDArrayU8
 
 from ..common.utils import list_files
 from .seg import evaluate_segmentation, fast_hist, per_image_hist
@@ -13,25 +14,25 @@ class TestFastHist(unittest.TestCase):
 
     def test_a_mock_case(self) -> None:
         """Test the correctness for fast_hist."""
-        a_bitmask = np.zeros((10, 10), dtype=np.uint8)
+        a_bitmask: NDArrayU8 = np.zeros((10, 10), dtype=np.uint8)
         a_bitmask[4:, 4:] = 1
-        b_bitmask = np.ones((10, 10), dtype=np.uint8)
+        b_bitmask: NDArrayU8 = np.ones((10, 10), dtype=np.uint8)
         b_bitmask[:7, :7] = 0
 
         hist = fast_hist(a_bitmask, b_bitmask, 3)[:-1, :-1]
-        gt_hist = np.array([[40, 24], [9, 27]])
+        gt_hist: NDArrayI32 = np.array([[40, 24], [9, 27]], dtype=np.int32)
         self.assertTrue((hist == gt_hist).all())
 
     def test_pred_overflow(self) -> None:
         """Test the blank prediction overflows."""
-        a_bitmask = np.zeros((10, 10), dtype=np.uint8)
+        a_bitmask: NDArrayU8 = np.zeros((10, 10), dtype=np.uint8)
         a_bitmask[4:, 4:] = 1
-        b_bitmask = np.ones((10, 10), dtype=np.uint8)
+        b_bitmask: NDArrayU8 = np.ones((10, 10), dtype=np.uint8)
         b_bitmask *= 3
         b_bitmask[:7, :7] = 0
 
         hist = fast_hist(a_bitmask, b_bitmask, 3)[:-1, :-1]
-        gt_hist = np.array([[40, 0], [9, 0]])
+        gt_hist: NDArrayI32 = np.array([[40, 0], [9, 0]], dtype=np.int32)
         self.assertTrue((hist == gt_hist).all())
 
 
@@ -46,7 +47,7 @@ class TestPerImageHist(unittest.TestCase):
         pred_path = f"{self.cur_dir}/testcases/seg/pred/a.png"
 
         hist, id_set = per_image_hist(gt_path, pred_path, 3)
-        gt_hist = np.array([[93, 1], [4, 2]])
+        gt_hist: NDArrayI32 = np.array([[93, 1], [4, 2]], dtype=np.int32)
         gt_id_set = set([0, 1])
         self.assertTrue((hist[:-1, :-1] == gt_hist).all())
         self.assertSetEqual(id_set, gt_id_set)
@@ -57,7 +58,9 @@ class TestPerImageHist(unittest.TestCase):
         pred_path = ""
 
         hist, id_set = per_image_hist(gt_path, pred_path, 3)
-        gt_hist = np.array([[0, 0, 94], [0, 0, 6], [0, 0, 0]])
+        gt_hist: NDArrayI32 = np.array(
+            [[0, 0, 94], [0, 0, 6], [0, 0, 0]], dtype=np.int32
+        )
         gt_id_set = set([0, 1])
         self.assertTrue((hist == gt_hist).all())
         self.assertSetEqual(id_set, gt_id_set)

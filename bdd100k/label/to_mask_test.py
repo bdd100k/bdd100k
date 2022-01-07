@@ -6,6 +6,7 @@ from typing import Callable, List
 
 import numpy as np
 from PIL import Image
+from scalabel.common.typing import NDArrayU8
 from scalabel.label.io import load
 from scalabel.label.typing import Config, Frame, Label
 
@@ -29,7 +30,7 @@ class TestUtilFunctions(unittest.TestCase):
             attributes=dict(truncated=True, crowd=False),
         )
         color = set_instance_color(label, 15, 300)
-        gt_color = np.array([15, 8, 1, 44])
+        gt_color: NDArrayU8 = np.array([15, 8, 1, 44], dtype=np.uint8)
         self.assertTrue((color == gt_color).all())
 
 
@@ -58,9 +59,9 @@ class TestToMasks(unittest.TestCase):
         bdd100k_config = load_bdd100k_config(task_name)
         convert_func(frames, self.test_out, bdd100k_config.scalabel, 1)
         output_path = os.path.join(self.test_out, output_name)
-        mask = np.asarray(Image.open(output_path), dtype=np.uint8)
+        mask: NDArrayU8 = np.asarray(Image.open(output_path), dtype=np.uint8)
 
-        gt_mask = np.asarray(
+        gt_mask: NDArrayU8 = np.asarray(
             Image.open(f"{cur_dir}/testcases/{file_name}"),
             dtype=np.uint8,
         )

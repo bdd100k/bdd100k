@@ -16,6 +16,7 @@ from glob import glob
 
 import gmplot
 import numpy as np
+from scalabel.common.typing import NDArrayF64
 
 from ..common.logger import logger
 
@@ -49,8 +50,8 @@ def visualize_file(in_file: str, out_file: str, apikey: str) -> None:
         latitude_list.append(location["latitude"])
         longitude_list.append(location["longitude"])
 
-    latitude_array = np.array(latitude_list)
-    longitude_array = np.array(longitude_list)
+    latitude_array: NDArrayF64 = np.array(latitude_list)
+    longitude_array: NDArrayF64 = np.array(longitude_list)
 
     mean_latitude = latitude_array.mean()
     mean_longitude = longitude_array.mean()

@@ -72,7 +72,7 @@ Meanwhile, for the semantic segmentation task, 19 classes are evaluated. They ar
 Panoptic Segmentation
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Meanwhile, for the instance segmentation task, 19 classes are evaluated. They are:
+Meanwhile, for the instance segmentation task, 40 classes are evaluated. They are:
 ::
 
     0:  unlabeled
@@ -277,16 +277,15 @@ Format Conversion
 Coordinate System
 ^^^^^^^^^^^^^^^^^^
 
-During our labeling, we regard the left-top corner of the most left-top pixel as (0, 0),
-so in our conversion scripts, the width is computed as :code:`x2 - x1 + 1`,
-and height is computed as :code:`y2 - y1 + 1`. This manner also influence the mIoU calculation.
-This manner is consistent with `pycocotools <https://pypi.org/project/pycocotools/>`_,
-`MMDetection 1.x <https://github.com/open-mmlab/mmdetection/releases/tag/v1.2.0>`_ and
+During our labeling, we regard the top-left corner of the most top-left pixel as (0, 0).
+In our conversion scripts, the width is computed as :code:`x2 - x1 + 1` and height is computed as :code:`y2 - y1 + 1`,
+following the Scalabel format.
+This manner is consistent with `MMDetection 1.x <https://github.com/open-mmlab/mmdetection/releases/tag/v1.2.0>`_ and
 `maskrcnn-benchmark <https://github.com/facebookresearch/maskrcnn-benchmark>`_.
-Note that, 
-`MMDetection 2.x <https://github.com/open-mmlab/mmdetection>`_ and
-`Detectron2 <https://github.com/facebookresearch/detectron2>`_ adopt a different manner.
-You need to take care when using them.
+Note that, `pycocotools <https://pypi.org/project/pycocotools/>`_,
+`MMDetection 2.x <https://github.com/open-mmlab/mmdetection>`_, and
+`Detectron2 <https://github.com/facebookresearch/detectron2>`_ adopt a different definition.
+For these, you can use ``to_coco`` to convert the annotations to COCO format, which will be consistent.
 
 
 from_coco

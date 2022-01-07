@@ -5,6 +5,7 @@ Works for 2D / 3D bounding box, segmentation masks, etc.
 
 import argparse
 import concurrent.futures
+from typing import Dict
 
 import numpy as np
 from scalabel.common.parallel import NPROC
@@ -26,7 +27,7 @@ class LabelViewerBDD100K(LabelViewer):
     def __init__(self, ui_cfg: UIConfig) -> None:
         """Initializer."""
         super().__init__(ui_cfg)
-        self.colors = {
+        self.colors: Dict[str, NDArrayF64] = {
             label.name: np.array(label.color)
             for label in labels
             if not label.hasInstances

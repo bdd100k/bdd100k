@@ -6,6 +6,7 @@ import unittest
 
 import numpy as np
 from PIL import Image
+from scalabel.common.typing import NDArrayU8
 from scalabel.label.coco_typing import ImgType
 
 from .to_coco_panseg import (
@@ -32,8 +33,10 @@ class TestToCocoPanSeg(unittest.TestCase):
         os.makedirs(self.test_out, exist_ok=True)
         bitmask2pan_mask(mask_name, pan_name)
 
-        pan_mask = np.asarray(Image.open(pan_name), dtype=np.uint8)
-        gt_pan_mask = np.asarray(Image.open(gt_pan_name), dtype=np.uint8)
+        pan_mask: NDArrayU8 = np.asarray(Image.open(pan_name), dtype=np.uint8)
+        gt_pan_mask: NDArrayU8 = np.asarray(
+            Image.open(gt_pan_name), dtype=np.uint8
+        )
 
         self.assertTrue((pan_mask == gt_pan_mask).all())
 
