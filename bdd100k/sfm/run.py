@@ -5,6 +5,7 @@ import time
 from typing import List, Optional, Tuple
 
 import numpy as np
+import open3d as o3d
 from scalabel.common.typing import NDArrayF64
 from scalabel.label.typing import Frame, Intrinsics
 from scalabel.label.utils import (
@@ -74,7 +75,7 @@ def poses_from_colmap(
     frames: List[Frame], input_model: str, input_format: str = ".txt"
 ) -> List[Frame]:
     """Read poses from colmap reconstruction, add to frames."""
-    cameras, images, _ = read_model(path=input_model, ext=input_format)
+    cameras, images, pc = read_model(path=input_model, ext=input_format)
     assert len(cameras) == 1, "Camera params should be shared across a video."
     f, c_x, c_y = cameras[0].params
     intrinsics = Intrinsics(focal=(f, f), center=(c_x, c_y))
@@ -93,12 +94,39 @@ def add_image_ids(frames: List[Frame], db_path: str) -> None:
     """Add the image ids in the database to each frame (map by name)."""
     db = COLMAPDatabase.connect(db_path)
     rows = db.execute("SELECT * FROM images")
-    for _ in range(len(frames)):
-        row = next(rows)
+    for row in rows:
         img_id, name = row[0], row[1]
         for f in frames:
             if f.name == name:
                 f.attributes = {"id": img_id}
+    db.close()
+
+
+def add_spatials_to_db(frames: List[Frame], db_path: str) -> None:
+    """Add the spatial locations to images in database."""
+    db = COLMAPDatabase.connect(db_path)
+
+    for f in frames:
+        qvec, tvec = [], []
+        if f.extrinsics is not None:
+            trans_mat = get_matrix_from_extrinsics(f.extrinsics)
+            qvec = rotmat2qvec(trans_mat[:3, :3])
+            tvec = trans_mat[:3, 3]
+            [qw, qx, qy, qz] = qvec
+            [tx, ty, tz] = tvec
+            id = f.attributes["id"]
+        db.execute(
+            """
+            UPDATE images 
+            SET prior_tx=%s, prior_ty=%s, prior_tz=%s
+            Where image_id=%s"""
+            % (tx, ty, tz, id)
+        )
+    # Uncomment to print table content in database
+    # rows = db.execute("SELECT * FROM images")
+    # for row in rows:
+    #     print(row)
+    db.commit()
     db.close()
 
 
@@ -149,14 +177,29 @@ def sfm_reconstruction(
         f"--image_path {image_path}" + options
     )
 
+    add_image_ids(frames, f"{output_path}/database.db")
+    add_spatials_to_db(frames, f"{output_path}/database.db")
+
+    # os.system(
+    #     f"colmap sequential_matcher --database_path {output_path}/database.db "
+    #     f"--SiftMatching.min_inlier_ratio {0.65} "
+    #     f"--SiftMatching.max_distance {0.55} "
+    #     f"--SiftMatching.min_num_inliers {60}"
+    # )
+
     os.system(
-        f"colmap exhaustive_matcher --database_path {output_path}/database.db"
+        f"colmap spatial_matcher --database_path {output_path}/database.db "
+        f"--SiftMatching.min_inlier_ratio {0.75} "
+        f"--SiftMatching.max_distance {0.45} "
+        f"--SiftMatching.min_num_inliers {70} "
+        "--SpatialMatching.is_gps 0 "
+        "--SpatialMatching.max_num_neighbors 30 "
+        "--SpatialMatching.max_distance 100"
     )
 
     # open db, get image ids, write to frame ids, export frames to colmap
-    add_image_ids(frames, f"{output_path}/database.db")
     model_path = os.path.join(output_path, "prior")
-
+    has_pose_prior = False
     if has_pose_prior:
         frames_to_colmap(frames, model_path, output_format)
         os.makedirs(os.path.join(output_path, "sparse"), exist_ok=True)
@@ -178,23 +221,40 @@ def sfm_reconstruction(
             )
     else:
         # normal reconstruction with given intrinsic & shared cam param
+        os.makedirs(os.path.join(output_path, "sparse"), exist_ok=True)
         options = " --Mapper.ba_refine_principal_point 1"
+        sparse_path = os.path.join(output_path, "sparse")
         os.system(
             f"colmap mapper "
             f"--database_path {output_path}/database.db "
             f"--image_path {image_path} "
-            f'--output_path {os.path.join(output_path, "sparse")}' + options
+            f"--output_path {sparse_path} "
+            f"--Mapper.abs_pose_min_inlier_ratio {0.35} "
+            f"--Mapper.filter_max_reproj_error {3.0}"
         )
 
     # TODO dense model
-    # os.mkdir('dense')
-    # os.system('colmap image_undistorter --image_path ./images --input_path
-    # ./sparse/0 --output_path ./dense')
-    # os.system('colmap patch_match_stereo --workspace_path ./dense')
-    # os.system('colmap stereo_fusion --workspace_path ./dense --output_path
-    # ./fused.ply')
+    input_path = os.path.join(output_path, "sparse", "0")
+    dense_path = os.path.join(output_path, "dense")
 
-    return frames, None  # todo points3D
+    os.makedirs(dense_path, exist_ok=True)
+    os.system(
+        f"colmap image_undistorter --image_path {image_path} "
+        f"--input_path {input_path} "
+        f"--output_path {dense_path}"
+    )
+    os.system(
+        f"colmap patch_match_stereo --workspace_path {dense_path} "
+        f"--PatchMatchStereo.geom_consistency true"
+    )
+    result_path = os.path.join(output_path, "fused.ply")
+    os.system(
+        f"colmap stereo_fusion --workspace_path {dense_path} "
+        f"--output_path {result_path}"
+    )
+    print("end mapper reconstruction")
+
+    return frames, None 
 
 
 if __name__ == "__main__":
@@ -230,12 +290,9 @@ if __name__ == "__main__":
         help="Visualize the SfM model after reconstruction.",
     )
     args = parser.parse_args()
-    # sfm_reconstruction(args.image_path, args.output_path, args.info_path, args.output_format)
-    # TODO resolve problem with open3d installation, check visualization of sparse model
-    if args.visualize:
-        model = Model()
-        model.read_model(args.output_path, ext=args.output_format)
-        model.create_window()
-        model.add_points()
-        model.add_cameras(scale=0.25)
-        model.show()
+    print(args.image_path)
+    print(args.output_path)
+    sfm_reconstruction(
+        args.image_path, args.output_path, args.info_path, args.output_format
+    )
+    
