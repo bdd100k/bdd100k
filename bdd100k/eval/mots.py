@@ -38,6 +38,7 @@ def acc_single_video_mots(
     classes: List[str],
     iou_thr: float = 0.5,
     ignore_iof_thr: float = 0.5,
+    ignore_unknown_cats: bool = False,  # pylint: disable=unused-argument
 ) -> List[mm.MOTAccumulator]:
     """Accumulate results for one video."""
     results = reorder_preds(gts, results)
