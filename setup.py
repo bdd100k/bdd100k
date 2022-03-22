@@ -48,6 +48,7 @@ setuptools.setup(
             "configs/det.toml",
             "configs/drivable.toml",
             "configs/ins_seg.toml",
+            "configs/lane_mark.toml",
             "configs/pan_seg.toml",
             "configs/pose.toml",
             "configs/seg_track.toml",
