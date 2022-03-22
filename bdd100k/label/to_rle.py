@@ -48,6 +48,7 @@ def parse_args() -> argparse.Namespace:
         choices=[
             "ins_seg",
             "sem_seg",
+            "drivable",
             "seg_track",
         ],
         help="conversion mode",
@@ -117,6 +118,8 @@ def semseg_to_rle(
 
     label_id = 0
     for category_id in category_ids:
+        if category_id >= len(categories):
+            continue
         label = Label(id=str(label_id))
         label.category = categories[category_id].name
         label.rle = mask_to_rle((bitmask == category_id).astype(np.uint8))
@@ -171,6 +174,7 @@ def main() -> None:
     convert_funcs: Dict[str, ToRLEFunc] = dict(
         ins_seg=insseg_to_rle,
         sem_seg=semseg_to_rle,
+        drivable=semseg_to_rle,
         seg_track=segtrack_to_rle,
     )
 
@@ -184,13 +188,13 @@ def main() -> None:
             )
             for frame in frames
         ), "Missing some bitmasks."
-    elif args.mode in ("sem_seg", "seg_track"):
+    elif args.mode in ("sem_seg", "drivable", "seg_track"):
         files = list_files(args.input)
         frames = []
         for file in files:
             if not file.endswith(".png") and not file.endswith(".jpg"):
                 continue
-            frame = Frame(name=file, labels=[])
+            frame = Frame(name=file.replace(".png", ".jpg"), labels=[])
             frames.append(frame)
     else:
         return
