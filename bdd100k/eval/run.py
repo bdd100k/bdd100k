@@ -86,7 +86,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--score-file",
         type=str,
-        default=".",
+        default=None,
         help="path to store the prediction scoring file (ins_seg)",
     )
     parser.add_argument(
@@ -101,7 +101,7 @@ def run_bitmask(
     task: str,
     gt_paths: List[str],
     pred_paths: List[str],
-    score_file: str,
+    score_file: Optional[str],
     iou_thr: float = 0.5,
     ignore_iof_thr: float = 0.5,
     quiet: bool = False,
@@ -110,6 +110,9 @@ def run_bitmask(
     """Run eval for bitmask input."""
     results: Optional[Result] = None
     if task == "ins_seg":
+        assert (
+            score_file is not None
+        ), "ins_seg evaluation with bitmasks requires score_file"
         results = evaluate_ins_seg(
             gt_paths, pred_paths, score_file, config.scalabel, nproc=nproc
         )
@@ -240,6 +243,7 @@ def run() -> None:
                 nproc=args.nproc,
             )
     else:
+        assert os.path.exists(args.gt) and os.path.exists(args.result)
         # for segmentation tasks, determine if the input contains bitmasks or
         # JSON files and call corresponding evaluation function
         res_files = list_files(args.result)

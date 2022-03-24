@@ -68,7 +68,7 @@ def fast_hist(
         np.less(groundtruth, size - 1),
     )
     return np.bincount(
-        size * groundtruth[k].astype(int) + prediction[k], minlength=size**2
+        size * groundtruth[k].astype(int) + prediction[k], minlength=size ** 2
     ).reshape(size, size)
 
 
@@ -143,6 +143,7 @@ def evaluate_segmentation(
         "sem_seg": labels,
         "drivable": drivables,
     }[mode]
+    label_defs = sorted(label_defs, key=lambda label: label.trainId)
     categories = [label.name for label in label_defs if label.trainId != 255]
     num_classes = {
         "sem_seg": len(categories) + 1,  # add an `ignored` class

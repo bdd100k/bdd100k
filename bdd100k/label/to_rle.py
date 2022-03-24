@@ -1,4 +1,4 @@
-"""Convert bitmask to RLE."""
+"""Convert mask/bitmask to RLE."""
 import argparse
 import os
 from functools import partial
@@ -25,32 +25,21 @@ ToRLEFunc = Callable[[Frame, str, List[Category]], Frame]
 
 def parse_args() -> argparse.Namespace:
     """Parse arguments."""
-    parser = argparse.ArgumentParser(description="")
+    parser = argparse.ArgumentParser(description="mask to RLE conversion")
     parser.add_argument(
-        "-i",
-        "--input",
-        help=("directory of bitmasks to convert"),
+        "-i", "--input", help=("directory of bitmasks to convert")
     )
     parser.add_argument(
         "-o",
         "--output",
         help="path to save scalabel formatted label file with RLEs",
     )
-    parser.add_argument(
-        "-s",
-        "--score-file",
-        help="path to score file",
-    )
+    parser.add_argument("-s", "--score-file", help="path to score file")
     parser.add_argument(
         "-m",
         "--mode",
         default="ins_seg",
-        choices=[
-            "ins_seg",
-            "sem_seg",
-            "drivable",
-            "seg_track",
-        ],
+        choices=["ins_seg", "sem_seg", "drivable", "seg_track"],
         help="conversion mode",
     )
     parser.add_argument(

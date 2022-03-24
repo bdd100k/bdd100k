@@ -215,7 +215,7 @@ class BDD100KInsSegEval(COCOevalV2):
                 gt_out_of_range_a = np.logical_or(
                     area_rng[0] > gt_areas_c, gt_areas_c > area_rng[1]
                 )
-                gt_ignores_a = gt_ignores_c & gt_out_of_range_a
+                gt_ignores_a = gt_ignores_c | gt_out_of_range_a
 
                 for t_ind, thr in enumerate(p.iouThrs):
                     if ious_c.shape[1] == 0:
@@ -291,6 +291,9 @@ def evaluate_ins_seg(
     bdd_eval = BDD100KInsSegEval(
         gt_paths, pred_paths, pred_score_file, cat_names, nproc
     )
+    # bdd_eval = BDD100KInsSegEval(
+    #     gt_paths[:10], pred_paths[:10], pred_score_file, cat_names, nproc
+    # )
     bdd_eval.params.catIds = cat_ids
     if with_logs:
         logger.info("evaluating...")
