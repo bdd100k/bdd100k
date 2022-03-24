@@ -16,10 +16,10 @@ from scalabel.label.io import group_and_sort, load
 from scalabel.label.to_coco import (
     scalabel2coco_box_track,
     scalabel2coco_detection,
-    scalabel2coco_pose,
-    set_seg_object_geometry,
     scalabel2coco_ins_seg,
+    scalabel2coco_pose,
     scalabel2coco_seg_track,
+    set_seg_object_geometry,
 )
 from scalabel.label.transforms import get_coco_categories, mask_to_bbox
 from scalabel.label.typing import Config, Frame, ImageSize

@@ -70,17 +70,18 @@ class TestBDD100KInsSegEval(unittest.TestCase):
                 89.68646865,
                 66.66666667,
                 68.60561056,
-                70.92409241,
-                70.92409241,
+                -1.0,
+                -1.0,
                 65.83333333,
                 70.83333333,
                 70.83333333,
                 70.83333333,
-                70.83333333,
-                70.83333333,
+                -1.0,
+                -1.0,
             ],
             dtype=np.float64,
         )
+        print(np.nan_to_num(data_arr[-1], nan=-1.0))
         self.assertTrue(
             np.isclose(
                 np.nan_to_num(data_arr[-1], nan=-1.0), overall_scores
@@ -103,14 +104,14 @@ class TestBDD100KInsSegEval(unittest.TestCase):
             "AP50": 89.68646864686468,
             "AP75": 66.66666666666666,
             "APs": 68.60561056105611,
-            "APm": 70.92409240924093,
-            "APl": 70.92409240924093,
+            "APm": -1.0,
+            "APl": -1.0,
             "AR1": 65.83333333333333,
             "AR10": 70.83333333333334,
             "AR100": 70.83333333333334,
             "ARs": 70.83333333333334,
-            "ARm": 70.83333333333334,
-            "ARl": 70.83333333333334,
+            "ARm": -1.0,
+            "ARl": -1.0,
         }
         self.assertSetEqual(set(summary.keys()), set(overall_reference.keys()))
         for name, score in summary.items():
