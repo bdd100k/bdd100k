@@ -143,8 +143,8 @@ def evaluate_segmentation(
         "sem_seg": labels,
         "drivable": drivables,
     }[mode]
-    label_defs = sorted(label_defs, key=lambda label: label.trainId)
-    categories = [label.name for label in label_defs if label.trainId != 255]
+    label_sort = sorted(label_defs, key=lambda label: int(label.trainId))
+    categories = [label.name for label in label_sort if label.trainId != 255]
     num_classes = {
         "sem_seg": len(categories) + 1,  # add an `ignored` class
         "drivable": len(drivables),  # `background` as `ignored`
