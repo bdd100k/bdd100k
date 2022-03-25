@@ -291,9 +291,6 @@ def evaluate_ins_seg(
     bdd_eval = BDD100KInsSegEval(
         gt_paths, pred_paths, pred_score_file, cat_names, nproc
     )
-    # bdd_eval = BDD100KInsSegEval(
-    #     gt_paths[:10], pred_paths[:10], pred_score_file, cat_names, nproc
-    # )
     bdd_eval.params.catIds = cat_ids
     if with_logs:
         logger.info("evaluating...")
