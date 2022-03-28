@@ -108,13 +108,13 @@ legacy results.
 Drivable Area
 ~~~~~~~~~~~~~~
 
-Masks, colormaps and original json files for drivable area.
+Masks, colormaps, RLEs, and original json files for drivable area.
 The mask format is explained at: :ref:`Semantic Segmentation Format <seg mask>`.
 
 +------+----------------------------------+
-| Size | 466MB                            |
+| Size | 514MB                            |
 +------+----------------------------------+
-| md5  | 98dcfa4c3c68e2e86f132ac085f8e329 |
+| md5  | 0abc320461200b1d7916f82fdcd64a96 |
 +------+----------------------------------+
 
 :: 
@@ -129,6 +129,9 @@ The mask format is explained at: :ref:`Semantic Segmentation Format <seg mask>`.
                     - train
                     - val
                 - polygons
+                    - drivable_train.json
+                    - drivable_val.json
+                - rles
                     - drivable_train.json
                     - drivable_val.json
 
@@ -164,13 +167,13 @@ The mask format is explained at: :ref:`Lane Marking Format <lane mask>`.
 Semantic Segmentation
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Masks, colormaps and original json files for semantic segmentation.
+Masks, colormaps, RLEs, and original json files for semantic segmentation.
 The mask format is explained at: :ref:`Semantic Segmentation Format <seg mask>`.
 
 +------+----------------------------------+
-| Size | 331MB                            |
+| Size | 419MB                            |
 +------+----------------------------------+
-| md5  | 098c0c17ca58364c47c5882b3eb7058d |
+| md5  | 9a2968dde3345eeb689cffb1e26f9c78 |
 +------+----------------------------------+
 
 :: 
@@ -187,18 +190,21 @@ The mask format is explained at: :ref:`Semantic Segmentation Format <seg mask>`.
                 - polygons
                     - sem_seg_train.json
                     - sem_seg_val.json
+                - rles
+                    - sem_seg_train.json
+                    - sem_seg_val.json
 
 
 Instance Segmentation
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Bitmasks, colormaps and original json files for instance segmentation.
+Masks, colormaps, RLEs, and original json files for instance segmentation.
 The bitmask format is explained at: :ref:`Instance Segmentation Format <bitmask>`.
 
 +------+----------------------------------+
-| Size | 98MB                             |
+| Size | 111MB                            |
 +------+----------------------------------+
-| md5  | 4254b7674b827ebf970c06745eb07fe9 |
+| md5  | 651b41f229d7327d8c4af97772de4390 |
 +------+----------------------------------+
 
 
@@ -214,6 +220,9 @@ The bitmask format is explained at: :ref:`Instance Segmentation Format <bitmask>
                     - train
                     - val
                 - polygons
+                    - ins_seg_train.json
+                    - ins_seg_val.json
+                - rles
                     - ins_seg_train.json
                     - ins_seg_val.json
 
@@ -317,9 +326,9 @@ The bitmask format is explained at: :ref:`Instance Segmentation Format <bitmask>
 
 
 +------+----------------------------------+
-| Size | 418MB                            |
+| Size | 452MB                            |
 +------+----------------------------------+
-| md5  | c29fb3fc54b119c8e5d980ce74d7b8b6 |
+| md5  | 8822a8b72c2c6719f4573bc4d7077020 |
 +------+----------------------------------+
 
 :: 
@@ -334,6 +343,9 @@ The bitmask format is explained at: :ref:`Instance Segmentation Format <bitmask>
                     - train
                     - val
                 - polygons
+                    - train
+                    - val
+                - rles
                     - train
                     - val
 
