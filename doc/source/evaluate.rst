@@ -87,7 +87,7 @@ with the following format:
 - `index`: the value corresponds to the "ann_id" stored in B and A channels.
 
 You can submit your predictions to our `evaluation server <https://eval.ai/web/challenges/challenge-page/1294>`__ hosted on EvalAI.
-For consistency, the evaluation server will only accept predictions in RLE format.
+Currently, the evaluation server only supports bitmask format.
 
 Run Evaluation on Your Own
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -205,9 +205,21 @@ Submission format
 ^^^^^^^^^^^^^^^^^^^^^^
 
 To evaluate your algorithms on the BDD100K semantic segmentation benchmark, you may prepare predictions in RLE or mask format.
+For RLE, these fields are required:
+::
+
+    - name: str, name of current frame
+    - labels []:
+        - id: str, not used here, but required for loading
+        - category: str, name of the predicted category
+        - rle:
+            - counts: str
+            - size: (height, width)
+
+For masks, the submission should be a folder of masks.
 
 You can submit your predictions to our `evaluation server <https://eval.ai/web/challenges/challenge-page/1257>`__ hosted on EvalAI.
-For consistency, the evaluation server will only accept predictions in RLE format.
+Currently, the evaluation server only supports mask format.
 
 Run Evaluation on Your Own
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -240,7 +252,7 @@ Submission
 ^^^^^^^^^^^^^^^^
 
 You can submit your predictions to our `evaluation server <https://eval.ai/web/challenges/challenge-page/1280>`__ hosted on EvalAI.
-For consistency, the evaluation server will only accept predictions in RLE format.
+Currently, the evaluation server only supports mask format.
 
 
 Run Evaluation on Your Own
@@ -418,11 +430,11 @@ Concretely, in MOT, it is computed using box IoU. While for MOTS, mask IoU is us
 Submission format
 ^^^^^^^^^^^^^^^^^^^^
 
-The submission should be in the same format as for MOT.
+The submission should be in the same format as for MOT with RLE.
 Additionally, it can also be a zipped nested folder for bitmask images,
 where images belonging to the same video are placed in the same folder, named by ${videoName}.
 
-The JSON file for each video should contain a list of per-frame result dictionaries with the following structure:
+For RLE, the JSON file for each video should contain a list of per-frame result dictionaries with the following structure:
 ::
 
     - videoName: str, name of current sequence
@@ -438,7 +450,7 @@ The JSON file for each video should contain a list of per-frame result dictionar
 You can find an example file `here <https://github.com/scalabel/scalabel/blob/master/scalabel/eval/testcases/seg_track/seg_track_preds.json>`_.
 
 You can submit your predictions to our `evaluation server <https://eval.ai/web/challenges/challenge-page/1295>`__ hosted on EvalAI.
-For consistency, the evaluation server will only accept predictions in RLE format.
+Currently, the evaluation server only supports bitmask format.
 
 Run Evaluation on Your Own
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
