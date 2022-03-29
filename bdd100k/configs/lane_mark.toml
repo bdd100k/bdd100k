@@ -1,0 +1,48 @@
+remove_ignored = true
+
+[scalabel]
+    [scalabel.imageSize]
+    height = 720
+    width = 1280
+
+    [[scalabel.categories]]
+    name = "direction"
+        [[scalabel.categories.subcategories]]
+        name = "parallel"
+
+        [[scalabel.categories.subcategories]]
+        name = "vertical"
+    
+    [[scalabel.categories]]
+    name = "style"
+        [[scalabel.categories.subcategories]]
+        name = "solid"
+
+        [[scalabel.categories.subcategories]]
+        name = "dashed"
+
+    [[scalabel.categories]]
+    name = "category"
+        [[scalabel.categories.subcategories]]
+        name = "crosswalk"
+
+        [[scalabel.categories.subcategories]]
+        name = "double other"
+
+        [[scalabel.categories.subcategories]]
+        name = "double white"
+
+        [[scalabel.categories.subcategories]]
+        name = "double yellow"
+
+        [[scalabel.categories.subcategories]]
+        name = "road curb"
+
+        [[scalabel.categories.subcategories]]
+        name = "single other"
+
+        [[scalabel.categories.subcategories]]
+        name = "single white"
+
+        [[scalabel.categories.subcategories]]
+        name = "single yellow"

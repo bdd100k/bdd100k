@@ -16,7 +16,9 @@ from scalabel.label.io import group_and_sort, load
 from scalabel.label.to_coco import (
     scalabel2coco_box_track,
     scalabel2coco_detection,
+    scalabel2coco_ins_seg,
     scalabel2coco_pose,
+    scalabel2coco_seg_track,
     set_seg_object_geometry,
 )
 from scalabel.label.transforms import get_coco_categories, mask_to_bbox
@@ -43,16 +45,12 @@ def parse_args() -> argparse.Namespace:
     """Parse arguments."""
     parser = argparse.ArgumentParser(description="bdd100k to coco format")
     parser.add_argument(
-        "-i",
-        "--input",
-        help=(
-            "root directory of bdd100k label Json files or path to a label "
-            "json file"
-        ),
+        "-i", "--input", required=True, help="path to Scalabel label file"
     )
     parser.add_argument(
         "-o",
         "--output",
+        required=True,
         help="path to save coco formatted label file",
     )
     parser.add_argument(
@@ -66,7 +64,7 @@ def parse_args() -> argparse.Namespace:
             "seg_track",
             "pose",
         ],
-        help="conversion mode.",
+        help="conversion mode",
     )
     parser.add_argument(
         "--nproc",
@@ -83,13 +81,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-mb",
         "--mask-base",
+        type=str,
+        default=None,
         help="Path to the BitMasks base folder.",
     )
     parser.add_argument(
         "-om",
         "--only-mask",
         action="store_true",
-        help="Path to the BitMasks base folder.",
+        help="Convert only masks.",
     )
     return parser.parse_args()
 
@@ -515,22 +515,6 @@ def main() -> None:
             args.input, bdd100k_config.scalabel, args.nproc
         )
     else:
-        if args.mode in ["det", "box_track", "pose"]:
-            convert_func = dict(
-                det=scalabel2coco_detection,
-                box_track=scalabel2coco_box_track,
-                pose=scalabel2coco_pose,
-            )[args.mode]
-        else:
-            convert_func = partial(
-                dict(
-                    ins_seg=bdd100k2coco_ins_seg,
-                    seg_track=bdd100k2coco_seg_track,
-                )[args.mode],
-                mask_base=args.mask_base,
-                nproc=args.nproc,
-            )
-
         logger.info("Loading annotations...")
         dataset = load(args.input, args.nproc)
         if args.config is not None:
@@ -539,6 +523,31 @@ def main() -> None:
             bdd100k_config = BDD100KConfig(config=dataset.config)
         else:
             bdd100k_config = load_bdd100k_config(args.mode)
+
+        if args.mode in ["det", "box_track", "pose"]:
+            convert_func = dict(
+                det=scalabel2coco_detection,
+                box_track=scalabel2coco_box_track,
+                pose=scalabel2coco_pose,
+            )[args.mode]
+        else:
+            if args.mask_base is not None:
+                convert_func = partial(
+                    dict(
+                        ins_seg=bdd100k2coco_ins_seg,
+                        seg_track=bdd100k2coco_seg_track,
+                    )[args.mode],
+                    mask_base=args.mask_base,
+                    nproc=args.nproc,
+                )
+            else:
+                convert_func = partial(
+                    dict(
+                        ins_seg=scalabel2coco_ins_seg,
+                        seg_track=scalabel2coco_seg_track,
+                    )[args.mode],
+                    nproc=args.nproc,
+                )
 
         logger.info("Start format converting...")
         frames = bdd100k_to_scalabel(dataset.frames, bdd100k_config)

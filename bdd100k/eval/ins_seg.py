@@ -215,7 +215,7 @@ class BDD100KInsSegEval(COCOevalV2):
                 gt_out_of_range_a = np.logical_or(
                     area_rng[0] > gt_areas_c, gt_areas_c > area_rng[1]
                 )
-                gt_ignores_a = gt_ignores_c & gt_out_of_range_a
+                gt_ignores_a = gt_ignores_c | gt_out_of_range_a
 
                 for t_ind, thr in enumerate(p.iouThrs):
                     if ious_c.shape[1] == 0:

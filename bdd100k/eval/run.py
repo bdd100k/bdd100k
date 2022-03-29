@@ -6,6 +6,7 @@ import os
 from typing import List, Optional, Tuple
 
 from scalabel.common.parallel import NPROC
+from scalabel.eval.boundary import evaluate_boundary
 from scalabel.eval.detect import evaluate_det
 from scalabel.eval.ins_seg import evaluate_ins_seg as sc_eval_ins_seg
 from scalabel.eval.mot import acc_single_video_mot, evaluate_track
@@ -59,10 +60,7 @@ def parse_args() -> argparse.Namespace:
         "--result", "-r", required=True, help="path to results to be evaluated"
     )
     parser.add_argument(
-        "--config",
-        "-c",
-        default=None,
-        help="path to the config file",
+        "--config", "-c", default=None, help="path to the config file"
     )
     parser.add_argument(
         "--iou-thr",
@@ -88,14 +86,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--score-file",
         type=str,
-        default=".",
+        default=None,
         help="path to store the prediction scoring file (ins_seg)",
     )
     parser.add_argument(
-        "--quiet",
-        "-q",
-        action="store_true",
-        help="without logging",
+        "--quiet", "-q", action="store_true", help="without logging"
     )
 
     return parser.parse_args()
@@ -106,7 +101,7 @@ def run_bitmask(
     task: str,
     gt_paths: List[str],
     pred_paths: List[str],
-    score_file: str,
+    score_file: Optional[str],
     iou_thr: float = 0.5,
     ignore_iof_thr: float = 0.5,
     quiet: bool = False,
@@ -115,12 +110,11 @@ def run_bitmask(
     """Run eval for bitmask input."""
     results: Optional[Result] = None
     if task == "ins_seg":
+        assert (
+            score_file is not None
+        ), "ins_seg evaluation with bitmasks requires score_file"
         results = evaluate_ins_seg(
-            gt_paths,
-            pred_paths,
-            score_file,
-            config.scalabel,
-            nproc=nproc,
+            gt_paths, pred_paths, score_file, config.scalabel, nproc=nproc
         )
     elif task == "seg_track":
         results = evaluate_seg_track(
@@ -169,10 +163,7 @@ def run_rle(
     results: Optional[Result] = None
     if task == "ins_seg":
         results = sc_eval_ins_seg(
-            gt_frames,
-            pred_frames,
-            config.scalabel,
-            nproc=nproc,
+            gt_frames, pred_frames, config.scalabel, nproc=nproc
         )
     elif task == "seg_track":
         results = sc_eval_seg_track(
@@ -186,17 +177,15 @@ def run_rle(
         )
     elif task in ("sem_seg", "drivable"):
         results = sc_eval_sem_seg(
-            gt_frames,
-            pred_frames,
-            config.scalabel,
-            nproc=nproc,
+            gt_frames, pred_frames, config.scalabel, nproc=nproc
         )
     elif task == "pan_seg":
         results = sc_eval_pan_seg(
-            gt_frames,
-            pred_frames,
-            config.scalabel,
-            nproc=nproc,
+            gt_frames, pred_frames, config.scalabel, nproc=nproc
+        )
+    elif task == "lane_mark":
+        results = evaluate_boundary(
+            gt_frames, pred_frames, config.scalabel, nproc=nproc
         )
 
     assert (
@@ -222,10 +211,8 @@ def run() -> None:
     args = parse_args()
     if args.config is not None:
         bdd100k_config = load_bdd100k_config(args.config)
-    elif args.task != "lane_mark":
-        bdd100k_config = load_bdd100k_config(args.task)
     else:
-        raise ValueError("config not specified")
+        bdd100k_config = load_bdd100k_config(args.task)
 
     if args.task in ["det", "box_track", "pose"]:
         gt_frames, result_frames = _load_frames(
@@ -256,6 +243,7 @@ def run() -> None:
                 nproc=args.nproc,
             )
     else:
+        assert os.path.exists(args.gt) and os.path.exists(args.result)
         # for segmentation tasks, determine if the input contains bitmasks or
         # JSON files and call corresponding evaluation function
         res_files = list_files(args.result)

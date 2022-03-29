@@ -20,23 +20,23 @@ Object Detection
 For object detection, 10 classes are evaluated. They are:
 ::
 
-    0: pedestrian
-    1: rider
-    2: car
-    3: truck
-    4: bus
-    5: train
-    6: motorcycle
-    7: bicycle
-    8: traffic light
-    9: traffic sign
+    1: pedestrian
+    2: rider
+    3: car
+    4: truck
+    5: bus
+    6: train
+    7: motorcycle
+    8: bicycle
+    9: traffic light
+    10: traffic sign
 
 Note that, the field `category_id` range from **1** instead of 0.
 
 Instance Segmentation, Box Tracking, Segmentation Tracking
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For instance segmentation, multi object tracking (box tracking) and multi object tracking and segmentation (segmentation tracking),
+For instance segmentation, multi object tracking (box tracking), and multi object tracking and segmentation (segmentation tracking),
 only the first **8** classes are used and evaluated.
 
 Semantic Segmentation
@@ -65,14 +65,13 @@ Meanwhile, for the semantic segmentation task, 19 classes are evaluated. They ar
     17: motorcycle
     18: bicycle
 
-`category_id` ranges from **0** for the semantic segmentation task.
 **255** is used for "unknown" category, and will not be evaluated.
 
 
 Panoptic Segmentation
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Meanwhile, for the instance segmentation task, 40 classes are evaluated. They are:
+For the panoptic segmentation task, 40 classes are evaluated. They are:
 ::
 
     0:  unlabeled
@@ -117,26 +116,23 @@ Meanwhile, for the instance segmentation task, 40 classes are evaluated. They ar
     39: train
     40: truck
 
-classes 1-30 are **stuffs**, 31-40 are things.
-`category_id` ranges from **0** for the panoptic segmentation task.
-
+Classes 1-30 are **stuffs**, 31-40 are **things**.
 
 Drivable Area
 ^^^^^^^^^^^^^^^^^^^^^^^
-For the drivable area task, 3 classes are evaluated, they are:
+For the drivable area task, there are 3 classes. They are:
 ::
 
     0: direct
     1: alternative
     2: background
 
-`category_id` ranges from **0** for the drivable area task.
-
+"Background" is not considered during evaluation.
 
 Lane Marking
 ^^^^^^^^^^^^^^^^^^^^^^^
-For the lane marking task, there are 3 sub-task: lane categories, lane directions and lane styles.
-There are 9, 3 and 3 classes for each sub-task listed above.
+For the lane marking task, there are 3 sub-tasks: lane categories, lane directions, and lane styles.
+There are 9, 3, and 3 classes for each sub-task.
 
 Lane Categories
 ::
@@ -166,6 +162,7 @@ Lane Styles
     1: dashed
     2: background
 
+"Background" is not considered during evaluation.
 
 Pose Estimation
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -224,18 +221,37 @@ Label attributes
 
 .. _seg mask:
 
-Semantic Segmentation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Segmentation Formats
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We provide labels for **semantic segmentation** and **drivable area** in both JSON and **mask** formats.
-The mask format save the ground-truth of each image into an one-channel png (8 bits per pixel).
+We provide labels for all segmentation tasks (semantic segmentation,
+drivable area, lane marking, instance segmentation, panoptic segmentation,
+and segmentation tracking) in both JSON and **mask** formats.
+The JSON format saves each segmentation mask as either polygons or in RLE.
+That ``poly2d`` used in JSONs is not of the same format as COCO.
+Instead, the ``poly2d`` field stores a Bezier Curve with vertices and control points.
+The ``rle`` used is consistent with COCO.
+We now use RLE as the main format for segmentation tasks as it is much more
+compact and easy to handle compared to the mask format, but the mask format is
+still supported.
+We do not allow overlap in the segmentation masks as each pixel should be assigned
+a single category only.
+During evaluation, predictions with overlaps will be ignored.
+The mask format handles this naturally, but for the RLE format post-processing
+is needed to remove overlaps.
+We describe the mask format for each segmentation task below.
+
+Semantic Segmentation
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The ground-truth of each image is saved into an one-channel png (8 bits per pixel).
 The value of each pixel represents its category. 255 usually means "ignore".
 
 
 .. _lane mask:
 
 Lane Marking
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 
 For lane marking, there are three sub-tasks: lane categories, lane direction and lane styles.
 A one-channel png file is used for each image to store all classes information.
@@ -252,20 +268,16 @@ Most importantly, the **5**-th bit is to indicate whether this pixel belongs to 
 .. _bitmask:
 
 Instance Segmentation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-We provide labels for **instance segmentation**, **panoptic segmentation** and **segmentation tracking** in both JSON and **bitmask** formats.
-Note that ``poly2d`` used in JSONs is not of the same format as COCO. Instead, the ``poly2d`` field stores a Bezier Curve with vertices and control points.
-In the bitmask format, labels for each image are stored in an **RGBA** png file.
-
-**The evaluation scripts use bitmasks as ground-truth, so we suggest using bitmasks as input all the way.**
-We expect each pixel only corresponds to one predicted class, ``poly2d`` cannot guarantee that, while bitmasks can assure that.
-
-For the RGBA image, The first byte, R, is used for the category id range from 1 (0 is used for the background).
-Moreover, G is for the instance attributes. Currently, four attributes are used, they are "truncated", "occluded", "crowd" and "ignore".
-Note that boxes with "crowd" or "ignore" labels will not be considered during testing.
+The labels for **instance segmentation**, **panoptic segmentation** and **segmentation tracking**
+are saved as bitmasks, where the labels for each image are stored in an **RGBA** png file.
+For the RGBA image, the first byte, R, is used for the category id and ranges from 1 (0 is used for the background).
+G is for the instance attributes. Currently, four attributes are used, and they are "truncated", "occluded", "crowd" and "ignore".
+Note that boxes with "crowd" or "ignore" labels will not be considered during evaluation.
 The above four attributes are stored in least significant bits of G. Given this, ``G = (truncated << 3) + (occluded << 2) + (crowd << 1) + ignore``
-. Finally, the B channel and A channel store the "ann_id" for instance segmentation and "ann_id" for segmentation tracking, respectively, which can be computed as ``(B << 8) + A``. The below image is for reference.
+. Finally, the B channel store the "ann_id" for instance segmentation and the A channel for segmentation tracking,
+which can be computed as ``(B << 8) + A``. The below image is for reference.
 
 .. figure:: ../images/bitmask.png
    :alt: Downloading buttons
@@ -291,26 +303,24 @@ For these, you can use ``to_coco`` to convert the annotations to COCO format, wh
 from_coco
 ^^^^^^^^^^^^^^^^^^
 
-``from_coco`` converts coco-format json files into bdd100k format.
-Currently, for conversion of segmentation, only the ``polygon`` format is supported.
-
-Available arguments:
+``from_coco`` converts COCO format JSON files into BDD100K format:
 ::
     
-    python3 -m bdd100k.label.from_coco -i ${input_file} -o ${out_path}  
+    python3 -m bdd100k.label.from_coco -i ${input_file} -o ${out_path} [--nproc ${process_num}]
+
+- `process_num`: the number of processes used for the conversion. Default as 4.
 
 
 to_mask
 ^^^^^^^^^^^^^^^^^^
- 
+
 You can run the conversion from poly2d to masks/bitmasks by this command:
 ::
     
-    python3 -m bdd100k.label.to_mask -m sem_seg|ins_seg|seg_track -i ${in_path} -o ${out_path} [--nproc ${process_num}]
+    python3 -m bdd100k.label.to_mask -m sem_seg|drivable|lane_mark|ins_seg|pan_seg|seg_track \
+        -i ${in_path} -o ${out_path} [--nproc ${process_num}]
 
 - `process_num`: the number of processes used for the conversion. Default as 4.
-
-However, as the conversion process is not deterministic, we don't recommend converting it by yourself.
 
 
 to_color
@@ -319,7 +329,8 @@ to_color
 You can run the conversion from masks/bitmasks to colormaps by this command:
 ::
     
-    python3 -m bdd100k.label.to_color -m sem_seg|ins_seg|seg_track -i ${in_path} -o ${out_path} [--nproc ${process_num}]
+    python3 -m bdd100k.label.to_color -m sem_seg|ins_seg|seg_track \
+        -i ${in_path} -o ${out_path} [--nproc ${process_num}]
 
 - `process_num`: the number of processes used for the conversion. Default as 4.
 
@@ -327,27 +338,46 @@ You can run the conversion from masks/bitmasks to colormaps by this command:
 to_coco
 ^^^^^^^^^^^^^^^^^^
 
-``to_coco`` converts bdd100k json files into coco format.
-
-Available arguments:
-
+``to_coco`` converts BDD100K JSONs/masks into COCO format.
+For detection, box tracking, and pose estimation, run this command:
 ::
    
-    python3 -m bdd100k.label.to_coco -m det|box_track|pose -i ${in_path} -o ${out_path}
+    python3 -m bdd100k.label.to_coco -m det|box_track|pose \
+        -i ${in_path} -o ${out_path} [--nproc ${process_num}]
 
-For instance segmentation and segmentation tracking, converting from "JSON + Bitmasks" and from "Bitmask" are both supported.
-For the first choice, use this command:
+- `process_num`: the number of processes used for the conversion. Default as 4.
 
+For instance segmentation and segmentation tracking, converting from
+JSON, JSON + Bitmasks, and from Bitmasks are all supported.
+For RLEs, use this command:
 ::
    
-    python3 -m bdd100k.label.to_coco -m ins_seg|seg_track -i ${in_path} -o ${out_path} -mb ${mask_base}
+    python3 -m bdd100k.label.to_coco -m ins_seg|seg_track \
+        -i ${in_path} -o ${out_path} [--nproc ${process_num}]
+
+For Bitmasks, use this command:
+::
+   
+    python3 -m bdd100k.label.to_coco -m ins_seg|seg_track \
+        -i ${in_path} -o ${out_path} -mb ${mask_base} [--nproc ${process_num}]
 
 - `mask_base`: the path to the bitmasks
 
 If you only have Bitmasks in hand and don't use the `scalabel_id` field, you can use this command:
-
 ::
    
-    python3 -m bdd100k.label.to_coco -m ins_seg|seg_track --only-mask -i ${mask_base} -o ${out_path}
+    python3 -m bdd100k.label.to_coco -m ins_seg|seg_track --only-mask \
+        -i ${mask_base} -o ${out_path} [--nproc ${process_num}]
 
 - `mask_base`: the path to the bitmasks
+
+to_rle
+^^^^^^^^^^^^
+
+You can run the conversion from masks/bitmasks to RLEs by this command:
+::
+    
+    python3 -m bdd100k.label.to_rle -m sem_seg|drivable|ins_seg|seg_track \
+        -i ${in_path} -o ${out_path} [--nproc ${process_num}]
+
+- `process_num`: the number of processes used for the conversion. Default as 4.
