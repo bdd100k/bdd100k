@@ -2,6 +2,7 @@
 import json
 import math
 import os
+import glob
 from typing import List, Optional, Tuple
 
 import numpy as np
@@ -17,7 +18,8 @@ def cam_spec_prior() -> Intrinsics:
     # 4.1 (F in mm) / 0.0014 (pixel size in mm) = 2928.57 focal length in
     # pixels
     # resolution always (720, 1280) --> principal point at (360, 640)
-    intrinsics = Intrinsics(focal=(2928.57, 2928.57), center=(360.0, 640.0))
+    # intrinsics = Intrinsics(focal=(2928.57, 2928.57), center=(360.0, 640.0))
+    intrinsics = Intrinsics(focal=(1020, 1020), center=(360.0, 640.0))
     return intrinsics
 
 
@@ -57,14 +59,21 @@ def load_pose_data(info_path: str) -> Optional[List[DictStrAny]]:
     return None
 
 
-def frames_from_images(image_path: str) -> List[Frame]:
+def frames_from_images(image_path: str, seq_name: str = None) -> List[Frame]:
     """Construct a list of Frame objects from an input image path."""
-    images = sorted(os.listdir(image_path))
-    seq_name = os.path.basename(image_path)
-    frames = [
-        Frame(name=im, videoName=seq_name, frameIndex=i)
-        for i, im in enumerate(images)
-    ]
+    if not seq_name:
+        images = sorted(os.listdir(image_path))
+        frames = [
+            Frame(name=im, videoName=seq_name, frameIndex=i)
+            for i, im in enumerate(images)
+        ]
+    else:
+        images = glob.glob(os.path.join(image_path, f'{seq_name}*'))
+        images = sorted([os.path.split(image)[1] for image in images])
+        frames = [
+            Frame(name=im, videoName=seq_name, frameIndex=i)
+            for i, im in enumerate(images)
+        ]
     return frames
 
 
@@ -80,6 +89,16 @@ def get_poses_from_data(list_data: List[DictStrAny]) -> NDArrayF64:
         yaw = np.deg2rad(data["course"] - list_data[0]["course"])
         pitch, roll = 0.0, 0.0
         locations.append([x - x0, y - y0, 0.0, pitch, roll, yaw])
+    return np.array(locations)
+
+
+def get_gps_from_data(list_data: List[DictStrAny]) -> NDArrayF64:
+    """Generate GPS location data."""
+    locations = []
+    for data in list_data:
+        locations.append(
+            [data["latitude"], data["longitude"],
+            0.0, 0.0, 0.0, 0.0])
     return np.array(locations)
 
 
@@ -99,7 +118,34 @@ def interpolate_trajectory(
         traj_lo = np.array(gps_poses[pose_index])
         if len(gps_poses) - 1 > pose_index:
             traj_hi: NDArrayF64 = np.array(gps_poses[pose_index + 1])
-            traj_cur = weight_hi * traj_hi + (1 - weight_hi) * traj_lo  # type: ignore
+            # type: ignore
+            traj_cur = weight_hi * traj_hi + (1 - weight_hi) * traj_lo
+        else:
+            traj_hi = traj_lo
+            traj_lo = np.array(gps_poses[pose_index - 1])
+            velo: NDArrayF64 = traj_hi - traj_lo
+            traj_cur = traj_hi + velo * weight_hi
+
+        f.extrinsics = Extrinsics(
+            location=tuple(traj_cur[:3]), rotation=tuple(traj_cur[3:])
+        )
+
+def interpolate_gps(
+    gps_prior: List[DictStrAny], frames: List[Frame]
+) -> None:
+    """Interpolate GPS priors to per frame poses."""
+    num_frames_per_pose = len(frames) / len(gps_prior)
+    gps_poses = get_gps_from_data(gps_prior)
+    for i, f in enumerate(frames):
+        f.intrinsics = cam_spec_prior()
+
+        pose_index = int(i / num_frames_per_pose)
+        weight_hi = i / num_frames_per_pose - i // num_frames_per_pose
+
+        traj_lo = np.array(gps_poses[pose_index])
+        if len(gps_poses) - 1 > pose_index:
+            traj_hi: NDArrayF64 = np.array(gps_poses[pose_index + 1])
+            traj_cur = weight_hi * traj_hi + (1 - weight_hi) * traj_lo
         else:
             traj_hi = traj_lo
             traj_lo = np.array(gps_poses[pose_index - 1])
@@ -119,3 +165,32 @@ def get_pose_priors(info_path: str, image_path: str) -> Optional[List[Frame]]:
         interpolate_trajectory(pose_data, frames)
         return frames
     return None
+
+
+def get_gps_priors(
+    info_path_list: List[str],
+    image_path: str
+) -> Optional[List[Frame]]:
+    """Generate Scalabel frames with gps priors from gps / image paths."""
+    frames = []
+    for info_path in info_path_list:
+        pose_data = load_pose_data(info_path)
+        seq_name = os.path.splitext(os.path.basename(info_path))[0]
+        if pose_data is not None:
+            cur_frames = frames_from_images(image_path, seq_name)
+            interpolate_gps(pose_data, cur_frames)
+            frames += cur_frames
+    return frames
+
+
+def gps_to_m(lat1, lon1, lat2, lon2):
+    """Estimate metric distance between 2 gps coords."""
+    radius = 6378.137 # Radius of earth in KM
+    dlat = lat2 * np.pi / 180 - lat1 * np.pi / 180
+    dlon = lon2 * np.pi / 180 - lon1 * np.pi / 180
+    a = np.sin(dlat/2) * np.sin(dlat/2) + \
+        np.cos(lat1 * np.pi / 180) * np.cos(lat2 * np.pi / 180) * \
+        np.sin(dlon/2) * np.sin(dlon/2)
+    c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1-a))
+    d = radius * c
+    return d * 1000 # meters

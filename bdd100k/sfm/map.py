@@ -8,6 +8,7 @@ import numpy as np
 import osmnx as ox
 from scalabel.common.parallel import NPROC, pmap
 from scalabel.common.typing import DictStrAny, NDArrayF64
+from ipyleaflet import Map, AntPath
 
 from .utils import get_location_from_data, latlon_from_data
 
@@ -50,6 +51,26 @@ def visualize_map(list_sequences: Sequences, save_path: str) -> None:
                 fill_opacity=1,
             ).add_to(street_map)
     street_map.save(save_path)
+
+
+def visualize_antpath(list_sequences: Sequences, save_path: str) -> None:
+    """Generate antpath visualization for a given set of sequences."""
+    coords_list = []
+    for seq in list_sequences:
+        lat_ = np.array([d["latitude"] for d in seq])
+        lon_ = np.array([d["longitude"] for d in seq])
+        coords = [(lat_[i], lon_[i]) for i in range(len(lat_))]
+        coords_list.append(coords)
+    m = Map(
+        center=coords[int(len(coords)/2)],
+        max_zoom=22, zoom=18)
+        # basemap=basemaps.OpenStreetMap.Mapnik)
+    m.layout.width='900px'
+    m.layout.height='600px'
+    for coords in coords_list:
+        antpath = AntPath(locations=coords, delay=2000)
+        m.add_layer(antpath)
+    m.save(save_path)
 
 
 def counterclockwise(point1, point2, point3):
@@ -97,7 +118,7 @@ def split_sequences_by_city(
         get_location_from_data, [seq[0] for seq in sequences], nproc
     )
     for loc, seq in zip(locations, sequences):
-        split_sequences_by_city[loc.city].append(seq)  # type: ignore
+        sequences_by_city[loc.city].append(seq)  # type: ignore
     return sequences_by_city
 
 
@@ -110,4 +131,3 @@ if __name__ == "__main__":
         help="Path to extract map data from.",
     )
     args = parser.parse_args()
-    # TODO continue
