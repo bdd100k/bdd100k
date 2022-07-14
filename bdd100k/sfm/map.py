@@ -2,13 +2,15 @@
 import argparse
 from collections import defaultdict
 from typing import Dict, List
-
-import folium
 import numpy as np
-import osmnx as ox
+try:
+    import folium
+    import osmnx as ox
+    from ipyleaflet import AntPath, Map
+except ImportError:
+    pass
 from scalabel.common.parallel import NPROC, pmap
 from scalabel.common.typing import DictStrAny, NDArrayF64
-from ipyleaflet import Map, AntPath
 
 from .utils import get_location_from_data, latlon_from_data
 
@@ -61,12 +63,10 @@ def visualize_antpath(list_sequences: Sequences, save_path: str) -> None:
         lon_ = np.array([d["longitude"] for d in seq])
         coords = [(lat_[i], lon_[i]) for i in range(len(lat_))]
         coords_list.append(coords)
-    m = Map(
-        center=coords[int(len(coords)/2)],
-        max_zoom=22, zoom=18)
-        # basemap=basemaps.OpenStreetMap.Mapnik)
-    m.layout.width='900px'
-    m.layout.height='600px'
+    m = Map(center=coords[int(len(coords) / 2)], max_zoom=22, zoom=18)
+    # basemap=basemaps.OpenStreetMap.Mapnik)
+    m.layout.width = "900px"
+    m.layout.height = "600px"
     for coords in coords_list:
         antpath = AntPath(locations=coords, delay=2000)
         m.add_layer(antpath)

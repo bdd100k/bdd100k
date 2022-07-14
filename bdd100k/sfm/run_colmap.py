@@ -3,14 +3,12 @@ import argparse
 import os
 import time
 from typing import List, Optional
+
 from scalabel.label.typing import Frame
-from scalabel.label.utils import (
-    get_matrix_from_extrinsics
-)
+from scalabel.label.utils import get_matrix_from_extrinsics
+
 from .colmap.database_io import COLMAPDatabase
-from .utils import (
-    cam_spec_prior, frames_from_images, get_gps_priors
-)
+from .utils import cam_spec_prior, frames_from_images, get_gps_priors
 
 
 def add_image_ids(frames: List[Frame], db_path: str) -> None:
@@ -221,11 +219,9 @@ def stereo_fusion(
 ) -> None:
     """Conduct stereo fusion."""
     if len(mask_path) != 0:
-        options = (
-            f"--StereoFusion.mask_path {mask_path} "
-        )
+        options = f"--StereoFusion.mask_path {mask_path} "
     else:
-        options = ("")
+        options = ""
 
     os.system(
         f"{colmap_new} stereo_fusion --workspace_path {dense_path} "
@@ -236,13 +232,14 @@ def stereo_fusion(
 def main():
     """Run sparse reconstruction."""
     parser = argparse.ArgumentParser(
-        description="Sparse Reconstruction for a sequence")
+        description="Sparse Reconstruction for a sequence"
+    )
     parser.add_argument(
         "--job",
         "-j",
         type=str,
         default="feature",
-        help="Which job to do(feature, mapper, orien_aligner or both)",
+        help="Which job to do(feature, mapper, orien_aligner or all)",
     )
     parser.add_argument(
         "--image-path",
@@ -298,11 +295,12 @@ def main():
     orien_aligned_path = os.path.join(sparse_path, "orientation_aligned")
     os.makedirs(orien_aligned_path, exist_ok=True)
 
-    frames = get_gps_priors(args.info_path, args.image_path)
-    if args.info_path is None:
-        frames = frames_from_images(args.image_path)
-
+    
+    
     if args.job == "feature":
+        frames = get_gps_priors(args.info_path, args.image_path)
+        if args.info_path is None:
+            frames = frames_from_images(args.image_path)
         database_creator(args.output_path, colmap_new)
         while not os.path.exists(f"{args.output_path}/database.db"):
             time.sleep(0.5)
@@ -337,6 +335,9 @@ def main():
             colmap_new,
         )
     elif args.job == "sparse":
+        frames = get_gps_priors(args.info_path, args.image_path)
+        if args.info_path is None:
+            frames = frames_from_images(args.image_path)
         database_creator(args.output_path, colmap_new)
         while not os.path.exists(f"{args.output_path}/database.db"):
             time.sleep(0.5)
@@ -374,13 +375,11 @@ def main():
     elif args.job == "stereo_fusion":
         dense_path = os.path.join(args.output_path, "dense")
         result_path = os.path.join(dense_path, "fused.ply")
-        stereo_fusion(
-            dense_path,
-            result_path,
-            args.mask_path,
-            colmap_new
-        )
+        stereo_fusion(dense_path, result_path, args.mask_path, colmap_new)
     elif args.job == "all":
+        frames = get_gps_priors(args.info_path, args.image_path)
+        if args.info_path is None:
+            frames = frames_from_images(args.image_path)
         database_creator(args.output_path, colmap_new)
         while not os.path.exists(f"{args.output_path}/database.db"):
             time.sleep(0.5)
@@ -415,12 +414,7 @@ def main():
             colmap_new,
         )
         result_path = os.path.join(dense_path, "fused.ply")
-        stereo_fusion(
-            dense_path,
-            result_path,
-            args.mask_path,
-            colmap_new
-        )
+        stereo_fusion(dense_path, result_path, args.mask_path, colmap_new)
 
 
 if __name__ == "__main__":

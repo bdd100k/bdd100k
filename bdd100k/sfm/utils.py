@@ -1,14 +1,17 @@
 """SfM / GPS info utilities."""
+import glob
 import json
 import math
 import os
-import glob
 from typing import List, Optional, Tuple
 
 import numpy as np
-from geopy.extra.rate_limiter import RateLimiter
-from geopy.geocoders import Nominatim
-from geopy.location import Location
+try:
+    from geopy.extra.rate_limiter import RateLimiter
+    from geopy.geocoders import Nominatim
+    from geopy.location import Location
+except ImportError:
+    pass
 from scalabel.common.typing import DictStrAny, NDArrayF64
 from scalabel.label.typing import Extrinsics, Frame, Intrinsics
 
@@ -68,7 +71,7 @@ def frames_from_images(image_path: str, seq_name: str = None) -> List[Frame]:
             for i, im in enumerate(images)
         ]
     else:
-        images = glob.glob(os.path.join(image_path, f'{seq_name}*'))
+        images = glob.glob(os.path.join(image_path, f"{seq_name}*"))
         images = sorted([os.path.split(image)[1] for image in images])
         frames = [
             Frame(name=im, videoName=seq_name, frameIndex=i)
@@ -97,8 +100,8 @@ def get_gps_from_data(list_data: List[DictStrAny]) -> NDArrayF64:
     locations = []
     for data in list_data:
         locations.append(
-            [data["latitude"], data["longitude"],
-            0.0, 0.0, 0.0, 0.0])
+            [data["latitude"], data["longitude"], 0.0, 0.0, 0.0, 0.0]
+        )
     return np.array(locations)
 
 
@@ -130,12 +133,16 @@ def interpolate_trajectory(
             location=tuple(traj_cur[:3]), rotation=tuple(traj_cur[3:])
         )
 
+
 def interpolate_gps(
     gps_prior: List[DictStrAny], frames: List[Frame]
-) -> None:
+) -> List[Frame]:
     """Interpolate GPS priors to per frame poses."""
     num_frames_per_pose = len(frames) / len(gps_prior)
     gps_poses = get_gps_from_data(gps_prior)
+    frames_filtered = []
+    frames_skipped = []
+    traj_prev = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     for i, f in enumerate(frames):
         f.intrinsics = cam_spec_prior()
 
@@ -155,6 +162,18 @@ def interpolate_gps(
         f.extrinsics = Extrinsics(
             location=tuple(traj_cur[:3]), rotation=tuple(traj_cur[3:])
         )
+        dist_moved = gps_to_m(
+            traj_prev[0],
+            traj_prev[1],
+            traj_cur[0],
+            traj_cur[1],
+        )
+        traj_prev = traj_cur
+        if i > 0 and dist_moved < 0.1:
+            frames_skipped.append(f)
+            continue
+        frames_filtered.append(f)
+    return frames_filtered, frames_skipped
 
 
 def get_pose_priors(info_path: str, image_path: str) -> Optional[List[Frame]]:
@@ -168,29 +187,52 @@ def get_pose_priors(info_path: str, image_path: str) -> Optional[List[Frame]]:
 
 
 def get_gps_priors(
-    info_path_list: List[str],
-    image_path: str
+    info_path_list: List[str], image_path: str
 ) -> Optional[List[Frame]]:
     """Generate Scalabel frames with gps priors from gps / image paths."""
     frames = []
+    frames_to_move = []
     for info_path in info_path_list:
         pose_data = load_pose_data(info_path)
         seq_name = os.path.splitext(os.path.basename(info_path))[0]
         if pose_data is not None:
             cur_frames = frames_from_images(image_path, seq_name)
-            interpolate_gps(pose_data, cur_frames)
-            frames += cur_frames
+            interpolated_frames, skipped_frames = interpolate_gps(
+                pose_data, cur_frames
+            )
+            frames += interpolated_frames
+            frames_to_move += skipped_frames
+    remove_skipped_frames(image_path, frames_to_move)
     return frames
+
+
+def remove_skipped_frames(
+    image_path: str, skipped_frames: List[Frame]
+) -> None:
+    """Move skipped frames from image folder to a new folder."""
+    dir_name = os.path.dirname(image_path)
+    skipped_image_path = os.path.join(dir_name, "images_skipped")
+    if os.path.exists(skipped_image_path):
+        if len(os.listdir(skipped_image_path)) == 0:
+            return
+    else:
+        os.system(f"mkdir {skipped_image_path}")
+        for frame in skipped_frames:
+            cur_image = os.path.join(image_path, frame.name)
+            try:
+                os.system(f"mv {cur_image} {skipped_image_path}")
+            except:
+                print(f"{frame.name} is not in {image_path}")
 
 
 def gps_to_m(lat1, lon1, lat2, lon2):
     """Estimate metric distance between 2 gps coords."""
-    radius = 6378.137 # Radius of earth in KM
+    radius = 6378.137  # Radius of earth in KM
     dlat = lat2 * np.pi / 180 - lat1 * np.pi / 180
     dlon = lon2 * np.pi / 180 - lon1 * np.pi / 180
-    a = np.sin(dlat/2) * np.sin(dlat/2) + \
-        np.cos(lat1 * np.pi / 180) * np.cos(lat2 * np.pi / 180) * \
-        np.sin(dlon/2) * np.sin(dlon/2)
-    c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1-a))
+    a = np.sin(dlat / 2) * np.sin(dlat / 2) + np.cos(
+        lat1 * np.pi / 180
+    ) * np.cos(lat2 * np.pi / 180) * np.sin(dlon / 2) * np.sin(dlon / 2)
+    c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
     d = radius * c
-    return d * 1000 # meters
+    return d * 1000  # meters
