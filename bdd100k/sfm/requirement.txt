@@ -1,4 +1,0 @@
-matplotlib
-open3d
-scipy==1.7.3
-scalabel

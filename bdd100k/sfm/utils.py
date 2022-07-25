@@ -3,9 +3,11 @@ import glob
 import json
 import math
 import os
+import pdb
 from typing import List, Optional, Tuple
 
 import numpy as np
+
 try:
     from geopy.extra.rate_limiter import RateLimiter
     from geopy.geocoders import Nominatim
@@ -192,6 +194,15 @@ def get_gps_priors(
     """Generate Scalabel frames with gps priors from gps / image paths."""
     frames = []
     frames_to_move = []
+    # if there is already skiped images, we reput them into image folder
+    # and redo the whole precess
+    dir_name = os.path.dirname(image_path)
+    skipped_image_path = os.path.join(dir_name, "images_skipped")
+    if os.path.exists(skipped_image_path):
+        skipped_image_path_all = os.path.join(skipped_image_path, "*")
+        os.system(f"mv {skipped_image_path_all} {image_path}")
+        os.system(f"rm -r {skipped_image_path}")
+
     for info_path in info_path_list:
         pose_data = load_pose_data(info_path)
         seq_name = os.path.splitext(os.path.basename(info_path))[0]
@@ -213,8 +224,7 @@ def remove_skipped_frames(
     dir_name = os.path.dirname(image_path)
     skipped_image_path = os.path.join(dir_name, "images_skipped")
     if os.path.exists(skipped_image_path):
-        if len(os.listdir(skipped_image_path)) == 0:
-            return
+        return
     else:
         os.system(f"mkdir {skipped_image_path}")
         for frame in skipped_frames:

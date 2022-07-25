@@ -1,4 +1,3 @@
-# flake8: noqa
 # Copyright (c) 2018, ETH Zurich and UNC Chapel Hill.
 # All rights reserved.
 #
@@ -33,6 +32,7 @@
 import argparse
 import collections
 import os
+import pdb
 import struct
 
 import numpy as np
@@ -186,13 +186,7 @@ def write_cameras_text(cameras, path):
     with open(path, "w") as fid:
         fid.write(HEADER)
         for _, cam in cameras.items():
-            to_write = [
-                cam.id,
-                cam.model.model_name,
-                cam.width,
-                cam.height,
-                *cam.params,
-            ]
+            to_write = [cam.id, cam.model, cam.width, cam.height, *cam.params]
             line = " ".join([str(elem) for elem in to_write])
             fid.write(line + "\n")
 
@@ -610,5 +604,141 @@ def main():
         )
 
 
+def detect_discontinuty(target_folder, ext):
+    for folder in os.listdir(target_folder):
+        sparse_path = os.path.join(
+            target_folder, folder, "sparse", "orientation_aligned"
+        )
+        for result_folder in os.listdir(sparse_path):
+            # pdb.set_trace()
+            cameras = read_cameras_binary(
+                os.path.join(sparse_path, result_folder, "cameras" + ext)
+            )
+            images = read_images_binary(
+                os.path.join(sparse_path, result_folder, "images" + ext)
+            )
+            # Check if there are enough frames
+            length_check = True
+            if len(images) < 50:
+                length_check = False
+                continue
+
+            focal_length_check = True
+            if len(cameras) == 1 and (1 in cameras):
+                focal_length = cameras[1].params[0]
+                if not 900.0 <= focal_length <= 1150.0:
+                    focal_length_check = False
+                    continue
+            else:
+                focal_length_check = False
+                continue
+
+            continuity_check = True
+            failed_sequence = []
+            failed_frames = []
+            for key in sorted(images):
+                if images[key].name[:17] in failed_sequence:
+                    continue
+
+                if (key - 1) in images and key in images:
+                    if images[key].name[:17] != images[key - 1].name[:17]:
+                        continue
+                    cur_tvec = images[key].tvec
+                    cur_R = qvec2rotmat(images[key].qvec)
+                    last_tvec = images[key - 1].tvec
+                    last_R = qvec2rotmat(images[key - 1].qvec)
+                    cur_t = -cur_R.T @ cur_tvec
+                    last_t = -last_R.T @ last_tvec
+
+                    dist_moved = np.linalg.norm(cur_t - last_t)
+                    if dist_moved > 15:
+                        failed_sequence.append(images[key].name[:17])
+                        print(
+                            f"For {folder}/{result_folder}, dist is: {dist_moved}, image is {images[key].name}"
+                        )
+                        continuity_check = False
+
+            print(
+                f"For {folder}/{result_folder}, discontinuity sequence: {failed_sequence}"
+            )
+            # print(f"For {folder}/{result_folder}, length check: {length_check}, length is {len(images)}; focal check: {focal_length_check}, focal is {focal_length}")
+
+
+def analyze_discontinuty(target_folder, ext):
+    for folder in os.listdir(target_folder):
+        sparse_path = os.path.join(
+            target_folder, folder, "sparse", "orientation_aligned"
+        )
+        for result_folder in os.listdir(sparse_path):
+            # pdb.set_trace()
+            cameras = read_cameras_binary(
+                os.path.join(sparse_path, result_folder, "cameras" + ext)
+            )
+            images = read_images_binary(
+                os.path.join(sparse_path, result_folder, "images" + ext)
+            )
+            # Check if there are enough frames
+            length_check = True
+            if len(images) < 50:
+                length_check = False
+                continue
+
+            focal_length_check = True
+            if len(cameras) == 1 and (1 in cameras):
+                focal_length = cameras[1].params[0]
+                if not 900.0 <= focal_length <= 1150.0:
+                    focal_length_check = False
+                    continue
+            else:
+                focal_length_check = False
+                continue
+
+            continuity_check = True
+            failed_sequence = []
+            failed_frames = []
+            key_last_valid = sorted(images)[0]
+            for key in sorted(images):
+                if key == key_last_valid:
+                    continue
+
+                if images[key].name[:17] != images[key_last_valid].name[:17]:
+                    key_last_valid = key
+                    continue
+                else:
+                    cur_tvec = images[key].tvec
+                    cur_R = qvec2rotmat(images[key].qvec)
+                    last_tvec = images[key_last_valid].tvec
+                    last_R = qvec2rotmat(images[key_last_valid].qvec)
+                    cur_t = -cur_R.T @ cur_tvec
+                    last_t = -last_R.T @ last_tvec
+
+                    dist_moved = np.linalg.norm(cur_t - last_t)
+                    # pdb.set_trace()
+
+                    if dist_moved > 15:
+                        failed_sequence.append(images[key].name[:17])
+                        continuity_check = False
+                        # print(f"dist is: {dist_moved}, image is {images[key].name}, ID is {images[key].id}, last is {images[key_last_valid].id}, {images[key_last_valid].name}")
+                        failed_frames.append(images[key])
+                    else:
+                        key_last_valid = key
+                    # print(f"For {folder}/{result_folder}, length check: {length_check}, length is {len(images)}; focal check: {focal_length_check}, focal is {focal_length}")
+            num_images = len(images)
+            num_failed_images = len(failed_frames)
+            sucess_percentage = 1 - num_failed_images / num_images
+
+            remove_whole_check = sucess_percentage >= 0.48
+            if not remove_whole_check:
+                print(
+                    f"For {folder}/{result_folder}, success percent: {sucess_percentage}, check: {remove_whole_check}"
+                )
+
+
 if __name__ == "__main__":
-    main()
+    # main()
+    ext = ".bin"
+    target_folder = (
+        "/scratch_net/zoidberg_second/yuthan/bdd100k/11201/daytime/overlaps"
+    )
+    analyze_discontinuty(target_folder, ext)
+    pdb.set_trace()

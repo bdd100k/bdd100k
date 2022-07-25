@@ -193,6 +193,20 @@ def orientation_aligner(
     )
 
 
+def image_deleter(
+    input_path: str,
+    output_path: str,
+    image2delete_id_path: str,
+):
+    """Delete images from sparse reconstruction."""
+    os.system(
+        f"colmap image_deleter "
+        f"--input_path {input_path} "
+        f"--output_path {output_path} "
+        f"--image_ids_path {image2delete_id_path}"
+    )
+
+
 def dense_recon(
     image_path: str,
     input_path: str,
@@ -295,8 +309,6 @@ def main():
     orien_aligned_path = os.path.join(sparse_path, "orientation_aligned")
     os.makedirs(orien_aligned_path, exist_ok=True)
 
-    
-    
     if args.job == "feature":
         frames = get_gps_priors(args.info_path, args.image_path)
         if args.info_path is None:
@@ -311,12 +323,14 @@ def main():
             colmap_new,
             args.no_gpu,
         )
+        # Used for spatial matcher
+        max_num_neighbors = min(160, int(len(os.listdir(args.image_path)) / 4))
         frames = feature_matcher(
             frames,
             args.matcher_method,
             args.output_path,
             colmap_new,
-            50,
+            max_num_neighbors,
             args.no_gpu,
         )
     elif args.job == "mapper":
@@ -348,12 +362,14 @@ def main():
             colmap_new,
             args.no_gpu,
         )
+        # Used for spatial matcher
+        max_num_neighbors = min(150, int(len(os.listdir(image_path)) / 4))
         frames = feature_matcher(
             frames,
             args.matcher_method,
             args.output_path,
             colmap_new,
-            50,
+            max_num_neighbors,
             args.no_gpu,
         )
         new_mapper(args.image_path, args.output_path, sparse_path, colmap_new)
@@ -390,12 +406,14 @@ def main():
             colmap_new,
             args.no_gpu,
         )
+        # Used for spatial matcher
+        max_num_neighbors = min(150, int(len(os.listdir(image_path)) / 4))
         frames = feature_matcher(
             frames,
             args.matcher_method,
             args.output_path,
             colmap_new,
-            50,
+            max_num_neighbors,
             args.no_gpu,
         )
         new_mapper(args.image_path, args.output_path, sparse_path, colmap_new)
