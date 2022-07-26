@@ -1,9 +1,7 @@
 """Scripts for downloading and preprocessing BDD100k data from server."""
 import argparse
 import os
-import pdb
 import pickle
-
 import numpy as np
 
 from .map import visualize_antpath, visualize_map

@@ -29,10 +29,10 @@ def visualize_map(list_sequences: Sequences, save_path: str) -> None:
 
     tracks = [latlon_from_data(seq) for seq in list_sequences]
     graph = ox.graph_from_bbox(
-        max([np.max(track[:, 0]) for track in tracks]) + 0.001,
-        min([np.min(track[:, 0]) for track in tracks]) - 0.001,
-        max([np.max(track[:, 1]) for track in tracks]) + 0.001,
-        min([np.min(track[:, 1]) for track in tracks]) - 0.001,
+        max(np.max(track[:, 0]) for track in tracks) + 0.001,
+        min(np.min(track[:, 0]) for track in tracks) - 0.001,
+        max(np.max(track[:, 1]) for track in tracks) + 0.001,
+        min(np.min(track[:, 1]) for track in tracks) - 0.001,
         simplify=False,
         retain_all=True,
         network_type="drive",

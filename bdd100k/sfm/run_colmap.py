@@ -363,7 +363,7 @@ def main():
             args.no_gpu,
         )
         # Used for spatial matcher
-        max_num_neighbors = min(150, int(len(os.listdir(image_path)) / 4))
+        max_num_neighbors = min(150, int(len(os.listdir(args.image_path)) / 4))
         frames = feature_matcher(
             frames,
             args.matcher_method,
@@ -407,7 +407,7 @@ def main():
             args.no_gpu,
         )
         # Used for spatial matcher
-        max_num_neighbors = min(150, int(len(os.listdir(image_path)) / 4))
+        max_num_neighbors = min(150, int(len(os.listdir(args.image_path)) / 4))
         frames = feature_matcher(
             frames,
             args.matcher_method,

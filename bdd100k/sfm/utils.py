@@ -3,7 +3,6 @@ import glob
 import json
 import math
 import os
-import pdb
 from typing import List, Optional, Tuple
 
 import numpy as np
@@ -225,14 +224,13 @@ def remove_skipped_frames(
     skipped_image_path = os.path.join(dir_name, "images_skipped")
     if os.path.exists(skipped_image_path):
         return
-    else:
-        os.system(f"mkdir {skipped_image_path}")
-        for frame in skipped_frames:
-            cur_image = os.path.join(image_path, frame.name)
-            try:
-                os.system(f"mv {cur_image} {skipped_image_path}")
-            except:
-                print(f"{frame.name} is not in {image_path}")
+    os.system(f"mkdir {skipped_image_path}")
+    for frame in skipped_frames:
+        cur_image = os.path.join(image_path, frame.name)
+        try:
+            os.system(f"mv {cur_image} {skipped_image_path}")
+        except FileNotFoundError:
+            print(f"{frame.name} is not in {image_path}")
 
 
 def gps_to_m(lat1, lon1, lat2, lon2):

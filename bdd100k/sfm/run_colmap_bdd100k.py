@@ -4,18 +4,19 @@ import glob
 import json
 import os
 import time
-
-import cv2
+try:
+    import cv2
+except ImportError:
+    pass
 import numpy as np
 from PIL import Image
-
 from bdd100k.sfm.colmap.read_write_dense import read_array
 from bdd100k.sfm.colmap.read_write_model import (
     qvec2rotmat,
     read_cameras_binary,
     read_images_binary,
 )
-from bdd100k.sfm.run_postprocess_bdd100k import get_sky_mask
+
 from .run_colmap import (
     database_creator,
     dense_recon,
@@ -27,6 +28,13 @@ from .run_colmap import (
     stereo_fusion,
 )
 from .utils import frames_from_images, get_gps_priors
+
+
+def get_sky_mask(seg_mask):
+    """Sky mask"""
+    sky_mask = np.ones(seg_mask.shape)
+    sky_mask[seg_mask == 10] = 0
+    return sky_mask
 
 
 def get_info_path_from_images(info_base_path, image_tags_path):
