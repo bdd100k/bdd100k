@@ -6,6 +6,7 @@ import unittest
 
 import numpy as np
 from PIL import Image
+from scalabel.common.typing import NDArrayU8
 from scalabel.label.coco_typing import PanopticAnnType
 
 from .from_coco_panseg import panseg2bitmask
@@ -32,8 +33,10 @@ class TestFromCocoPanSeg(unittest.TestCase):
         gt_mask_name = (
             f"{self.cur_dir}/testcases/panseg_bdd100k/panseg_mask.png"
         )
-        bitmask = np.asarray(Image.open(mask_name), dtype=np.uint8)
-        gt_bitmask = np.asarray(Image.open(gt_mask_name), dtype=np.uint8)
+        bitmask: NDArrayU8 = np.asarray(Image.open(mask_name), dtype=np.uint8)
+        gt_bitmask: NDArrayU8 = np.asarray(
+            Image.open(gt_mask_name), dtype=np.uint8
+        )
         self.assertTrue((bitmask == gt_bitmask).all())
 
     @classmethod

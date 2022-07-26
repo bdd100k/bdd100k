@@ -5,8 +5,9 @@ import unittest
 
 import numpy as np
 from PIL import Image
+from scalabel.common.typing import NDArrayF64, NDArrayU8
 
-from ..common.utils import load_bdd100k_config
+from ..common.utils import list_files, load_bdd100k_config
 from .ins_seg import evaluate_ins_seg
 
 
@@ -19,7 +20,11 @@ class TestBDD100KInsSegEval(unittest.TestCase):
     pred_json = f"{cur_dir}/testcases/ins_seg/pred.json"
     bdd100k_config = load_bdd100k_config("ins_seg")
     result = evaluate_ins_seg(
-        gt_base, pred_base, pred_json, bdd100k_config.scalabel, nproc=1
+        list_files(gt_base, ".png", with_prefix=True),
+        list_files(pred_base, ".png", with_prefix=True),
+        pred_json,
+        bdd100k_config.scalabel,
+        nproc=1,
     )
 
     def test_frame(self) -> None:
@@ -41,7 +46,7 @@ class TestBDD100KInsSegEval(unittest.TestCase):
         self.assertSetEqual(categories, set(data_frame.index.values))
 
         data_arr = data_frame.to_numpy()
-        APs = np.array(  # pylint: disable=invalid-name
+        aps: NDArrayF64 = np.array(
             [
                 100.0,
                 90.0,
@@ -52,28 +57,31 @@ class TestBDD100KInsSegEval(unittest.TestCase):
                 -1.0,
                 -1.0,
                 68.60561056,
-            ]
+            ],
+            dtype=np.float64,
         )
         self.assertTrue(
-            np.isclose(np.nan_to_num(data_arr[:, 0], nan=-1.0), APs).all()
+            np.isclose(np.nan_to_num(data_arr[:, 0], nan=-1.0), aps).all()
         )
 
-        overall_scores = np.array(
+        overall_scores: NDArrayF64 = np.array(
             [
                 68.60561056,
                 89.68646865,
                 66.66666667,
                 68.60561056,
-                70.92409241,
-                70.92409241,
+                -1.0,
+                -1.0,
                 65.83333333,
                 70.83333333,
                 70.83333333,
                 70.83333333,
-                70.83333333,
-                70.83333333,
-            ]
+                -1.0,
+                -1.0,
+            ],
+            dtype=np.float64,
         )
+        print(np.nan_to_num(data_arr[-1], nan=-1.0))
         self.assertTrue(
             np.isclose(
                 np.nan_to_num(data_arr[-1], nan=-1.0), overall_scores
@@ -96,14 +104,14 @@ class TestBDD100KInsSegEval(unittest.TestCase):
             "AP50": 89.68646864686468,
             "AP75": 66.66666666666666,
             "APs": 68.60561056105611,
-            "APm": 70.92409240924093,
-            "APl": 70.92409240924093,
+            "APm": -1.0,
+            "APl": -1.0,
             "AR1": 65.83333333333333,
             "AR10": 70.83333333333334,
             "AR100": 70.83333333333334,
             "ARs": 70.83333333333334,
-            "ARm": 70.83333333333334,
-            "ARl": 70.83333333333334,
+            "ARm": -1.0,
+            "ARl": -1.0,
         }
         self.assertSetEqual(set(summary.keys()), set(overall_reference.keys()))
         for name, score in summary.items():
@@ -121,7 +129,7 @@ def create_test_file() -> None:
 
     if not os.path.isdir(gt_base):
         os.makedirs(gt_base)
-        gt_mask = np.zeros((100, 100, 4), dtype=np.uint8)
+        gt_mask: NDArrayU8 = np.zeros((100, 100, 4), dtype=np.uint8)
         gt_mask[:10, :10] = np.array([1, 0, 0, 1], dtype=np.uint8)
         gt_mask[20:40, 10:20] = np.array([2, 0, 0, 2], dtype=np.uint8)
         gt_mask[20:40, 20:30] = np.array([3, 0, 0, 3], dtype=np.uint8)
@@ -132,7 +140,7 @@ def create_test_file() -> None:
 
     if not os.path.isdir(dt_base):
         os.makedirs(dt_base)
-        dt_mask = np.zeros((100, 100, 4), dtype=np.uint8)
+        dt_mask: NDArrayU8 = np.zeros((100, 100, 4), dtype=np.uint8)
         dt_mask[:10, :10] = np.array([1, 0, 0, 1], dtype=np.uint8)
         dt_mask[20:40, 10:19] = np.array([2, 0, 0, 2], dtype=np.uint8)
         dt_mask[20:40, 20:27] = np.array([3, 0, 0, 4], dtype=np.uint8)

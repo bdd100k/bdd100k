@@ -9,6 +9,7 @@ from typing import Dict, List
 import numpy as np
 from PIL import Image
 from scalabel.common.parallel import NPROC
+from scalabel.common.typing import NDArrayI32, NDArrayU8
 from scalabel.label.coco_typing import (
     ImgType,
     PanopticAnnType,
@@ -52,10 +53,12 @@ def parse_args() -> argparse.Namespace:
 
 def bitmask2pan_mask(mask_name: str, pan_name: str) -> None:
     """Convert bitmask into panoptic segmentation mask."""
-    bitmask = np.asarray(Image.open(mask_name)).astype(dtype=np.int32)
+    bitmask: NDArrayI32 = np.asarray(Image.open(mask_name)).astype(
+        dtype=np.int32
+    )
     height, width = bitmask.shape[:2]
 
-    pan_fmt = np.zeros((height, width, 3), dtype=np.uint8)
+    pan_fmt: NDArrayU8 = np.zeros((height, width, 3), dtype=np.uint8)
     pan_fmt[..., 0] = bitmask[..., 3]
     pan_fmt[..., 1] = bitmask[..., 2]
 

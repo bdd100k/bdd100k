@@ -3,6 +3,7 @@ import os
 import unittest
 
 import numpy as np
+from scalabel.common.typing import NDArrayF64
 from scalabel.label.coco_typing import PanopticCatType
 
 from ..common.utils import list_files
@@ -54,7 +55,7 @@ class TestPQPerImage(unittest.TestCase):
         gt_path = os.path.join(self.gt_base, "a.png")
         pred_path = os.path.join(self.pred_base, "a.png")
         pq_stat = pq_per_image(gt_path, pred_path)
-        gt_res_arr = np.array(
+        gt_res_arr: NDArrayF64 = np.array(
             [
                 [1, 1, 0, 0, 0.7708830548926014],
                 [4, 1, 0, 0, 0.6422764227642277],
@@ -72,7 +73,8 @@ class TestPQPerImage(unittest.TestCase):
                 [30, 1, 0, 0, 0.9662389555811991],
                 [34, 1, 0, 0, 0.8457497612225406],
                 [35, 4, 0, 0, 3.18008304800378],
-            ]
+            ],
+            dtype=np.float64,
         )
         res_list = []
         for key, pq_stat_cat in pq_stat.pq_per_cats.items():
@@ -85,7 +87,7 @@ class TestPQPerImage(unittest.TestCase):
                     pq_stat_cat.iou,
                 ]
             )
-        res_arr = np.array(res_list)
+        res_arr: NDArrayF64 = np.array(res_list, dtype=np.float64)
         self.assertTrue((gt_res_arr == res_arr).all())
 
     def test_blank_prediction(self) -> None:

@@ -44,11 +44,15 @@ setuptools.setup(
     ],
     package_data={
         "bdd100k": [
-            "configs/det.toml",
-            "configs/ins_seg.toml",
-            "configs/sem_seg.toml",
             "configs/box_track.toml",
+            "configs/det.toml",
+            "configs/drivable.toml",
+            "configs/ins_seg.toml",
+            "configs/lane_mark.toml",
+            "configs/pan_seg.toml",
+            "configs/pose.toml",
             "configs/seg_track.toml",
+            "configs/sem_seg.toml",
             "py.typed",
         ]
     },
