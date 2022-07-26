@@ -4,12 +4,10 @@ import glob
 import json
 import os
 import time
-try:
-    import cv2
-except ImportError:
-    pass
+
 import numpy as np
 from PIL import Image
+
 from bdd100k.sfm.colmap.read_write_dense import read_array
 from bdd100k.sfm.colmap.read_write_model import (
     qvec2rotmat,
@@ -248,7 +246,8 @@ def create_fusion_mask(dense_path, seg_mask_path):
         seg_mask = np.array(Image.open(seg_mask_file))
         # Create fusion mask
         mask_fusion = get_fusion_mask(depth_map, seg_mask)
-        cv2.imwrite(f"{fusion_mask_path}/{image_name}.png", mask_fusion)
+        mask_fusion = Image.fromarray(mask_fusion)
+        mask_fusion.save(f"{fusion_mask_path}/{image_name}.png")
     return fusion_mask_path
 
 

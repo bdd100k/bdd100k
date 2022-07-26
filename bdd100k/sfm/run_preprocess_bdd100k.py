@@ -2,6 +2,7 @@
 import argparse
 import os
 import pickle
+
 import numpy as np
 
 from .map import visualize_antpath, visualize_map
