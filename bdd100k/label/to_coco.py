@@ -331,6 +331,7 @@ def bdd100k2coco_ins_seg(
             file_name=image_anns.name,
             height=img_shape.height,
             width=img_shape.width,
+            attributes=image_anns.attributes,
         )
         if image_anns.url is not None:
             image["coco_url"] = image_anns.url
@@ -415,8 +416,11 @@ def bdd100k2coco_seg_track(
         instance_id_maps: Dict[str, int] = {}
 
         video_name = video_anns[0].videoName
+        video_attributes = video_anns[0].attributes
         video_id += 1
-        video = VidType(id=video_id, name=video_name)
+        video = VidType(
+            id=video_id, name=video_name, attributes=video_attributes
+        )
         videos.append(video)
 
         for image_anns in video_anns:
@@ -434,6 +438,7 @@ def bdd100k2coco_seg_track(
                 file_name=os.path.join(video_name, image_anns.name),
                 height=img_shape.height,
                 width=img_shape.width,
+                attributes=image_anns.attributes,
             )
             if image_anns.url is not None:
                 image["coco_url"] = image_anns.url
