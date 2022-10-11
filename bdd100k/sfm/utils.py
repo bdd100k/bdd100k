@@ -3,9 +3,12 @@ import glob
 import json
 import math
 import os
-from typing import List, Optional, Tuple
-
+from typing import Dict, List, Optional, Tuple
 import numpy as np
+from PIL import Image
+from scalabel.label.transforms import rle_to_mask
+
+from .run_postprocess import plot_depth
 
 try:
     from geopy.extra.rate_limiter import RateLimiter
@@ -14,16 +17,26 @@ try:
 except ImportError:
     pass
 from scalabel.common.typing import DictStrAny, NDArrayF64
+from scalabel.label.io import load
+from scalabel.label.transforms import poly_to_patch, rle_to_mask
 from scalabel.label.typing import Extrinsics, Frame, Intrinsics
 
 
-def cam_spec_prior() -> Intrinsics:
+def cam_spec_prior(intrinsics_path: Optional[str] = "") -> Intrinsics:
     """Generate intrinsics from iPhone 5 cam spec prior."""
-    # 4.1 (F in mm) / 0.0014 (pixel size in mm) = 2928.57 focal length in
+    # For bdd100 sequences
+    # 4.1 (F in mm) / 0.0014 (pixel size in mm) = 1020 focal length in
     # pixels
     # resolution always (720, 1280) --> principal point at (360, 640)
-    # intrinsics = Intrinsics(focal=(2928.57, 2928.57), center=(360.0, 640.0))
-    intrinsics = Intrinsics(focal=(1020, 1020), center=(360.0, 640.0))
+    if intrinsics_path == "":
+        # These are intrinsics estimated for bdd100k
+        intrinsics = Intrinsics(focal=(1020.0, 1020.0), center=(360.0, 640.0))
+    else:
+        with open(intrinsics_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        intrinsics = Intrinsics(
+            focal=(data["fx"], data["fy"]), center=(data["cy"], data["cx"])
+        )
     return intrinsics
 
 
@@ -107,14 +120,16 @@ def get_gps_from_data(list_data: List[DictStrAny]) -> NDArrayF64:
 
 
 def interpolate_trajectory(
-    gps_prior: List[DictStrAny], frames: List[Frame]
+    gps_prior: List[DictStrAny],
+    frames: List[Frame],
+    intrinsics_path: Optional[str] = "",
 ) -> None:
     """Interpolate GPS based pose priors to per frame poses."""
     num_frames_per_pose = len(frames) / len(gps_prior)
     gps_poses = get_poses_from_data(gps_prior)
 
     for i, f in enumerate(frames):
-        f.intrinsics = cam_spec_prior()
+        f.intrinsics = cam_spec_prior(intrinsics_path)
 
         pose_index = int(i / num_frames_per_pose)
         weight_hi = i / num_frames_per_pose - i // num_frames_per_pose
@@ -136,7 +151,9 @@ def interpolate_trajectory(
 
 
 def interpolate_gps(
-    gps_prior: List[DictStrAny], frames: List[Frame]
+    gps_prior: List[DictStrAny],
+    frames: List[Frame],
+    intrinsics_path: Optional[str] = "",
 ) -> List[Frame]:
     """Interpolate GPS priors to per frame poses."""
     num_frames_per_pose = len(frames) / len(gps_prior)
@@ -145,7 +162,7 @@ def interpolate_gps(
     frames_skipped = []
     traj_prev = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     for i, f in enumerate(frames):
-        f.intrinsics = cam_spec_prior()
+        f.intrinsics = cam_spec_prior(intrinsics_path)
 
         pose_index = int(i / num_frames_per_pose)
         weight_hi = i / num_frames_per_pose - i // num_frames_per_pose
@@ -188,7 +205,9 @@ def get_pose_priors(info_path: str, image_path: str) -> Optional[List[Frame]]:
 
 
 def get_gps_priors(
-    info_path_list: List[str], image_path: str
+    info_path_list: List[str],
+    image_path: str,
+    intrinsics_path: Optional[str] = "",
 ) -> Optional[List[Frame]]:
     """Generate Scalabel frames with gps priors from gps / image paths."""
     frames = []
@@ -208,7 +227,7 @@ def get_gps_priors(
         if pose_data is not None:
             cur_frames = frames_from_images(image_path, seq_name)
             interpolated_frames, skipped_frames = interpolate_gps(
-                pose_data, cur_frames
+                pose_data, cur_frames, intrinsics_path
             )
             frames += interpolated_frames
             frames_to_move += skipped_frames
@@ -244,3 +263,64 @@ def gps_to_m(lat1, lon1, lat2, lon2):
     c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
     d = radius * c
     return d * 1000  # meters
+
+
+def create_pan_mask_dict(pan_json_path: str) -> Dict[str, np.array]:
+    if not os.path.exists(pan_json_path):
+        return None
+    with open(pan_json_path, "rb") as fp:
+        fp_content = json.load(fp)
+    frames = fp_content["frames"]
+    result = dict()
+    for frame in frames:
+        img_name = frame["name"]
+        labels = frame["labels"]
+        pan_dict = {
+            "person": [],
+            "rider": [],
+            "bicycle": [],
+            "bus": [],
+            "car": [],
+            "caravan": [],
+            "motorcycle": [],
+            "trailer": [],
+            "train": [],
+            "truck": [],
+            "dynamic": [],
+            "ego vehicle": [],
+            "ground": [],
+            "static": [],
+            "parking": [],
+            "rail track": [],
+            "road": [],
+            "sidewalk": [],
+            "bridge": [],
+            "building": [],
+            "fence": [],
+            "garage": [],
+            "guard rail": [],
+            "tunnel": [],
+            "wall": [],
+            "banner": [],
+            "billboard": [],
+            "lane divider": [],
+            "parking sign": [],
+            "pole": [],
+            "polegroup": [],
+            "street light": [],
+            "traffic cone": [],
+            "traffic device": [],
+            "traffic light": [],
+            "traffic sign": [],
+            "traffic sign frame": [],
+            "terrain": [],
+            "vegetation": [],
+            "sky": [],
+            "unlabeled": [],
+        }
+        result[img_name] = pan_dict
+        for label in labels:
+            result[img_name][label["category"]].append(
+                rle_to_mask(label["rle"])
+            )
+    return result
