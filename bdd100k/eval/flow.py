@@ -218,7 +218,7 @@ def compute_scores_per_video(
         flow_name = ann_frame1.name.replace(".jpg", ".flo")
         flow_path = os.path.join(pred_path, ann_frame1.videoName, flow_name)
         if os.path.exists(flow_path):
-            flow = read_flow(flow_path) * 4
+            flow = read_flow(flow_path)
             warp_mask = warp_segmentation_mask(ann_mask2, flow)
         else:
             print(f"Missing flow for {flow_path}.")
@@ -269,8 +269,8 @@ def evaluate_flow(
         for f in ann_videos
         if f[0].videoName
         in [
-            "b1d0a191-03dcecc2",
-            "b1d22ed6-f1cac061",
+            # "b1d0a191-03dcecc2",
+            # "b1d22ed6-f1cac061",
             "b1c9c847-3bda4659",
             "b1d0a191-06deb55d",
             "b1d10d08-c35503b8",
