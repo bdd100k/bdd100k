@@ -11,6 +11,79 @@ from .colmap.database_io import COLMAPDatabase
 from .utils import cam_spec_prior, frames_from_images, get_gps_priors
 
 
+def parse_args():
+    """Arguments."""
+    parser = argparse.ArgumentParser(
+        description="run COLMAP Reconstruction for image sequences"
+    )
+    parser.add_argument(
+        "--job",
+        "-j",
+        type=str,
+        default="feature",
+        help="Which job to do(feature, mapper, stereo_fusion, all, etc)",
+    )
+    parser.add_argument(
+        "--image-path",
+        "-i",
+        type=str,
+        help="Path to image sequence.",
+    )
+    parser.add_argument(
+        "--output-path",
+        "-o",
+        type=str,
+        help="Path to output (the path contains database, sparse, dense).",
+    )
+    parser.add_argument(
+        "--info-path",
+        type=str,
+        action="append",
+        default=None,
+        help="""
+        Path to info file in .json for sequence.
+        """,
+    )
+    parser.add_argument(
+        "--mask-path",
+        type=str,
+        default="",
+        help="""
+        Path to image mask for stereo fusion.
+        """,
+    )
+    parser.add_argument(
+        "--matcher-method",
+        type=str,
+        default="spatial",
+        help="The feature match method. (spatial, sequential, exhaustive).",
+    )
+    parser.add_argument(
+        "--colmap-path",
+        default="colmap",
+        type=str,
+        help="The path to the modeified colmap.",
+    )
+    parser.add_argument(
+        "--no-gpu",
+        action="store_true",
+        help="Run colmap with out GPU (Only works for sparse reconstruction)",
+    )
+    parser.add_argument(
+        "--intrinsics",
+        type=str,
+        default="bdd100k",
+        help="Path to a json file for camera intriniscs.",
+    )
+    parser.add_argument(
+        "--no-prior-motion",
+        action="store_true",
+        help="To not use prior knowledge on GPS in Bundle adjustment",
+    )
+    args = parser.parse_args()
+    return args
+
+
 def add_image_ids(frames: List[Frame], db_path: str) -> None:
     """Add the image ids in the database to each frame (map by name)."""
     db = COLMAPDatabase.connect(db_path)
@@ -24,8 +97,9 @@ def add_image_ids(frames: List[Frame], db_path: str) -> None:
 
 
 def add_spatials_to_db(frames: List[Frame], db_path: str) -> None:
-    """
-    Add the spatial locations (transformed to cartesian) to images in database.
+    """Add the spatial locations to images in database.
+
+    (already transformed to cartesian)
     """
     db = COLMAPDatabase.connect(db_path)
     for f in frames:
@@ -75,6 +149,7 @@ def feature_extractor(
     output_path: str,
     colmap_new: str,
     no_gpu: Optional[bool] = False,
+    intrinsics_path: Optional[str] = "bdd100k",
 ) -> List[Frame]:
     """Conduct feature extraction."""
     # we assume shared intrinsics
@@ -82,22 +157,24 @@ def feature_extractor(
         assert frames[0].intrinsics.focal[0] == frames[0].intrinsics.focal[0]
         intrinsics = frames[0].intrinsics
     else:
-        intrinsics = cam_spec_prior()
-
-    f_x = intrinsics.focal[0]
-    c_x, c_y = intrinsics.center
+        intrinsics = cam_spec_prior(intrinsics_path)
 
     no_gpu_option = (" --SiftExtraction.use_gpu 0") if no_gpu else ("")
 
-    options = (
-        " --ImageReader.camera_model SIMPLE_PINHOLE"
-        " --ImageReader.single_camera 1"
-        f" --ImageReader.camera_params {f_x},{c_y},{c_x}"
-    )
+    if intrinsics:
+        f_x = intrinsics.focal[0]
+        c_x, c_y = intrinsics.center
+        intrinsics_options = (
+            " --ImageReader.camera_model SIMPLE_PINHOLE"
+            " --ImageReader.single_camera 1"
+            f" --ImageReader.camera_params {f_x},{c_y},{c_x}"
+        )
+    else:
+        intrinsics_options = " --ImageReader.camera_model SIMPLE_PINHOLE"
     os.system(
         f"{colmap_new} feature_extractor "
         f"--database_path {output_path}/database.db "
-        f"--image_path {image_path}" + options + no_gpu_option
+        f"--image_path {image_path}" + intrinsics_options + no_gpu_option
     )
     return frames
 
@@ -159,6 +236,7 @@ def new_mapper(
     output_path: str,
     sparse_path: str,
     colmap_new: str,
+    no_prior_motion: Optional[bool] = False,
 ):
     """Conduct incremental mapper using the modified colmap with GPS."""
     os.system(
@@ -170,7 +248,7 @@ def new_mapper(
         f"--Mapper.filter_max_reproj_error {4.0} "
         f"--Mapper.min_num_matches {20} "
         f"--Mapper.prior_is_gps 1 "
-        f"--Mapper.use_prior_motion 1 "
+        f"--Mapper.use_prior_motion {int(not no_prior_motion)} "
         f"--Mapper.use_enu_coords 1 "
         f"--Mapper.prior_loss_scale 0.072 "
         f"--Mapper.ba_global_loss_scale 10.597 "
@@ -231,7 +309,7 @@ def stereo_fusion(
     mask_path: str,
     colmap_new: str,
 ) -> None:
-    """Conduct stereo fusion."""
+    """Conterduct seo fusion."""
     if len(mask_path) != 0:
         options = f"--StereoFusion.mask_path {mask_path} "
     else:
@@ -245,64 +323,7 @@ def stereo_fusion(
 
 def main():
     """Run sparse reconstruction."""
-    parser = argparse.ArgumentParser(
-        description="Sparse Reconstruction for a sequence"
-    )
-    parser.add_argument(
-        "--job",
-        "-j",
-        type=str,
-        default="feature",
-        help="Which job to do(feature, mapper, orien_aligner or all)",
-    )
-    parser.add_argument(
-        "--image-path",
-        "-i",
-        type=str,
-        help="Path to image sequence.",
-    )
-    parser.add_argument(
-        "--output-path",
-        "-o",
-        type=str,
-        help="Path to output (the path contains database, sparse, dense).",
-    )
-    parser.add_argument(
-        "--info-path",
-        type=str,
-        action="append",
-        default=None,
-        help="""
-        Path to info file in .json for sequence.
-        """,
-    )
-    parser.add_argument(
-        "--mask-path",
-        type=str,
-        default="",
-        help="""
-        Path to image mask for stereo fusion.
-        """,
-    )
-    parser.add_argument(
-        "--matcher-method",
-        type=str,
-        default="spatial",
-        help="The feature match method. (spatial, sequential, exhaustive).",
-    )
-    parser.add_argument(
-        "--colmap-path",
-        default="colmap",
-        type=str,
-        help="The path to the modeified colmap.",
-    )
-    parser.add_argument(
-        "--no-gpu",
-        action="store_true",
-        help="Run colmap with out GPU (Only works for sparse reconstruction)",
-    )
-
-    args = parser.parse_args()
+    args = parse_args()
     colmap_new = args.colmap_path
     sparse_path = os.path.join(args.output_path, "sparse")
     os.makedirs(sparse_path, exist_ok=True)
@@ -310,9 +331,12 @@ def main():
     os.makedirs(orien_aligned_path, exist_ok=True)
 
     if args.job == "feature":
-        frames = get_gps_priors(args.info_path, args.image_path)
         if args.info_path is None:
             frames = frames_from_images(args.image_path)
+        else:
+            frames = get_gps_priors(
+                args.info_path, args.image_path, args.intrinsics
+            )
         database_creator(args.output_path, colmap_new)
         while not os.path.exists(f"{args.output_path}/database.db"):
             time.sleep(0.5)
@@ -322,6 +346,7 @@ def main():
             args.output_path,
             colmap_new,
             args.no_gpu,
+            args.intrinsics,
         )
         # Used for spatial matcher
         max_num_neighbors = min(160, int(len(os.listdir(args.image_path)) / 4))
@@ -334,7 +359,13 @@ def main():
             args.no_gpu,
         )
     elif args.job == "mapper":
-        new_mapper(args.image_path, args.output_path, sparse_path, colmap_new)
+        new_mapper(
+            args.image_path,
+            args.output_path,
+            sparse_path,
+            colmap_new,
+            args.no_prior_motion,
+        )
         orientation_aligner(
             args.image_path,
             os.path.join(sparse_path, "0"),
@@ -349,7 +380,12 @@ def main():
             colmap_new,
         )
     elif args.job == "sparse":
-        frames = get_gps_priors(args.info_path, args.image_path)
+        if args.info_path is None:
+            frames = frames_from_images(args.image_path)
+        else:
+            frames = get_gps_priors(
+                args.info_path, args.image_path, args.intrinsics
+            )
         if args.info_path is None:
             frames = frames_from_images(args.image_path)
         database_creator(args.output_path, colmap_new)
@@ -361,8 +397,8 @@ def main():
             args.output_path,
             colmap_new,
             args.no_gpu,
+            args.intrinsics,
         )
-        # Used for spatial matcher
         max_num_neighbors = min(150, int(len(os.listdir(args.image_path)) / 4))
         frames = feature_matcher(
             frames,
@@ -393,7 +429,9 @@ def main():
         result_path = os.path.join(dense_path, "fused.ply")
         stereo_fusion(dense_path, result_path, args.mask_path, colmap_new)
     elif args.job == "all":
-        frames = get_gps_priors(args.info_path, args.image_path)
+        frames = get_gps_priors(
+            args.info_path, args.image_path, args.intrinsics
+        )
         if args.info_path is None:
             frames = frames_from_images(args.image_path)
         database_creator(args.output_path, colmap_new)
@@ -405,6 +443,7 @@ def main():
             args.output_path,
             colmap_new,
             args.no_gpu,
+            args.intrinsics,
         )
         # Used for spatial matcher
         max_num_neighbors = min(150, int(len(os.listdir(args.image_path)) / 4))

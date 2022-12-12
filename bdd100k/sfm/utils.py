@@ -4,11 +4,8 @@ import json
 import math
 import os
 from typing import Dict, List, Optional, Tuple
-import numpy as np
-from PIL import Image
-from scalabel.label.transforms import rle_to_mask
 
-from .run_postprocess import plot_depth
+import numpy as np
 
 try:
     from geopy.extra.rate_limiter import RateLimiter
@@ -16,19 +13,23 @@ try:
     from geopy.location import Location
 except ImportError:
     pass
+import matplotlib.pyplot as plt
+from matplotlib import cm
 from scalabel.common.typing import DictStrAny, NDArrayF64
-from scalabel.label.io import load
-from scalabel.label.transforms import poly_to_patch, rle_to_mask
+from scalabel.label.transforms import rle_to_mask
 from scalabel.label.typing import Extrinsics, Frame, Intrinsics
 
 
-def cam_spec_prior(intrinsics_path: Optional[str] = "") -> Intrinsics:
+def cam_spec_prior(intrinsics_path: str = "") -> Optional[Intrinsics]:
     """Generate intrinsics from iPhone 5 cam spec prior."""
-    # For bdd100 sequences
-    # 4.1 (F in mm) / 0.0014 (pixel size in mm) = 1020 focal length in
-    # pixels
-    # resolution always (720, 1280) --> principal point at (360, 640)
     if intrinsics_path == "":
+        # Empty string means no intrinsics are given
+        intrinsics = None
+    elif intrinsics_path == "bdd100k":
+        # For bdd100 sequences
+        # 4.1 (F in mm) / 0.0014 (pixel size in mm) = 1020 focal length in
+        # pixels
+        # resolution always (720, 1280) --> principal point at (360, 640)
         # These are intrinsics estimated for bdd100k
         intrinsics = Intrinsics(focal=(1020.0, 1020.0), center=(360.0, 640.0))
     else:
@@ -76,7 +77,9 @@ def load_pose_data(info_path: str) -> Optional[List[DictStrAny]]:
     return None
 
 
-def frames_from_images(image_path: str, seq_name: str = None) -> List[Frame]:
+def frames_from_images(
+    image_path: str, seq_name: Optional[str] = None
+) -> List[Frame]:
     """Construct a list of Frame objects from an input image path."""
     if not seq_name:
         images = sorted(os.listdir(image_path))
@@ -137,7 +140,6 @@ def interpolate_trajectory(
         traj_lo = np.array(gps_poses[pose_index])
         if len(gps_poses) - 1 > pose_index:
             traj_hi: NDArrayF64 = np.array(gps_poses[pose_index + 1])
-            # type: ignore
             traj_cur = weight_hi * traj_hi + (1 - weight_hi) * traj_lo
         else:
             traj_hi = traj_lo
@@ -265,13 +267,16 @@ def gps_to_m(lat1, lon1, lat2, lon2):
     return d * 1000  # meters
 
 
-def create_pan_mask_dict(pan_json_path: str) -> Dict[str, np.array]:
+def create_pan_mask_dict(
+    pan_json_path: str, shape: Tuple[int, int] = (720, 1280)
+) -> Dict[str, np.array]:
+    """Create a dictionary for panoptic segmentation."""
     if not os.path.exists(pan_json_path):
         return None
     with open(pan_json_path, "rb") as fp:
         fp_content = json.load(fp)
     frames = fp_content["frames"]
-    result = dict()
+    result = {}
     for frame in frames:
         img_name = frame["name"]
         labels = frame["labels"]
@@ -317,10 +322,137 @@ def create_pan_mask_dict(pan_json_path: str) -> Dict[str, np.array]:
             "vegetation": [],
             "sky": [],
             "unlabeled": [],
+            "total": None,
+        }
+        sem_id = {
+            "person": 31,
+            "rider": 32,
+            "bicycle": 33,
+            "bus": 34,
+            "car": 35,
+            "caravan": 36,
+            "motorcycle": 37,
+            "trailer": 38,
+            "train": 39,
+            "truck": 40,
+            "dynamic": 1,
+            "ego vehicle": 2,
+            "ground": 3,
+            "static": 4,
+            "parking": 5,
+            "rail track": 6,
+            "road": 7,
+            "sidewalk": 8,
+            "bridge": 9,
+            "building": 10,
+            "fence": 11,
+            "garage": 12,
+            "guard rail": 13,
+            "tunnel": 14,
+            "wall": 15,
+            "banner": 16,
+            "billboard": 17,
+            "lane divider": 18,
+            "parking sign": 19,
+            "pole": 20,
+            "polegroup": 21,
+            "street light": 22,
+            "traffic cone": 23,
+            "traffic device": 24,
+            "traffic light": 25,
+            "traffic sign": 26,
+            "traffic sign frame": 27,
+            "terrain": 28,
+            "vegetation": 29,
+            "sky": 30,
+            "unlabeled": 0,
         }
         result[img_name] = pan_dict
+        pan_seg_total = np.zeros(shape)
         for label in labels:
-            result[img_name][label["category"]].append(
-                rle_to_mask(label["rle"])
-            )
+            cur_label_mask = rle_to_mask(label["rle"])
+            result[img_name][label["category"]].append(cur_label_mask)
+            pan_seg_total += cur_label_mask * sem_id[label["category"]]
+        result[img_name]["total"] = pan_seg_total
     return result
+
+
+def depth_to_pcd(
+    depth_img: np.ndarray, camera_params: np.array, extrinsics_mat: np.ndarray
+) -> np.ndarray:
+    """Map from 2D depth map to 3D point cloud."""
+    f = camera_params[0]
+    cx = camera_params[2]
+    cy = camera_params[3]
+    width = depth_img.shape[1]
+    height = depth_img.shape[0]
+    xw = np.tile(list(range(width)), (height, 1)) - cx
+    yw = np.tile(list(range(height)), (width, 1)).T - cy
+    point_x = (xw * depth_img).reshape(width * height) / f
+    point_y = (yw * depth_img).reshape(width * height) / f
+    point_z = depth_img.reshape(width * height)
+    point = np.stack((point_x, point_y, point_z))
+    point = point[:, ~np.all(point == 0, axis=0)]
+    point = np.vstack((point, np.ones(point.shape[1])))
+    pcd_array = np.matmul(np.linalg.inv(extrinsics_mat), point)
+    return pcd_array
+
+
+def pcd_to_depth(pcd, shape, camera_params, extrinsics_mat):
+    """Map from 3D point cloud to 2D depth map at a different extrinsics.
+
+    outputs:
+        depth_img: the rendered depth image
+        pcd_indices: corresponding index of point in pcd list
+    """
+    f = camera_params[0]
+    cx = camera_params[2]
+    cy = camera_params[3]
+    intrinsics_mat = np.identity(4)
+    intrinsics_mat[0, 2] = cx
+    intrinsics_mat[1, 2] = cy
+    intrinsics_mat[0, 0] = f
+    intrinsics_mat[1, 1] = f
+    depth_img = np.zeros(shape)
+    pcd_indices = np.ones(shape) * -1
+    for point_index, point in enumerate(pcd):
+        # If depth value is already filtered, skip it
+        if all(point == [0.0, 0.0, 0.0, 0.0]):
+            continue
+        point2d = np.matmul(extrinsics_mat, point)
+        depth = point2d[2]
+        point2d = 1 / depth * np.matmul(intrinsics_mat, point2d)
+        u_ = round(point2d[0])
+        v_ = round(point2d[1])
+        if 0 <= u_ < shape[1] and 0 <= v_ < shape[0]:
+            # If there is already a closer depth value at pixel, do not update
+            if 0 < depth_img[v_, u_] < depth:
+                continue
+            depth_img[v_, u_] = depth
+            pcd_indices[v_, u_] = point_index
+    return depth_img, pcd_indices
+
+
+def plot_depth(
+    depth_map: np.ndarray,
+    save_path: str = "",
+    title: str = "",
+    visualize: bool = True,
+    vmin: float = 0,
+    vmax: float = 80,
+) -> None:
+    """Visualize depth map."""
+    mask = np.logical_or((depth_map == vmin), (depth_map > vmax))
+    depth_map_visual = np.ma.masked_where(mask, depth_map)
+    cmap = cm.viridis
+    cmap.set_bad(color="gray")
+    plt.figure(figsize=(30, 20))
+    plt.imshow(depth_map_visual, cmap=cmap, vmin=vmin, vmax=vmax)
+    plt.colorbar()
+    plt.title(title)
+
+    if visualize:
+        plt.show()
+    else:
+        plt.imsave(save_path, depth_map_visual, cmap=cmap)
+    plt.close()
