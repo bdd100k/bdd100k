@@ -4,10 +4,14 @@ import glob
 import os
 from typing import Dict, List, Tuple
 
-import cv2
 import numpy as np
-import open3d as o3d
-from sklearn.neighbors import KDTree
+
+try:
+    import cv2
+    import open3d as o3d
+    from sklearn.neighbors import KDTree
+except ImportError:
+    pass
 
 from bdd100k.sfm.colmap.read_write_dense import read_array
 from bdd100k.sfm.colmap.read_write_model import qvec2rotmat, read_model
@@ -251,9 +255,6 @@ def prepare_bts_training_data(
 
     Method fn (focal length normalization):
         Normalize the focal length and Crop to the same size as KITTI
-
-    Method vd (virtual depth (Omni3d)):
-        Generate virtual depth
     """
     height = g_t.shape[0]
     width = g_t.shape[1]
@@ -285,16 +286,7 @@ def prepare_bts_training_data(
     rgb_fn = rgb_fn[
         top_margin : top_margin + H_KITTI, left_margin : left_margin + W_KITTI
     ]
-
-    # Virtual Depth
-    gt_vd = g_t * FOCAL_KITTI / focal * height / H_KITTI
-    gt_vd = gt_vd[
-        top_margin : top_margin + H_KITTI, left_margin : left_margin + W_KITTI
-    ]
-    rgb_vd = rgb[
-        top_margin : top_margin + H_KITTI, left_margin : left_margin + W_KITTI
-    ]
-    return gt_fn, rgb_fn, gt_vd, rgb_vd
+    return gt_fn, rgb_fn
 
 
 def postprocess(dense_path, target_path, args):
@@ -384,21 +376,13 @@ def postprocess(dense_path, target_path, args):
             bts_train_gt_fn_path = os.path.join(
                 dense_path, "bts_train_fn", "gt"
             )
-            bts_train_rgb_vd_path = os.path.join(
-                dense_path, "bts_train_vd", "rgb"
-            )
-            bts_train_gt_vd_path = os.path.join(
-                dense_path, "bts_train_vd", "gt"
-            )
             os.makedirs(bts_train_rgb_fn_path, exist_ok=True)
             os.makedirs(bts_train_gt_fn_path, exist_ok=True)
-            os.makedirs(bts_train_rgb_vd_path, exist_ok=True)
-            os.makedirs(bts_train_gt_vd_path, exist_ok=True)
             if depth_density > 0.1:
                 rgb_path = os.path.join(images_path, image_name)
                 rgb = cv2.imread(rgb_path)
                 gt = depth_map_uint16
-                gt_fn, rgb_fn, gt_vd, rgb_vd = prepare_bts_training_data(
+                gt_fn, rgb_fn = prepare_bts_training_data(
                     gt, rgb, float(camera_params[0])
                 )
                 cv2.imwrite(
@@ -407,13 +391,6 @@ def postprocess(dense_path, target_path, args):
                 )
                 cv2.imwrite(
                     os.path.join(bts_train_rgb_fn_path, image_name_png), rgb_fn
-                )
-                cv2.imwrite(
-                    os.path.join(bts_train_gt_vd_path, image_name_png),
-                    gt_vd.astype(np.uint16),
-                )
-                cv2.imwrite(
-                    os.path.join(bts_train_rgb_vd_path, image_name_png), rgb_vd
                 )
     return depth_maps_processed_path
 
