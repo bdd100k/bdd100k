@@ -23,13 +23,13 @@ Since the raw depth maps are usually nosiy, we post-process them by applying sev
 
 ## 2. Installation
 
-### Hardware
+### 2.1 Hardware
 
 * OS: Ubuntu >18.04
 * NVIDIA GPU with **CUDA>=10.1** (tested with 1 RTX1080Ti or 2080Ti)
     * GPU is only required for MVS. You can specify ```--no-gpu``` for SfM if no GPU on your machine
 
-### Software
+### 2.2 Software
 - Install [COLMAP](https://github.com/kevinhangoat/colmap)
     * This is an unofficial implementation of COLMAP with GPS information as a reference in Bundle adjustment. The official colmap currently does not support such feature, but the discussion about adding it can be found [here](https://github.com/colmap/colmap/pull/1409) contributed by [ferreram](https://github.com/ferreram/colmap/tree/sfm_gps_ba_aligner_4_clem). 
 - Clone this repo and install libraries 
@@ -42,7 +42,7 @@ pip install -r bdd100k/sfm/requirements.txt
 
 ## 3. Example Demo
 
-### COLMAP reconstruction
+### 3.1 COLMAP reconstruction
 
 Assuming you want to reconstruct for one bdd100k sequence and the data are stored as the follow structure:
 
@@ -82,7 +82,7 @@ Orientation Aligner:
 python -m bdd100k.sfm.run_colmap --job orien_aligner --image-path sequence/path/images --output-path sequence/path/ --info-path sequence/path/info.json
 ```
 
-Multi view Stereo:
+Multi View Stereo:
 ```bash
 python -m bdd100k.sfm.run_colmap --job dense --image-path sequence/path/images --output-path sequence/path/
 ```
@@ -93,7 +93,8 @@ python -m bdd100k.sfm.run_colmap --job stereo_fusion --image-path sequence/path/
 ```
 Check run_colmap.py for more features and functions.
 
-### Depth Map Post-processing
+
+### 3.2 Depth Map Post-processing
 
 After the COLMAP reconstruction, the sequence path becomes:
 
