@@ -8,7 +8,12 @@ from scalabel.label.typing import Frame
 from scalabel.label.utils import get_matrix_from_extrinsics
 
 from .colmap.database_io import COLMAPDatabase
-from .utils import cam_spec_prior, frames_from_images, get_gps_priors
+from .utils import (
+    cam_spec_prior,
+    create_fusion_masks_pan,
+    frames_from_images,
+    get_gps_priors,
+)
 
 
 def parse_args():
@@ -184,9 +189,9 @@ def database_creator(
     colmap_new: str,
 ) -> None:
     """Create colmap database."""
+    database_path = os.path.join(output_path, "database.db")
     os.system(
-        f"{colmap_new} database_creator"
-        f" --database_path {output_path}/database.db"
+        f"{colmap_new} database_creator" f" --database_path {database_path}"
     )
 
 
@@ -228,6 +233,38 @@ def feature_matcher(
             f"--SiftMatching.max_distance {0.55} "
             f"--SiftMatching.min_num_inliers {60}" + no_gpu_option
         )
+    return frames
+
+
+def run_feature(args) -> List[Frame]:
+    """Conduct feature extractor and feature matcher."""
+    if args.info_path is None:
+        frames = frames_from_images(args.image_path)
+    else:
+        frames = get_gps_priors(
+            args.info_path, args.image_path, args.intrinsics
+        )
+    database_creator(args.output_path, args.colmap_path)
+    while not os.path.exists(f"{args.output_path}/database.db"):
+        time.sleep(0.5)
+    frames = feature_extractor(
+        frames,
+        args.image_path,
+        args.output_path,
+        args.colmap_path,
+        args.no_gpu,
+        args.intrinsics,
+    )
+    # Used for spatial matcher, only match 160 nearest frames at most
+    max_num_neighbors = min(160, int(len(os.listdir(args.image_path)) / 4))
+    frames = feature_matcher(
+        frames,
+        args.matcher_method,
+        args.output_path,
+        args.colmap_path,
+        max_num_neighbors,
+        args.no_gpu,
+    )
     return frames
 
 
@@ -324,154 +361,138 @@ def stereo_fusion(
 def main():
     """Run sparse reconstruction."""
     args = parse_args()
-    colmap_new = args.colmap_path
     sparse_path = os.path.join(args.output_path, "sparse")
     os.makedirs(sparse_path, exist_ok=True)
-    orien_aligned_path = os.path.join(sparse_path, "orientation_aligned")
-    os.makedirs(orien_aligned_path, exist_ok=True)
 
     if args.job == "feature":
-        if args.info_path is None:
-            frames = frames_from_images(args.image_path)
-        else:
-            frames = get_gps_priors(
-                args.info_path, args.image_path, args.intrinsics
-            )
-        database_creator(args.output_path, colmap_new)
-        while not os.path.exists(f"{args.output_path}/database.db"):
-            time.sleep(0.5)
-        frames = feature_extractor(
-            frames,
-            args.image_path,
-            args.output_path,
-            colmap_new,
-            args.no_gpu,
-            args.intrinsics,
-        )
-        # Used for spatial matcher
-        max_num_neighbors = min(160, int(len(os.listdir(args.image_path)) / 4))
-        frames = feature_matcher(
-            frames,
-            args.matcher_method,
-            args.output_path,
-            colmap_new,
-            max_num_neighbors,
-            args.no_gpu,
-        )
+        run_feature(args)
     elif args.job == "mapper":
         new_mapper(
             args.image_path,
             args.output_path,
             sparse_path,
-            colmap_new,
+            args.colmap_path,
             args.no_prior_motion,
         )
-        orientation_aligner(
-            args.image_path,
-            os.path.join(sparse_path, "0"),
-            orien_aligned_path,
-            colmap_new,
-        )
     elif args.job == "orien_aligner":
-        orientation_aligner(
-            args.image_path,
-            os.path.join(sparse_path, "0"),
-            orien_aligned_path,
-            colmap_new,
-        )
-    elif args.job == "sparse":
-        if args.info_path is None:
-            frames = frames_from_images(args.image_path)
-        else:
-            frames = get_gps_priors(
-                args.info_path, args.image_path, args.intrinsics
+        sparse_results = os.listdir(sparse_path)
+        for folder in sparse_results:
+            orientation_aligned_path = os.path.join(
+                sparse_path,
+                "orientation_aligned",
+                f"{folder}",
             )
-        if args.info_path is None:
-            frames = frames_from_images(args.image_path)
-        database_creator(args.output_path, colmap_new)
-        while not os.path.exists(f"{args.output_path}/database.db"):
-            time.sleep(0.5)
-        frames = feature_extractor(
-            frames,
+            os.makedirs(orientation_aligned_path, exist_ok=True)
+            orientation_aligner(
+                args.image_path,
+                os.path.join(sparse_path, folder),
+                orientation_aligned_path,
+                args.colmap_path,
+            )
+    elif args.job == "sparse":
+        run_feature(args)
+        new_mapper(
             args.image_path,
             args.output_path,
-            colmap_new,
-            args.no_gpu,
-            args.intrinsics,
+            sparse_path,
+            args.colmap_path,
+            args.no_prior_motion,
         )
-        max_num_neighbors = min(150, int(len(os.listdir(args.image_path)) / 4))
-        frames = feature_matcher(
-            frames,
-            args.matcher_method,
-            args.output_path,
-            colmap_new,
-            max_num_neighbors,
-            args.no_gpu,
-        )
-        new_mapper(args.image_path, args.output_path, sparse_path, colmap_new)
-        orientation_aligner(
-            args.image_path,
-            os.path.join(sparse_path, "0"),
-            orien_aligned_path,
-            colmap_new,
-        )
+        sparse_results = os.listdir(sparse_path)
+        for folder in sparse_results:
+            orientation_aligned_path = os.path.join(
+                sparse_path,
+                "orientation_aligned",
+                f"{folder}",
+            )
+            os.makedirs(orientation_aligned_path, exist_ok=True)
+            orientation_aligner(
+                args.image_path,
+                os.path.join(sparse_path, folder),
+                orientation_aligned_path,
+                args.colmap_path,
+            )
     elif args.job == "dense":
-        dense_path = os.path.join(args.output_path, "dense")
-        os.makedirs(dense_path, exist_ok=True)
-        dense_recon(
-            args.image_path,
-            orien_aligned_path,
-            dense_path,
-            colmap_new,
-        )
+        sparse_aligned_path = os.path.join(sparse_path, "orientation_aligned")
+        sparse_results = os.listdir(sparse_aligned_path)
+        for folder in sparse_results:
+            input_path = os.path.join(sparse_aligned_path, folder)
+            dense_path = os.path.join(
+                args.output_path, "dense", f"{folder}_dense"
+            )
+            os.makedirs(dense_path, exist_ok=True)
+            dense_recon(
+                args.image_path,
+                input_path,
+                dense_path,
+                args.colmap_path,
+            )
     elif args.job == "stereo_fusion":
-        dense_path = os.path.join(args.output_path, "dense")
-        result_path = os.path.join(dense_path, "fused.ply")
-        stereo_fusion(dense_path, result_path, args.mask_path, colmap_new)
+        sparse_aligned_path = os.path.join(sparse_path, "orientation_aligned")
+        sparse_results = os.listdir(sparse_aligned_path)
+        pan_mask_path = os.path.join(args.output_path, "pan_mask")
+        for folder in sparse_results:
+            dense_path = os.path.join(
+                args.output_path, "dense", f"{folder}_dense"
+            )
+            if args.mask_path == "":
+                fusion_mask_path = create_fusion_masks_pan(
+                    dense_path, pan_mask_path
+                )
+            else:
+                fusion_mask_path = args.mask_path
+            result_path = os.path.join(dense_path, "fused.ply")
+            stereo_fusion(
+                dense_path, result_path, fusion_mask_path, args.colmap_path
+            )
     elif args.job == "all":
-        frames = get_gps_priors(
-            args.info_path, args.image_path, args.intrinsics
-        )
-        if args.info_path is None:
-            frames = frames_from_images(args.image_path)
-        database_creator(args.output_path, colmap_new)
-        while not os.path.exists(f"{args.output_path}/database.db"):
-            time.sleep(0.5)
-        frames = feature_extractor(
-            frames,
+        run_feature(args)
+        new_mapper(
             args.image_path,
             args.output_path,
-            colmap_new,
-            args.no_gpu,
-            args.intrinsics,
+            sparse_path,
+            args.colmap_path,
+            args.no_prior_motion,
         )
-        # Used for spatial matcher
-        max_num_neighbors = min(150, int(len(os.listdir(args.image_path)) / 4))
-        frames = feature_matcher(
-            frames,
-            args.matcher_method,
-            args.output_path,
-            colmap_new,
-            max_num_neighbors,
-            args.no_gpu,
-        )
-        new_mapper(args.image_path, args.output_path, sparse_path, colmap_new)
-        orientation_aligner(
-            args.image_path,
-            os.path.join(sparse_path, "0"),
-            orien_aligned_path,
-            colmap_new,
-        )
-        dense_path = os.path.join(args.output_path, "dense")
-        os.makedirs(dense_path, exist_ok=True)
-        dense_recon(
-            args.image_path,
-            orien_aligned_path,
-            dense_path,
-            colmap_new,
-        )
-        result_path = os.path.join(dense_path, "fused.ply")
-        stereo_fusion(dense_path, result_path, args.mask_path, colmap_new)
+        sparse_results = os.listdir(sparse_path)
+        for folder in sparse_results:
+            orientation_aligned_path = os.path.join(
+                sparse_path,
+                "orientation_aligned",
+                f"{folder}",
+            )
+            os.makedirs(orientation_aligned_path, exist_ok=True)
+            orientation_aligner(
+                args.image_path,
+                os.path.join(sparse_path, folder),
+                orientation_aligned_path,
+                args.colmap_path,
+            )
+        sparse_aligned_path = os.path.join(sparse_path, "orientation_aligned")
+        sparse_results = os.listdir(sparse_aligned_path)
+        pan_mask_path = os.path.join(args.output_path, "pan_mask")
+        for folder in sparse_results:
+            input_path = os.path.join(sparse_aligned_path, folder)
+            dense_path = os.path.join(
+                args.output_path, "dense", f"{folder}_dense"
+            )
+            os.makedirs(dense_path, exist_ok=True)
+            dense_recon(
+                args.image_path,
+                input_path,
+                dense_path,
+                args.colmap_path,
+            )
+            if args.mask_path == "":
+                fusion_mask_path = create_fusion_masks_pan(
+                    dense_path, pan_mask_path
+                )
+            else:
+                fusion_mask_path = args.mask_path
+            result_path = os.path.join(dense_path, "fused.ply")
+            stereo_fusion(
+                dense_path, result_path, fusion_mask_path, args.colmap_path
+            )
 
 
 if __name__ == "__main__":

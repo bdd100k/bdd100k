@@ -11,6 +11,7 @@ try:
     from geopy.extra.rate_limiter import RateLimiter
     from geopy.geocoders import Nominatim
     from geopy.location import Location
+    from PIL import Image
 except ImportError:
     pass
 import matplotlib.pyplot as plt
@@ -18,6 +19,8 @@ from matplotlib import cm
 from scalabel.common.typing import DictStrAny, NDArrayF64
 from scalabel.label.transforms import rle_to_mask
 from scalabel.label.typing import Extrinsics, Frame, Intrinsics
+
+from bdd100k.sfm.colmap.read_write_dense import read_array
 
 
 def cam_spec_prior(intrinsics_path: str = "") -> Optional[Intrinsics]:
@@ -456,3 +459,62 @@ def plot_depth(
     else:
         plt.imsave(save_path, depth_map_visual, cmap=cmap)
     plt.close()
+
+
+def get_fusion_mask_pan(depth_map: np.array, pan_seg_dict: Dict) -> np.array:
+    """Update the image masks for stereo fusion."""
+    mask_fusion = np.ones(depth_map.shape, dtype=np.int8)
+    # Percentile filter
+    min_depth, max_depth = np.percentile(depth_map, [5, 95])
+    mask_fusion[depth_map < min_depth] = 0
+    mask_fusion[depth_map > max_depth] = 0
+    # Only keep of points within 3 - 450 meter
+    mask_fusion[depth_map < 3] = 0
+    mask_fusion[depth_map > 450] = 0
+
+    pan_mask = np.zeros(depth_map.shape)
+    if pan_seg_dict is not None:
+        if len(pan_seg_dict["ego vehicle"]) != 0:
+            pan_mask += pan_seg_dict["ego vehicle"][0]
+        if len(pan_seg_dict["sky"]) != 0:
+            pan_mask += pan_seg_dict["sky"][0]
+        transient_instances = (
+            pan_seg_dict["car"]
+            + pan_seg_dict["bus"]
+            + pan_seg_dict["truck"]
+            + pan_seg_dict["person"]
+            + pan_seg_dict["rider"]
+            + pan_seg_dict["bicycle"]
+        )
+        if len(transient_instances) != 0:
+            for instance_mask in transient_instances:
+                pan_mask += instance_mask
+        pan_mask = 1 - pan_mask
+        mask_fusion = mask_fusion * pan_mask
+    return mask_fusion
+
+
+def create_fusion_masks_pan(dense_path: str, pan_mask_path: str):
+    """Create image masks only for stereo fusion"""
+    print(f"Creating fusion mask for: {dense_path}")
+    depth_path = os.path.join(dense_path, "stereo", "depth_maps")
+    depth_maps_geometric = glob.glob(depth_path + "/*.geometric.bin")
+    fusion_mask_path = os.path.join(dense_path, "fusion_mask")
+    pan_mask_path = os.path.join(pan_mask_path, "pan_seg.json")
+    pan_mask_dict = create_pan_mask_dict(pan_mask_path)
+    os.makedirs(fusion_mask_path, exist_ok=True)
+    for depth_map_path in depth_maps_geometric:
+        image_name = ".".join(depth_map_path.split("/")[-1].split(".")[:2])
+
+        if not os.path.exists(depth_map_path):
+            print(f"File not found: {depth_map_path}")
+            continue
+        depth_map = read_array(depth_map_path)
+        # Create fusion mask
+        pan_mask = None
+        if pan_mask_dict and image_name in pan_mask_dict:
+            pan_mask = pan_mask_dict[image_name]
+        mask_fusion = get_fusion_mask_pan(depth_map, pan_mask)
+        mask_fusion = Image.fromarray(mask_fusion.astype(np.uint8))
+        mask_fusion.save(f"{fusion_mask_path}/{image_name}.png")
+    return fusion_mask_path

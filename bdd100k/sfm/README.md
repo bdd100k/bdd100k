@@ -72,9 +72,9 @@ Feature extraction and matching:
 python -m bdd100k.sfm.run_colmap --job feature --image-path sequence/path/images --output-path sequence/path/ --info-path sequence/path/info.json
 ```
 
-Structure and Motion:
+Structure and Motion (Make sure you specify the path to the modified version of colmap):
 ```bash
-python -m bdd100k.sfm.run_colmap --job mapper --image-path sequence/path/images --output-path sequence/path/ --info-path sequence/path/info.json
+python -m bdd100k.sfm.run_colmap --job mapper --image-path sequence/path/images --output-path sequence/path/ --info-path sequence/path/info.json --colmap-path path/to/colmap/app
 ```
 
 Orientation Aligner:
@@ -87,7 +87,7 @@ Multi View Stereo:
 python -m bdd100k.sfm.run_colmap --job dense --image-path sequence/path/images --output-path sequence/path/
 ```
 
-Fusion:
+Fusion (A path of image masks will be automatically created for fusion using the panoptic mask, unless a mask-path is specified):
 ```bash
 python -m bdd100k.sfm.run_colmap --job stereo_fusion --image-path sequence/path/images --output-path sequence/path/
 ```
@@ -118,7 +118,7 @@ Run the following commad for depth map post processing.
 ```
 python3 -m bdd100k.sfm.run_postprocess \
     --target_path sequence/path/ \
-    --dense_path sequence/path/dense
+    --dense_path sequence/path/dense/0_dense
 ```
 The results will be saved to folder named depth_maps_processed under folder 0_dense.
 
