@@ -737,10 +737,4 @@ def analyze_discontinuty(target_folder, ext):
 
 
 if __name__ == "__main__":
-    # main()
-    ext = ".bin"
-    target_folder = (
-        "/scratch_net/zoidberg_second/yuthan/bdd100k/11201/daytime/overlaps"
-    )
-    analyze_discontinuty(target_folder, ext)
-    pdb.set_trace()
+    main()

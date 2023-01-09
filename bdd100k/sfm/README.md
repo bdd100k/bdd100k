@@ -37,9 +37,12 @@ Since the raw depth maps are usually nosiy, we post-process them by applying sev
 git clone --recursive git@github.com:bdd100k/bdd100k.git
 cd bdd100k
 python setup.py develop
+pip install -r requirements.txt
+```
+- (Optional) To use the depth post-procesing tool, also install the additional libraries:
+```
 pip install -r bdd100k/sfm/requirements.txt
 ```
-
 ## 3. Example Demo
 
 ### 3.1 COLMAP reconstruction

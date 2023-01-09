@@ -495,7 +495,7 @@ def get_fusion_mask_pan(depth_map: np.array, pan_seg_dict: Dict) -> np.array:
 
 
 def create_fusion_masks_pan(dense_path: str, pan_mask_path: str):
-    """Create image masks only for stereo fusion"""
+    """Create image masks only for stereo fusion."""
     print(f"Creating fusion mask for: {dense_path}")
     depth_path = os.path.join(dense_path, "stereo", "depth_maps")
     depth_maps_geometric = glob.glob(depth_path + "/*.geometric.bin")
