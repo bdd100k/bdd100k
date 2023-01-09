@@ -1,3 +1,5 @@
+# type: ignore
+# flake8: noqa
 # Copyright (c) 2018, ETH Zurich and UNC Chapel Hill.
 # All rights reserved.
 #

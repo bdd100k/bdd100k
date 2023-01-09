@@ -1,3 +1,5 @@
+# type: ignore
+# flake8: noqa
 #!/usr/bin/env python
 
 # Copyright (c) 2022, ETH Zurich and UNC Chapel Hill.
