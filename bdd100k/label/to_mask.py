@@ -5,8 +5,8 @@ from functools import partial
 from multiprocessing import Pool
 from typing import Callable, Dict, List
 
-import matplotlib  # type: ignore
-import matplotlib.pyplot as plt  # type: ignore
+import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 from scalabel.common.parallel import NPROC

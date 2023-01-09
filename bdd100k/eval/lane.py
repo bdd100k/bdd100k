@@ -130,7 +130,7 @@ def get_lane_class(
         ),
         value,
     )
-    return lane_cls  # type: ignore
+    return lane_cls
 
 
 def lane_class_func(

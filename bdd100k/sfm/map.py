@@ -120,7 +120,7 @@ def split_sequences_by_city(
         get_location_from_data, [seq[0] for seq in sequences], nproc
     )
     for loc, seq in zip(locations, sequences):
-        sequences_by_city[loc.city].append(seq)  # type: ignore
+        sequences_by_city[loc.city].append(seq)
     return sequences_by_city
 
 

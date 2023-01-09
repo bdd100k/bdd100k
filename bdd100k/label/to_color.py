@@ -57,7 +57,7 @@ def mask_to_color(bitmask_file: str, colormap_file: str, mode: str) -> None:
     elif mode == "lane_mark":
         array: NDArrayU8 = np.asarray(bitmask, dtype=np.uint8)
         # 15 = (1 << 4) - 1, only take the last 4 bits
-        array = array & 15
+        array = array & 15  # type: ignore
         bitmask = Image.fromarray(array)
     palette = get_palette(mode)
     bitmask.putpalette(palette)

@@ -54,7 +54,9 @@ enable=use-symbolic-message-instead,useless-supression,fixme
 
 # This is a bug in detecting bad continuation. Since black is handling the code
 # formatting, we can disable C0330 safely.
-disable=C0330, R0801
+# disable unrecognized-option,unknown-option-value,useless-option-value 
+# due to pylint 2.14 update, see https://github.com/PyCQA/pylint/issues/6931
+disable=C0330,R0801,unrecognized-option,unknown-option-value,useless-option-value
 
 
 [REPORTS]

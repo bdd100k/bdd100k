@@ -67,7 +67,7 @@ def fast_hist(
         np.greater_equal(groundtruth, 0),
         np.less(groundtruth, size - 1),
     )
-    return np.bincount(
+    return np.bincount(  # type: ignore
         size * groundtruth[k].astype(int) + prediction[k], minlength=size**2
     ).reshape(size, size)
 
@@ -79,7 +79,7 @@ def per_class_iou(hist: NDArrayI32) -> NDArrayF64:
     )
     ious[np.isnan(ious)] = 0
     # Last class as `ignored`
-    return ious[:-1]  # type: ignore
+    return ious[:-1]
 
 
 def per_class_acc(hist: NDArrayI32) -> NDArrayF64:
@@ -87,7 +87,7 @@ def per_class_acc(hist: NDArrayI32) -> NDArrayF64:
     accs: NDArrayF64 = np.diag(hist) / hist.sum(axis=0)
     accs[np.isnan(accs)] = 0
     # Last class as `ignored`
-    return accs[:-1]  # type: ignore
+    return accs[:-1]
 
 
 def whole_acc(hist: NDArrayI32) -> float:

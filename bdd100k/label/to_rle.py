@@ -135,8 +135,8 @@ def segtrack_to_rle(
     frame.videoName = img_name.split("/")[0]
     frame.frameIndex = int(img_name.split("-")[-1].split(".")[0]) - 1
 
-    for i, _ in enumerate(instance_ids):
-        label = Label(id=str(instance_ids[i]))
+    for i, inst_id in enumerate(instance_ids):
+        label = Label(id=str(inst_id))
         label.category = categories[category_ids[i] - 1].name
         label.rle = mask_to_rle((masks == i + 1).astype(np.uint8))
         frame.labels.append(label)
