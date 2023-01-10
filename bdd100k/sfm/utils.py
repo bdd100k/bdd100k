@@ -8,22 +8,29 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 
 try:
+    import cv2
     from geopy.extra.rate_limiter import RateLimiter
     from geopy.geocoders import Nominatim
     from geopy.location import Location
-    from PIL import Image
 except ImportError:
     pass
 import matplotlib.pyplot as plt
 from matplotlib import cm
-from scalabel.common.typing import DictStrAny, NDArrayF64
+from scalabel.common.typing import (
+    DictStrAny,
+    NDArrayF64,
+    NDArrayI32,
+    NDArrayU8,
+)
 from scalabel.label.transforms import rle_to_mask
 from scalabel.label.typing import Extrinsics, Frame, Intrinsics
 
 from bdd100k.sfm.colmap.read_write_dense import read_array
 
 
-def cam_spec_prior(intrinsics_path: str = "") -> Optional[Intrinsics]:
+def cam_spec_prior(
+    intrinsics_path: Optional[str] = "",
+) -> Intrinsics:
     """Generate intrinsics from iPhone 5 cam spec prior."""
     if intrinsics_path == "":
         # Empty string means no intrinsics are given
@@ -36,11 +43,14 @@ def cam_spec_prior(intrinsics_path: str = "") -> Optional[Intrinsics]:
         # These are intrinsics estimated for bdd100k
         intrinsics = Intrinsics(focal=(1020.0, 1020.0), center=(360.0, 640.0))
     else:
-        with open(intrinsics_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        intrinsics = Intrinsics(
-            focal=(data["fx"], data["fy"]), center=(data["cy"], data["cx"])
-        )
+        if intrinsics_path:
+            with open(intrinsics_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            intrinsics = Intrinsics(
+                focal=(data["fx"], data["fy"]), center=(data["cy"], data["cx"])
+            )
+        else:
+            intrinsics_path = None
     return intrinsics
 
 
@@ -142,8 +152,10 @@ def interpolate_trajectory(
 
         traj_lo = np.array(gps_poses[pose_index])
         if len(gps_poses) - 1 > pose_index:
-            traj_hi: NDArrayF64 = np.array(gps_poses[pose_index + 1])
-            traj_cur = weight_hi * traj_hi + (1 - weight_hi) * traj_lo
+            traj_hi = np.array(gps_poses[pose_index + 1])
+            traj_cur: NDArrayF64 = (
+                weight_hi * traj_hi + (1 - weight_hi) * traj_lo
+            )
         else:
             traj_hi = traj_lo
             traj_lo = np.array(gps_poses[pose_index - 1])
@@ -159,7 +171,7 @@ def interpolate_gps(
     gps_prior: List[DictStrAny],
     frames: List[Frame],
     intrinsics_path: Optional[str] = "",
-) -> List[Frame]:
+) -> Tuple[List[Frame], List[Frame]]:
     """Interpolate GPS priors to per frame poses."""
     num_frames_per_pose = len(frames) / len(gps_prior)
     gps_poses = get_gps_from_data(gps_prior)
@@ -213,10 +225,10 @@ def get_gps_priors(
     info_path_list: List[str],
     image_path: str,
     intrinsics_path: Optional[str] = "",
-) -> Optional[List[Frame]]:
+) -> List[Frame]:
     """Generate Scalabel frames with gps priors from gps / image paths."""
-    frames = []
-    frames_to_move = []
+    frames: List[Frame] = []
+    frames_to_move: List[Frame] = []
     # if there is already skiped images, we reput them into image folder
     # and redo the whole precess
     dir_name = os.path.dirname(image_path)
@@ -257,7 +269,7 @@ def remove_skipped_frames(
             print(f"{frame.name} is not in {image_path}")
 
 
-def gps_to_m(lat1, lon1, lat2, lon2):
+def gps_to_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Estimate metric distance between 2 gps coords."""
     radius = 6378.137  # Radius of earth in KM
     dlat = lat2 * np.pi / 180 - lat1 * np.pi / 180
@@ -266,13 +278,13 @@ def gps_to_m(lat1, lon1, lat2, lon2):
         lat1 * np.pi / 180
     ) * np.cos(lat2 * np.pi / 180) * np.sin(dlon / 2) * np.sin(dlon / 2)
     c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
-    d = radius * c
-    return d * 1000  # meters
+    d = float(radius * c * 1000.0)
+    return d
 
 
 def create_pan_mask_dict(
     pan_json_path: str, shape: Tuple[int, int] = (720, 1280)
-) -> Dict[str, np.array]:
+) -> Optional[Dict[str, List[NDArrayU8]]]:
     """Create a dictionary for panoptic segmentation."""
     if not os.path.exists(pan_json_path):
         return None
@@ -283,7 +295,7 @@ def create_pan_mask_dict(
     for frame in frames:
         img_name = frame["name"]
         labels = frame["labels"]
-        pan_dict = {
+        pan_dict: Dict[str, List[NDArrayU8]] = {
             "person": [],
             "rider": [],
             "bicycle": [],
@@ -325,7 +337,7 @@ def create_pan_mask_dict(
             "vegetation": [],
             "sky": [],
             "unlabeled": [],
-            "total": None,
+            "total": [],
         }
         sem_id = {
             "person": 31,
@@ -376,13 +388,15 @@ def create_pan_mask_dict(
             cur_label_mask = rle_to_mask(label["rle"])
             result[img_name][label["category"]].append(cur_label_mask)
             pan_seg_total += cur_label_mask * sem_id[label["category"]]
-        result[img_name]["total"] = pan_seg_total
+        result[img_name]["total"] = [pan_seg_total]
     return result
 
 
 def depth_to_pcd(
-    depth_img: np.ndarray, camera_params: np.array, extrinsics_mat: np.ndarray
-) -> np.ndarray:
+    depth_img: NDArrayF64,
+    camera_params: NDArrayF64,
+    extrinsics_mat: NDArrayF64,
+) -> NDArrayF64:
     """Map from 2D depth map to 3D point cloud."""
     f = camera_params[0]
     cx = camera_params[2]
@@ -397,11 +411,16 @@ def depth_to_pcd(
     point = np.stack((point_x, point_y, point_z))
     point = point[:, ~np.all(point == 0, axis=0)]
     point = np.vstack((point, np.ones(point.shape[1])))
-    pcd_array = np.matmul(np.linalg.inv(extrinsics_mat), point)
+    pcd_array = np.array(np.matmul(np.linalg.inv(extrinsics_mat), point))
     return pcd_array
 
 
-def pcd_to_depth(pcd, shape, camera_params, extrinsics_mat):
+def pcd_to_depth(
+    pcd: List[NDArrayF64],
+    shape: Tuple[int, int],
+    camera_params: NDArrayF64,
+    extrinsics_mat: NDArrayF64,
+) -> Tuple[NDArrayF64, NDArrayI32]:
     """Map from 3D point cloud to 2D depth map at a different extrinsics.
 
     outputs:
@@ -417,7 +436,7 @@ def pcd_to_depth(pcd, shape, camera_params, extrinsics_mat):
     intrinsics_mat[0, 0] = f
     intrinsics_mat[1, 1] = f
     depth_img = np.zeros(shape)
-    pcd_indices = np.ones(shape) * -1
+    pcd_indices: NDArrayI32 = np.ones(shape) * -1
     for point_index, point in enumerate(pcd):
         # If depth value is already filtered, skip it
         if all(point == [0.0, 0.0, 0.0, 0.0]):
@@ -437,7 +456,7 @@ def pcd_to_depth(pcd, shape, camera_params, extrinsics_mat):
 
 
 def plot_depth(
-    depth_map: np.ndarray,
+    depth_map: NDArrayF64,
     save_path: str = "",
     title: str = "",
     visualize: bool = True,
@@ -461,7 +480,9 @@ def plot_depth(
     plt.close()
 
 
-def get_fusion_mask_pan(depth_map: np.array, pan_seg_dict: Dict) -> np.array:
+def get_fusion_mask_pan(
+    depth_map: NDArrayF64, pan_seg_dict: Optional[Dict[str, List[NDArrayU8]]]
+) -> NDArrayU8:
     """Update the image masks for stereo fusion."""
     mask_fusion = np.ones(depth_map.shape, dtype=np.int8)
     # Percentile filter
@@ -494,7 +515,7 @@ def get_fusion_mask_pan(depth_map: np.array, pan_seg_dict: Dict) -> np.array:
     return mask_fusion
 
 
-def create_fusion_masks_pan(dense_path: str, pan_mask_path: str):
+def create_fusion_masks_pan(dense_path: str, pan_mask_path: str) -> str:
     """Create image masks only for stereo fusion."""
     print(f"Creating fusion mask for: {dense_path}")
     depth_path = os.path.join(dense_path, "stereo", "depth_maps")
@@ -515,6 +536,6 @@ def create_fusion_masks_pan(dense_path: str, pan_mask_path: str):
         if pan_mask_dict and image_name in pan_mask_dict:
             pan_mask = pan_mask_dict[image_name]
         mask_fusion = get_fusion_mask_pan(depth_map, pan_mask)
-        mask_fusion = Image.fromarray(mask_fusion.astype(np.uint8))
-        mask_fusion.save(f"{fusion_mask_path}/{image_name}.png")
+        mask_fusion_save_path = f"{fusion_mask_path}/{image_name}.png"
+        cv2.imwrite(mask_fusion.astype(np.uint8), mask_fusion_save_path)
     return fusion_mask_path

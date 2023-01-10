@@ -15,78 +15,74 @@ from .utils import (
     get_gps_priors,
 )
 
-
-def parse_args():
-    """Arguments."""
-    parser = argparse.ArgumentParser(
-        description="run COLMAP Reconstruction for image sequences"
-    )
-    parser.add_argument(
-        "--job",
-        "-j",
-        type=str,
-        default="feature",
-        help="Which job to do(feature, mapper, stereo_fusion, all, etc)",
-    )
-    parser.add_argument(
-        "--image-path",
-        "-i",
-        type=str,
-        help="Path to image sequence.",
-    )
-    parser.add_argument(
-        "--output-path",
-        "-o",
-        type=str,
-        help="Path to output (the path contains database, sparse, dense).",
-    )
-    parser.add_argument(
-        "--info-path",
-        type=str,
-        action="append",
-        default=None,
-        help="""
-        Path to info file in .json for sequence.
-        """,
-    )
-    parser.add_argument(
-        "--mask-path",
-        type=str,
-        default="",
-        help="""
-        Path to image mask for stereo fusion.
-        """,
-    )
-    parser.add_argument(
-        "--matcher-method",
-        type=str,
-        default="spatial",
-        help="The feature match method. (spatial, sequential, exhaustive).",
-    )
-    parser.add_argument(
-        "--colmap-path",
-        default="colmap",
-        type=str,
-        help="The path to the modeified colmap.",
-    )
-    parser.add_argument(
-        "--no-gpu",
-        action="store_true",
-        help="Run colmap with out GPU (Only works for sparse reconstruction)",
-    )
-    parser.add_argument(
-        "--intrinsics",
-        type=str,
-        default="bdd100k",
-        help="Path to a json file for camera intriniscs.",
-    )
-    parser.add_argument(
-        "--no-prior-motion",
-        action="store_true",
-        help="To not use prior knowledge on GPS in Bundle adjustment",
-    )
-    args = parser.parse_args()
-    return args
+parser = argparse.ArgumentParser(
+    description="run COLMAP Reconstruction for image sequences"
+)
+parser.add_argument(
+    "--job",
+    "-j",
+    type=str,
+    default="feature",
+    help="Which job to do(feature, mapper, stereo_fusion, all, etc)",
+)
+parser.add_argument(
+    "--image-path",
+    "-i",
+    type=str,
+    help="Path to image sequence.",
+)
+parser.add_argument(
+    "--output-path",
+    "-o",
+    type=str,
+    help="Path to output (the path contains database, sparse, dense).",
+)
+parser.add_argument(
+    "--info-path",
+    type=str,
+    action="append",
+    default=None,
+    help="""
+    Path to info file in .json for sequence.
+    """,
+)
+parser.add_argument(
+    "--mask-path",
+    type=str,
+    default="",
+    help="""
+    Path to image mask for stereo fusion.
+    """,
+)
+parser.add_argument(
+    "--matcher-method",
+    type=str,
+    default="spatial",
+    help="The feature match method. (spatial, sequential, exhaustive).",
+)
+parser.add_argument(
+    "--colmap-path",
+    default="colmap",
+    type=str,
+    help="The path to the modeified colmap.",
+)
+parser.add_argument(
+    "--no-gpu",
+    action="store_true",
+    help="Run colmap with out GPU (Only works for sparse reconstruction)",
+)
+parser.add_argument(
+    "--intrinsics",
+    type=str,
+    default="bdd100k",
+    help="Path to a json file for camera intriniscs.",
+)
+parser.add_argument(
+    "--no-prior-motion",
+    action="store_true",
+    help="To not use prior knowledge on GPS in Bundle adjustment",
+)
+ARGUMENTS = parser.parse_args()
 
 
 def add_image_ids(frames: List[Frame], db_path: str) -> None:
@@ -236,34 +232,36 @@ def feature_matcher(
     return frames
 
 
-def run_feature(args) -> List[Frame]:
+def run_feature() -> List[Frame]:
     """Conduct feature extractor and feature matcher."""
-    if args.info_path is None:
-        frames = frames_from_images(args.image_path)
+    if ARGUMENTS.info_path is None:
+        frames = frames_from_images(ARGUMENTS.image_path)
     else:
         frames = get_gps_priors(
-            args.info_path, args.image_path, args.intrinsics
+            ARGUMENTS.info_path, ARGUMENTS.image_path, ARGUMENTS.intrinsics
         )
-    database_creator(args.output_path, args.colmap_path)
-    while not os.path.exists(f"{args.output_path}/database.db"):
+    database_creator(ARGUMENTS.output_path, ARGUMENTS.colmap_path)
+    while not os.path.exists(f"{ARGUMENTS.output_path}/database.db"):
         time.sleep(0.5)
     frames = feature_extractor(
         frames,
-        args.image_path,
-        args.output_path,
-        args.colmap_path,
-        args.no_gpu,
-        args.intrinsics,
+        ARGUMENTS.image_path,
+        ARGUMENTS.output_path,
+        ARGUMENTS.colmap_path,
+        ARGUMENTS.no_gpu,
+        ARGUMENTS.intrinsics,
     )
     # Used for spatial matcher, only match 160 nearest frames at most
-    max_num_neighbors = min(160, int(len(os.listdir(args.image_path)) / 4))
+    max_num_neighbors = min(
+        160, int(len(os.listdir(ARGUMENTS.image_path)) / 4)
+    )
     frames = feature_matcher(
         frames,
-        args.matcher_method,
-        args.output_path,
-        args.colmap_path,
+        ARGUMENTS.matcher_method,
+        ARGUMENTS.output_path,
+        ARGUMENTS.colmap_path,
         max_num_neighbors,
-        args.no_gpu,
+        ARGUMENTS.no_gpu,
     )
     return frames
 
@@ -274,7 +272,7 @@ def new_mapper(
     sparse_path: str,
     colmap_new: str,
     no_prior_motion: Optional[bool] = False,
-):
+) -> None:
     """Conduct incremental mapper using the modified colmap with GPS."""
     os.system(
         f"{colmap_new} mapper "
@@ -312,7 +310,7 @@ def image_deleter(
     input_path: str,
     output_path: str,
     image2delete_id_path: str,
-):
+) -> None:
     """Delete images from sparse reconstruction."""
     os.system(
         f"colmap image_deleter "
@@ -358,23 +356,22 @@ def stereo_fusion(
     )
 
 
-def main():
+def main() -> None:
     """Run sparse reconstruction."""
-    args = parse_args()
-    sparse_path = os.path.join(args.output_path, "sparse")
+    sparse_path = os.path.join(ARGUMENTS.output_path, "sparse")
     os.makedirs(sparse_path, exist_ok=True)
 
-    if args.job == "feature":
-        run_feature(args)
-    elif args.job == "mapper":
+    if ARGUMENTS.job == "feature":
+        run_feature()
+    elif ARGUMENTS.job == "mapper":
         new_mapper(
-            args.image_path,
-            args.output_path,
+            ARGUMENTS.image_path,
+            ARGUMENTS.output_path,
             sparse_path,
-            args.colmap_path,
-            args.no_prior_motion,
+            ARGUMENTS.colmap_path,
+            ARGUMENTS.no_prior_motion,
         )
-    elif args.job == "orien_aligner":
+    elif ARGUMENTS.job == "orien_aligner":
         sparse_results = os.listdir(sparse_path)
         for folder in sparse_results:
             orientation_aligned_path = os.path.join(
@@ -384,19 +381,19 @@ def main():
             )
             os.makedirs(orientation_aligned_path, exist_ok=True)
             orientation_aligner(
-                args.image_path,
+                ARGUMENTS.image_path,
                 os.path.join(sparse_path, folder),
                 orientation_aligned_path,
-                args.colmap_path,
+                ARGUMENTS.colmap_path,
             )
-    elif args.job == "sparse":
-        run_feature(args)
+    elif ARGUMENTS.job == "sparse":
+        run_feature()
         new_mapper(
-            args.image_path,
-            args.output_path,
+            ARGUMENTS.image_path,
+            ARGUMENTS.output_path,
             sparse_path,
-            args.colmap_path,
-            args.no_prior_motion,
+            ARGUMENTS.colmap_path,
+            ARGUMENTS.no_prior_motion,
         )
         sparse_results = os.listdir(sparse_path)
         for folder in sparse_results:
@@ -407,52 +404,55 @@ def main():
             )
             os.makedirs(orientation_aligned_path, exist_ok=True)
             orientation_aligner(
-                args.image_path,
+                ARGUMENTS.image_path,
                 os.path.join(sparse_path, folder),
                 orientation_aligned_path,
-                args.colmap_path,
+                ARGUMENTS.colmap_path,
             )
-    elif args.job == "dense":
+    elif ARGUMENTS.job == "dense":
         sparse_aligned_path = os.path.join(sparse_path, "orientation_aligned")
         sparse_results = os.listdir(sparse_aligned_path)
         for folder in sparse_results:
             input_path = os.path.join(sparse_aligned_path, folder)
             dense_path = os.path.join(
-                args.output_path, "dense", f"{folder}_dense"
+                ARGUMENTS.output_path, "dense", f"{folder}_dense"
             )
             os.makedirs(dense_path, exist_ok=True)
             dense_recon(
-                args.image_path,
+                ARGUMENTS.image_path,
                 input_path,
                 dense_path,
-                args.colmap_path,
+                ARGUMENTS.colmap_path,
             )
-    elif args.job == "stereo_fusion":
+    elif ARGUMENTS.job == "stereo_fusion":
         sparse_aligned_path = os.path.join(sparse_path, "orientation_aligned")
         sparse_results = os.listdir(sparse_aligned_path)
-        pan_mask_path = os.path.join(args.output_path, "pan_mask")
+        pan_mask_path = os.path.join(ARGUMENTS.output_path, "pan_mask")
         for folder in sparse_results:
             dense_path = os.path.join(
-                args.output_path, "dense", f"{folder}_dense"
+                ARGUMENTS.output_path, "dense", f"{folder}_dense"
             )
-            if args.mask_path == "":
+            if ARGUMENTS.mask_path == "":
                 fusion_mask_path = create_fusion_masks_pan(
                     dense_path, pan_mask_path
                 )
             else:
-                fusion_mask_path = args.mask_path
+                fusion_mask_path = ARGUMENTS.mask_path
             result_path = os.path.join(dense_path, "fused.ply")
             stereo_fusion(
-                dense_path, result_path, fusion_mask_path, args.colmap_path
+                dense_path,
+                result_path,
+                fusion_mask_path,
+                ARGUMENTS.colmap_path,
             )
-    elif args.job == "all":
-        run_feature(args)
+    elif ARGUMENTS.job == "all":
+        run_feature()
         new_mapper(
-            args.image_path,
-            args.output_path,
+            ARGUMENTS.image_path,
+            ARGUMENTS.output_path,
             sparse_path,
-            args.colmap_path,
-            args.no_prior_motion,
+            ARGUMENTS.colmap_path,
+            ARGUMENTS.no_prior_motion,
         )
         sparse_results = os.listdir(sparse_path)
         for folder in sparse_results:
@@ -463,35 +463,38 @@ def main():
             )
             os.makedirs(orientation_aligned_path, exist_ok=True)
             orientation_aligner(
-                args.image_path,
+                ARGUMENTS.image_path,
                 os.path.join(sparse_path, folder),
                 orientation_aligned_path,
-                args.colmap_path,
+                ARGUMENTS.colmap_path,
             )
         sparse_aligned_path = os.path.join(sparse_path, "orientation_aligned")
         sparse_results = os.listdir(sparse_aligned_path)
-        pan_mask_path = os.path.join(args.output_path, "pan_mask")
+        pan_mask_path = os.path.join(ARGUMENTS.output_path, "pan_mask")
         for folder in sparse_results:
             input_path = os.path.join(sparse_aligned_path, folder)
             dense_path = os.path.join(
-                args.output_path, "dense", f"{folder}_dense"
+                ARGUMENTS.output_path, "dense", f"{folder}_dense"
             )
             os.makedirs(dense_path, exist_ok=True)
             dense_recon(
-                args.image_path,
+                ARGUMENTS.image_path,
                 input_path,
                 dense_path,
-                args.colmap_path,
+                ARGUMENTS.colmap_path,
             )
-            if args.mask_path == "":
+            if ARGUMENTS.mask_path == "":
                 fusion_mask_path = create_fusion_masks_pan(
                     dense_path, pan_mask_path
                 )
             else:
-                fusion_mask_path = args.mask_path
+                fusion_mask_path = ARGUMENTS.mask_path
             result_path = os.path.join(dense_path, "fused.ply")
             stereo_fusion(
-                dense_path, result_path, fusion_mask_path, args.colmap_path
+                dense_path,
+                result_path,
+                fusion_mask_path,
+                ARGUMENTS.colmap_path,
             )
 
 

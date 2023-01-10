@@ -2,9 +2,10 @@
 import argparse
 import glob
 import os
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
+from scalabel.common.typing import NDArrayF64, NDArrayU8
 
 try:
     import cv2
@@ -14,7 +15,12 @@ except ImportError:
     pass
 
 from bdd100k.sfm.colmap.read_write_dense import read_array
-from bdd100k.sfm.colmap.read_write_model import qvec2rotmat, read_model
+from bdd100k.sfm.colmap.read_write_model import (
+    Camera,
+    Image,
+    qvec2rotmat,
+    read_model,
+)
 
 from .utils import create_pan_mask_dict, depth_to_pcd, pcd_to_depth, plot_depth
 
@@ -24,56 +30,54 @@ H_KITTI = 352
 W_KITTI = 1216
 
 
-def parse_args():
-    """Arguments."""
-    parser = argparse.ArgumentParser(description="Postprocess depth map")
-    parser.add_argument(
-        "--dense_path",
-        type=str,
-        default="",
-        help="Dense path to save all postcodes and the results.",
-    )
-    parser.add_argument(
-        "--target_path",
-        "-t",
-        type=str,
-        default="postcode",
-        help="Local path to save all postcodes and the results.",
-    )
-    parser.add_argument(
-        "--min_depth_percentile",
-        help="minimum visualization depth percentile",
-        type=float,
-        default=5,
-    )
-    parser.add_argument(
-        "--max_depth_percentile",
-        help="maximum visualization depth percentile",
-        type=float,
-        default=95,
-    )
-    parser.add_argument(
-        "--min_depth",
-        help="minimum visualization depth in meter",
-        type=float,
-        default=3,
-    )
-    parser.add_argument(
-        "--max_depth",
-        help="maximum visualization depth in meter",
-        type=float,
-        default=80,
-    )
-    parser.add_argument(
-        "--crop_bts",
-        action="store_true",
-        help="Crop images for bts training.",
-    )
-    args = parser.parse_args()
-    return args
+"""Arguments."""
+parser = argparse.ArgumentParser(description="Postprocess depth map")
+parser.add_argument(
+    "--dense_path",
+    type=str,
+    default="",
+    help="Dense path to save all postcodes and the results.",
+)
+parser.add_argument(
+    "--target_path",
+    "-t",
+    type=str,
+    default="postcode",
+    help="Local path to save all postcodes and the results.",
+)
+parser.add_argument(
+    "--min_depth_percentile",
+    help="minimum visualization depth percentile",
+    type=float,
+    default=5,
+)
+parser.add_argument(
+    "--max_depth_percentile",
+    help="maximum visualization depth percentile",
+    type=float,
+    default=95,
+)
+parser.add_argument(
+    "--min_depth",
+    help="minimum visualization depth in meter",
+    type=float,
+    default=3,
+)
+parser.add_argument(
+    "--max_depth",
+    help="maximum visualization depth in meter",
+    type=float,
+    default=80,
+)
+parser.add_argument(
+    "--crop_bts",
+    action="store_true",
+    help="Crop images for bts training.",
+)
+ARGUMENTS = parser.parse_args()
 
 
-def fit_plane(pcd_array: np.ndarray) -> List[np.array]:
+def fit_plane(pcd_array: NDArrayF64) -> List[NDArrayF64]:
     """Use ransac to fit the points of floor/ground to a plane.
 
     This is used to avoid noise in depth map for the ground.
@@ -107,7 +111,7 @@ def fit_plane(pcd_array: np.ndarray) -> List[np.array]:
     return pcd_ground_inlier
 
 
-def images_to_dict(images: List) -> Dict:
+def images_to_dict(images: Dict[int, Image]) -> Dict[str, Dict[str, int]]:
     """Generate a dictionary of images for easier post processing.
 
     output:
@@ -138,7 +142,9 @@ def images_to_dict(images: List) -> Dict:
     return images_dict
 
 
-def get_extrinsics_from_images(images: Dict, image_id: int):
+def get_extrinsics_from_images(
+    images: Dict[int, Image], image_id: int
+) -> NDArrayF64:
     """Get extrinsics from images."""
     tvec = images[image_id].tvec
     qvec = images[image_id].qvec
@@ -149,9 +155,9 @@ def get_extrinsics_from_images(images: Dict, image_id: int):
     return extrinsics_mat
 
 
-def apply_range_filter(depth_map: np.array, args) -> np.array:
+def apply_range_filter(depth_map: NDArrayF64) -> NDArrayF64:
     """Filter depth based on range."""
-    if args.min_depth_percentile > args.max_depth_percentile:
+    if ARGUMENTS.min_depth_percentile > ARGUMENTS.max_depth_percentile:
         raise ValueError(
             "min_depth_percentile should be less than or equal "
             "to the max_depth_percentile."
@@ -159,18 +165,21 @@ def apply_range_filter(depth_map: np.array, args) -> np.array:
     depth_map_range = depth_map.copy()
     # Percentile filter
     min_depth, max_depth = np.percentile(
-        depth_map, [args.min_depth_percentile, args.max_depth_percentile]
+        depth_map,
+        [ARGUMENTS.min_depth_percentile, ARGUMENTS.max_depth_percentile],
     )
     depth_map_range[depth_map < min_depth] = min_depth
     depth_map_range[depth_map > max_depth] = max_depth
-    depth_map_range[depth_map < args.min_depth] = 0.0
-    depth_map_range[depth_map > args.max_depth] = 0.0
+    depth_map_range[depth_map < ARGUMENTS.min_depth] = 0.0
+    depth_map_range[depth_map > ARGUMENTS.max_depth] = 0.0
     return depth_map_range
 
 
 def apply_instance_filter(
-    depth_map: np.array, pan_seg_dict: Dict, image_name: str
-) -> np.array:
+    depth_map: NDArrayF64,
+    pan_seg_dict: Optional[Dict[str, Dict[str, List[NDArrayU8]]]],
+    image_name: str,
+) -> NDArrayF64:
     """Filter depth based on instance segmentation."""
     depth_map_instance = depth_map.copy()
     instances_mask = (
@@ -211,8 +220,10 @@ def apply_instance_filter(
 
 
 def get_ground_depth(
-    depth_map: np.array, pan_seg_dict: Dict, image_name: str
-) -> np.array:
+    depth_map: NDArrayF64,
+    pan_seg_dict: Optional[Dict[str, Dict[str, List[NDArrayU8]]]],
+    image_name: str,
+) -> NDArrayF64:
     """Fit a plane to the depth map for ground pixels using ransac."""
     depth_map_ground = depth_map.copy()
     ground_mask = np.zeros(depth_map.shape)
@@ -222,13 +233,16 @@ def get_ground_depth(
         ground_mask += pan_seg_dict[image_name]["ground"][0]
     if len(pan_seg_dict[image_name]["road"]) != 0:
         ground_mask += pan_seg_dict[image_name]["road"][0]
-    depth_ground = depth_map_ground * ground_mask
+    depth_ground: NDArrayF64 = depth_map_ground * ground_mask
     return depth_ground
 
 
 def apply_ground_ransac_filter(
-    depth_map: np.array, depth_ground: np.array, camera_params, extrinsics_mat
-) -> np.array:
+    depth_map: NDArrayF64,
+    depth_ground: NDArrayF64,
+    camera_params: Camera,
+    extrinsics_mat: NDArrayF64,
+) -> NDArrayF64:
     """Use ransac to fit the ground points to a plane."""
     depth_map_ground_ransac = depth_map.copy()
     pcd_ground_array = depth_to_pcd(
@@ -247,8 +261,8 @@ def apply_ground_ransac_filter(
 
 
 def prepare_bts_training_data(
-    g_t: np.array, rgb: np.array, focal: float
-) -> Tuple[np.array, np.array]:
+    g_t: NDArrayF64, rgb: NDArrayU8, focal: float
+) -> Tuple[NDArrayF64, NDArrayF64]:
     """Prepare depth dataset to the same format as KITTI for BTS training.
 
     KITTI intrinsics: H: 352, W: 1216, f: 715.0873
@@ -289,7 +303,7 @@ def prepare_bts_training_data(
     return gt_fn, rgb_fn
 
 
-def postprocess(dense_path, target_path, args):
+def postprocess(dense_path: str, target_path: str) -> str:
     """Filter the depth maps through several filters."""
     images_path = os.path.join(target_path, "images")
     sparse_path = os.path.join(dense_path, "sparse")
@@ -328,7 +342,7 @@ def postprocess(dense_path, target_path, args):
         depth_map = read_array(depth_map_)
 
         # Apply range filter
-        depth_map_range = apply_range_filter(depth_map, args)
+        depth_map_range = apply_range_filter(depth_map)
 
         # Apply instance segmentation mask filter
         depth_map_instance = apply_instance_filter(
@@ -356,7 +370,8 @@ def postprocess(dense_path, target_path, args):
         if depth_density > 0.1:
             # Save depth map
             # Save depth to the second decimal in unit16
-            depth_map_uint16 = (depth_map_processed * 256.0).astype(np.uint16)
+            depth_map_processed_save: NDArrayF64 = depth_map_processed * 256
+            depth_map_uint16 = depth_map_processed_save.astype(np.uint16)
             cv2.imwrite(
                 os.path.join(depth_maps_processed_path, image_name_png),
                 depth_map_uint16,
@@ -369,7 +384,7 @@ def postprocess(dense_path, target_path, args):
             )
 
         # Only consider depth maps with depth density > 10% for training
-        if args.crop_bts:
+        if ARGUMENTS.crop_bts:
             bts_train_rgb_fn_path = os.path.join(
                 dense_path, "bts_train_fn", "rgb"
             )
@@ -395,12 +410,11 @@ def postprocess(dense_path, target_path, args):
     return depth_maps_processed_path
 
 
-def main():
+def main() -> None:
     """Post process depth maps."""
-    args = parse_args()
-    target_path = args.target_path
-    dense_path = args.dense_path
-    postprocess(dense_path, target_path, args)
+    target_path = ARGUMENTS.target_path
+    dense_path = ARGUMENTS.dense_path
+    postprocess(dense_path, target_path)
 
 
 if __name__ == "__main__":
