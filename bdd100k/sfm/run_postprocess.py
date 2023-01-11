@@ -2,7 +2,7 @@
 import argparse
 import glob
 import os
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, cast
 
 import numpy as np
 from scalabel.common.typing import NDArrayF64, NDArrayU8
@@ -182,16 +182,20 @@ def apply_instance_filter(
 ) -> NDArrayF64:
     """Filter depth based on instance segmentation."""
     depth_map_instance = depth_map.copy()
+    pan_seg_dict = cast(Dict[str, Dict[str, List[NDArrayU8]]], pan_seg_dict)
+    pan_mask = pan_seg_dict[image_name]
     instances_mask = (
-        pan_seg_dict[image_name]["car"]
-        + pan_seg_dict[image_name]["bus"]
-        + pan_seg_dict[image_name]["truck"]
-        + pan_seg_dict[image_name]["caravan"]
+        pan_mask["car"]
+        + pan_mask["bus"]
+        + pan_mask["truck"]
+        + pan_mask["caravan"]
     )
     if len(instances_mask) != 0:
         for instance_mask in instances_mask:
-            instance_depth_img = instance_mask * depth_map_instance
-            instance_depth = instance_depth_img[instance_depth_img != 0]
+            instance_depth_img: NDArrayF64 = instance_mask * depth_map_instance
+            instance_depth: NDArrayF64 = instance_depth_img[
+                instance_depth_img != 0
+            ]
             if len(instance_depth) == 0:
                 continue
 
@@ -209,12 +213,12 @@ def apply_instance_filter(
                     * (instance_depth_img < max_thres)
                 )
     for stuff_class in ["unlabeled", "ego vehicle", "sky", "dynamic"]:
-        if len(pan_seg_dict[image_name][stuff_class]) > 0:
-            depth_map_instance *= 1 - pan_seg_dict[image_name][stuff_class][0]
+        if len(pan_mask[stuff_class]) > 0:
+            depth_map_instance *= 1 - pan_mask[stuff_class][0]
 
     for thing_class in ["person", "rider", "bicycle", "motorcycle"]:
-        if len(pan_seg_dict[image_name][thing_class]) > 0:
-            for ins in pan_seg_dict[image_name][thing_class]:
+        if len(pan_mask[thing_class]) > 0:
+            for ins in pan_mask[thing_class]:
                 depth_map_instance *= 1 - ins
     return depth_map_instance
 
@@ -227,12 +231,14 @@ def get_ground_depth(
     """Fit a plane to the depth map for ground pixels using ransac."""
     depth_map_ground = depth_map.copy()
     ground_mask = np.zeros(depth_map.shape)
-    if len(pan_seg_dict[image_name]["sidewalk"]) != 0:
-        ground_mask += pan_seg_dict[image_name]["sidewalk"][0]
-    if len(pan_seg_dict[image_name]["ground"]) != 0:
-        ground_mask += pan_seg_dict[image_name]["ground"][0]
-    if len(pan_seg_dict[image_name]["road"]) != 0:
-        ground_mask += pan_seg_dict[image_name]["road"][0]
+    pan_seg_dict = cast(Dict[str, Dict[str, List[NDArrayU8]]], pan_seg_dict)
+    pan_mask = pan_seg_dict[image_name]
+    if len(pan_mask["sidewalk"]) != 0:
+        ground_mask += pan_mask["sidewalk"][0]
+    if len(pan_mask["ground"]) != 0:
+        ground_mask += pan_mask["ground"][0]
+    if len(pan_mask["road"]) != 0:
+        ground_mask += pan_mask["road"][0]
     depth_ground: NDArrayF64 = depth_map_ground * ground_mask
     return depth_ground
 

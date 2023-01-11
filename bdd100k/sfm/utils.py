@@ -30,7 +30,7 @@ from bdd100k.sfm.colmap.read_write_dense import read_array
 
 def cam_spec_prior(
     intrinsics_path: Optional[str] = "",
-) -> Intrinsics:
+) -> Optional[Intrinsics]:
     """Generate intrinsics from iPhone 5 cam spec prior."""
     if intrinsics_path == "":
         # Empty string means no intrinsics are given
@@ -284,7 +284,7 @@ def gps_to_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 
 def create_pan_mask_dict(
     pan_json_path: str, shape: Tuple[int, int] = (720, 1280)
-) -> Optional[Dict[str, List[NDArrayU8]]]:
+) -> Optional[Dict[str, Dict[str, List[NDArrayU8]]]]:
     """Create a dictionary for panoptic segmentation."""
     if not os.path.exists(pan_json_path):
         return None

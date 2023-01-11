@@ -15,74 +15,75 @@ from .utils import (
     get_gps_priors,
 )
 
-parser = argparse.ArgumentParser(
-    description="run COLMAP Reconstruction for image sequences"
-)
-parser.add_argument(
-    "--job",
-    "-j",
-    type=str,
-    default="feature",
-    help="Which job to do(feature, mapper, stereo_fusion, all, etc)",
-)
-parser.add_argument(
-    "--image-path",
-    "-i",
-    type=str,
-    help="Path to image sequence.",
-)
-parser.add_argument(
-    "--output-path",
-    "-o",
-    type=str,
-    help="Path to output (the path contains database, sparse, dense).",
-)
-parser.add_argument(
-    "--info-path",
-    type=str,
-    action="append",
-    default=None,
-    help="""
-    Path to info file in .json for sequence.
-    """,
-)
-parser.add_argument(
-    "--mask-path",
-    type=str,
-    default="",
-    help="""
-    Path to image mask for stereo fusion.
-    """,
-)
-parser.add_argument(
-    "--matcher-method",
-    type=str,
-    default="spatial",
-    help="The feature match method. (spatial, sequential, exhaustive).",
-)
-parser.add_argument(
-    "--colmap-path",
-    default="colmap",
-    type=str,
-    help="The path to the modeified colmap.",
-)
-parser.add_argument(
-    "--no-gpu",
-    action="store_true",
-    help="Run colmap with out GPU (Only works for sparse reconstruction)",
-)
-parser.add_argument(
-    "--intrinsics",
-    type=str,
-    default="bdd100k",
-    help="Path to a json file for camera intriniscs.",
-)
-parser.add_argument(
-    "--no-prior-motion",
-    action="store_true",
-    help="To not use prior knowledge on GPS in Bundle adjustment",
-)
-ARGUMENTS = parser.parse_args()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="run COLMAP Reconstruction for image sequences"
+    )
+    parser.add_argument(
+        "--job",
+        "-j",
+        type=str,
+        default="feature",
+        help="Which job to do(feature, mapper, stereo_fusion, all, etc)",
+    )
+    parser.add_argument(
+        "--image-path",
+        "-i",
+        type=str,
+        help="Path to image sequence.",
+    )
+    parser.add_argument(
+        "--output-path",
+        "-o",
+        type=str,
+        help="Path to output (the path contains database, sparse, dense).",
+    )
+    parser.add_argument(
+        "--info-path",
+        type=str,
+        action="append",
+        default=None,
+        help="""
+        Path to info file in .json for sequence.
+        """,
+    )
+    parser.add_argument(
+        "--mask-path",
+        type=str,
+        default="",
+        help="""
+        Path to image mask for stereo fusion.
+        """,
+    )
+    parser.add_argument(
+        "--matcher-method",
+        type=str,
+        default="spatial",
+        help="The feature match method. (spatial, sequential, exhaustive).",
+    )
+    parser.add_argument(
+        "--colmap-path",
+        default="colmap",
+        type=str,
+        help="The path to the modeified colmap.",
+    )
+    parser.add_argument(
+        "--no-gpu",
+        action="store_true",
+        help="Run colmap with out GPU (Only works for sparse reconstruction)",
+    )
+    parser.add_argument(
+        "--intrinsics",
+        type=str,
+        default="bdd100k",
+        help="Path to a json file for camera intriniscs.",
+    )
+    parser.add_argument(
+        "--no-prior-motion",
+        action="store_true",
+        help="To not use prior knowledge on GPS in Bundle adjustment",
+    )
+    ARGUMENTS = parser.parse_args()
 
 
 def add_image_ids(frames: List[Frame], db_path: str) -> None:
@@ -154,6 +155,7 @@ def feature_extractor(
 ) -> List[Frame]:
     """Conduct feature extraction."""
     # we assume shared intrinsics
+    intrinsics = None
     if frames[0].intrinsics is not None:
         assert frames[0].intrinsics.focal[0] == frames[0].intrinsics.focal[0]
         intrinsics = frames[0].intrinsics
