@@ -25,7 +25,7 @@ from scalabel.common.typing import (
 from scalabel.label.transforms import rle_to_mask
 from scalabel.label.typing import Extrinsics, Frame, Intrinsics
 
-from bdd100k.sfm.colmap.read_write_dense import read_array
+from bdd100k.sfm.colmap.read_write_dense import read_array  # type: ignore
 
 
 def cam_spec_prior(

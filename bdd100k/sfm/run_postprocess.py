@@ -14,8 +14,8 @@ try:
 except ImportError:
     pass
 
-from bdd100k.sfm.colmap.read_write_dense import read_array
-from bdd100k.sfm.colmap.read_write_model import (
+from bdd100k.sfm.colmap.read_write_dense import read_array  # type: ignore
+from bdd100k.sfm.colmap.read_write_model import (  # type: ignore
     Camera,
     Image,
     qvec2rotmat,

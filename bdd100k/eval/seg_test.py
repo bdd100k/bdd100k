@@ -28,7 +28,7 @@ class TestFastHist(unittest.TestCase):
         a_bitmask: NDArrayU8 = np.zeros((10, 10), dtype=np.uint8)
         a_bitmask[4:, 4:] = 1
         b_bitmask: NDArrayU8 = np.ones((10, 10), dtype=np.uint8)
-        b_bitmask *= 3  # type: ignore
+        b_bitmask *= 3
         b_bitmask[:7, :7] = 0
 
         hist = fast_hist(a_bitmask, b_bitmask, 3)[:-1, :-1]

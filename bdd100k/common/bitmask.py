@@ -64,8 +64,8 @@ def bitmask_intersection_rate(
 ) -> Tuple[NDArrayF64, NDArrayF64]:
     """Returns the intersection over the area of the predicted box."""
     assert gt_masks.shape == pred_masks.shape
-    m: int = np.max(gt_masks)
-    n: int = min(np.max(pred_masks), MAX_DET)
+    m: int = np.max(gt_masks)  # type: ignore
+    n: int = min(np.max(pred_masks), MAX_DET)  # type: ignore
 
     gt_masks = gt_masks.reshape(-1)
     pred_masks = pred_masks.reshape(-1)

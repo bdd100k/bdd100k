@@ -173,7 +173,7 @@ class LaneResult(Result):
         """Convert the lane_mark data into a flattened dict as the summary."""
         summary_dict: Dict[str, Union[int, float]] = {}
         for metric, scores_list in self.dict(
-            include=include, exclude=exclude  # type: ignore
+            include=include, exclude=exclude
         ).items():
             for category, score in scores_list[-2].items():
                 summary_dict[f"{metric}/{category}"] = score

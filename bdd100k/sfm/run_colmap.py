@@ -7,7 +7,7 @@ from typing import List, Optional
 from scalabel.label.typing import Frame
 from scalabel.label.utils import get_matrix_from_extrinsics
 
-from .colmap.database_io import COLMAPDatabase
+from .colmap.database_io import COLMAPDatabase  # type: ignore
 from .utils import (
     cam_spec_prior,
     create_fusion_masks_pan,
