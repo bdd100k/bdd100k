@@ -388,7 +388,7 @@ def create_pan_mask_dict(
             cur_label_mask = rle_to_mask(label["rle"])
             result[img_name][label["category"]].append(cur_label_mask)
             pan_seg_total += cur_label_mask * sem_id[label["category"]]
-        result[img_name]["total"] = [pan_seg_total]
+        result[img_name]["total"] = [pan_seg_total]  # type: ignore
     return result
 
 
@@ -436,7 +436,7 @@ def pcd_to_depth(
     intrinsics_mat[0, 0] = f
     intrinsics_mat[1, 1] = f
     depth_img = np.zeros(shape)
-    pcd_indices: NDArrayI32 = np.ones(shape) * -1
+    pcd_indices: NDArrayI32 = np.ones(shape) * -1  # type: ignore
     for point_index, point in enumerate(pcd):
         # If depth value is already filtered, skip it
         if all(point == [0.0, 0.0, 0.0, 0.0]):
@@ -511,8 +511,8 @@ def get_fusion_mask_pan(
             for instance_mask in transient_instances:
                 pan_mask += instance_mask
         pan_mask = 1 - pan_mask
-        mask_fusion = mask_fusion * pan_mask
-    return mask_fusion
+        mask_fusion = mask_fusion * pan_mask  # type: ignore
+    return mask_fusion  # type: ignore
 
 
 def create_fusion_masks_pan(dense_path: str, pan_mask_path: str) -> str:

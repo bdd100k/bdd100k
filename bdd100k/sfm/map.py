@@ -75,42 +75,6 @@ def visualize_antpath(list_sequences: Sequences, save_path: str) -> None:
     m.save(save_path)
 
 
-def counterclockwise(point1, point2, point3):
-    """Determinine if three points are listed in a counterclockwise order."""
-    return (point3[1] - point1[1]) * (point2[0] - point1[0]) > (
-        point2[1] - point1[1]
-    ) * (point3[0] - point1[0])
-
-
-def intersect(t1p1, t1p2, t2p1, t2p2):
-    """Compute if two line segments (t1p1, t1p2) and (t2p1, t2p2) intersect."""
-    return counterclockwise(t1p1, t2p1, t2p2) != counterclockwise(
-        t1p2, t2p1, t2p2
-    ) and counterclockwise(t1p1, t1p2, t2p1) != counterclockwise(
-        t1p1, t1p2, t2p2
-    )
-
-
-def tracks_intersect(track1: NDArrayF64, track2: NDArrayF64) -> bool:
-    """Compute if two GPS tracks intersect."""
-    for t1p1, t1p2 in zip(track1[:-1], track1[1:]):
-        for t2p1, t2p2 in zip(track2[:-1], track2[1:]):
-            if intersect(t1p1, t1p2, t2p1, t2p2):
-                return True
-    return False
-
-
-def find_intersecting_sequences(sequences: Sequences):
-    """Find intersecting paths in given sequences."""
-    tracks = [latlon_from_data(seq) for seq in sequences]
-    intersecting_tracks = np.zeros((len(tracks), len(tracks)))
-    for i, key_track in enumerate(tracks):
-        for j, ref_track in enumerate(tracks):
-            if tracks_intersect(key_track, ref_track):
-                intersecting_tracks[i, j] = 1
-    return intersecting_tracks
-
-
 def split_sequences_by_city(
     sequences: Sequences, nproc: int = NPROC
 ) -> Dict[str, Sequences]:
@@ -122,14 +86,3 @@ def split_sequences_by_city(
     for loc, seq in zip(locations, sequences):
         sequences_by_city[loc.city].append(seq)
     return sequences_by_city
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="options")
-    parser.add_argument(
-        "--info-path",
-        type=str,
-        choices=["train", "test", "val"],
-        help="Path to extract map data from.",
-    )
-    args = parser.parse_args()

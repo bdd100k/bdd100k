@@ -258,7 +258,10 @@ def apply_ground_ransac_filter(
     )
     pcd_ground_filtered = fit_plane(pcd_ground_array)
     depth_ground_filtered, _ = pcd_to_depth(
-        pcd_ground_filtered, depth_map.shape, camera_params, extrinsics_mat
+        pcd_ground_filtered,
+        depth_map.shape,  # type: ignore
+        camera_params,
+        extrinsics_mat,
     )
     depth_map_ground_ransac = (
         depth_map_ground_ransac - depth_ground + depth_ground_filtered
@@ -267,7 +270,7 @@ def apply_ground_ransac_filter(
 
 
 def prepare_bts_training_data(
-    g_t: NDArrayF64, rgb: NDArrayU8, focal: float
+    g_t: NDArrayF64, rgb: NDArrayU8, focal: float  # type: ignore
 ) -> Tuple[NDArrayF64, NDArrayF64]:
     """Prepare depth dataset to the same format as KITTI for BTS training.
 
