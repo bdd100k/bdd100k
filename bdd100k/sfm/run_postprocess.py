@@ -269,49 +269,6 @@ def apply_ground_ransac_filter(
     return depth_map_ground_ransac
 
 
-def prepare_bts_training_data(
-    g_t: NDArrayF64, rgb: NDArrayU8, focal: float  # type: ignore
-) -> Tuple[NDArrayF64, NDArrayF64]:
-    """Prepare depth dataset to the same format as KITTI for BTS training.
-
-    KITTI intrinsics: H: 352, W: 1216, f: 715.0873
-
-    Method fn (focal length normalization):
-        Normalize the focal length and Crop to the same size as KITTI
-    """
-    height = g_t.shape[0]
-    width = g_t.shape[1]
-    scale = FOCAL_KITTI / focal
-    top_margin = int((height - H_KITTI) / 2)
-    left_margin = int((width - W_KITTI) / 2)
-
-    # Normalize the focal length based on scale
-    gt_normalized = cv2.resize(
-        g_t, (0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST
-    )
-    rgb_normalized = cv2.resize(rgb, (0, 0), fx=scale, fy=scale)
-    new_width, new_height = gt_normalized.shape[1], gt_normalized.shape[0]
-    height_margin = int((height - new_height) / 2)
-    width_margin = int((width - new_width) / 2)
-    gt_fn = np.zeros(g_t.shape)
-    gt_fn[
-        height_margin : height_margin + new_height,
-        width_margin : width_margin + new_width,
-    ] = gt_normalized
-    rgb_fn = np.zeros(rgb.shape)
-    rgb_fn[
-        height_margin : height_margin + new_height,
-        width_margin : width_margin + new_width,
-    ] = rgb_normalized
-    gt_fn = gt_fn[
-        top_margin : top_margin + H_KITTI, left_margin : left_margin + W_KITTI
-    ]
-    rgb_fn = rgb_fn[
-        top_margin : top_margin + H_KITTI, left_margin : left_margin + W_KITTI
-    ]
-    return gt_fn, rgb_fn
-
-
 def postprocess(dense_path: str, target_path: str) -> str:
     """Filter the depth maps through several filters."""
     images_path = os.path.join(target_path, "images")
@@ -392,30 +349,6 @@ def postprocess(dense_path: str, target_path: str) -> str:
                 False,
             )
 
-        # Only consider depth maps with depth density > 10% for training
-        if ARGUMENTS.crop_bts:
-            bts_train_rgb_fn_path = os.path.join(
-                dense_path, "bts_train_fn", "rgb"
-            )
-            bts_train_gt_fn_path = os.path.join(
-                dense_path, "bts_train_fn", "gt"
-            )
-            os.makedirs(bts_train_rgb_fn_path, exist_ok=True)
-            os.makedirs(bts_train_gt_fn_path, exist_ok=True)
-            if depth_density > 0.1:
-                rgb_path = os.path.join(images_path, image_name)
-                rgb = cv2.imread(rgb_path)
-                gt = depth_map_uint16
-                gt_fn, rgb_fn = prepare_bts_training_data(
-                    gt, rgb, float(camera_params[0])
-                )
-                cv2.imwrite(
-                    os.path.join(bts_train_gt_fn_path, image_name_png),
-                    gt_fn.astype(np.uint16),
-                )
-                cv2.imwrite(
-                    os.path.join(bts_train_rgb_fn_path, image_name_png), rgb_fn
-                )
     return depth_maps_processed_path
 
 
