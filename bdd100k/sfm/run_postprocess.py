@@ -2,7 +2,7 @@
 import argparse
 import glob
 import os
-from typing import Dict, List, Optional, Tuple, cast
+from typing import Dict, List, Optional, cast
 
 import numpy as np
 from scalabel.common.typing import NDArrayF64, NDArrayU8
@@ -271,7 +271,6 @@ def apply_ground_ransac_filter(
 
 def postprocess(dense_path: str, target_path: str) -> str:
     """Filter the depth maps through several filters."""
-    images_path = os.path.join(target_path, "images")
     sparse_path = os.path.join(dense_path, "sparse")
     cameras, images, _ = read_model(sparse_path)
     camera_params = cameras[1].params
