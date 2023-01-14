@@ -1,5 +1,4 @@
 """Street map visualization of BDD100K sequences."""
-import argparse
 from collections import defaultdict
 from typing import Dict, List
 
@@ -12,7 +11,7 @@ try:
 except ImportError:
     pass
 from scalabel.common.parallel import NPROC, pmap
-from scalabel.common.typing import DictStrAny, NDArrayF64
+from scalabel.common.typing import DictStrAny
 
 from .utils import get_location_from_data, latlon_from_data
 
