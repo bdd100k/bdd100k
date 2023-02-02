@@ -1,3 +1,4 @@
+# pylint: disable=unnecessary-dunder-call
 """Test cases for run.py."""
 import argparse
 import os

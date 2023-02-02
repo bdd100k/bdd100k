@@ -277,7 +277,7 @@ def bitmask2coco_seg_track(
     for files in files_list:
         video_name = os.path.split(files[0])[0]
         video_id += 1
-        video = VidType(id=video_id, name=video_name)
+        video = VidType(id=video_id, name=video_name, attributes=None)
         videos.append(video)
 
         for frame_id, file_ in tqdm(enumerate(files)):
@@ -416,7 +416,7 @@ def bdd100k2coco_seg_track(
 
         video_name = video_anns[0].videoName
         video_id += 1
-        video = VidType(id=video_id, name=video_name)
+        video = VidType(id=video_id, name=video_name, attributes=None)
         videos.append(video)
 
         for image_anns in video_anns:
@@ -503,10 +503,10 @@ def main() -> None:
 
     if args.only_mask:
         assert args.mode in ["ins_seg", "seg_track"]
-        convert_function = dict(
-            ins_seg=bitmask2coco_ins_seg,
-            seg_track=bitmask2coco_seg_track,
-        )[args.mode]
+        convert_function = {
+            "ins_seg": bitmask2coco_ins_seg,
+            "seg_track": bitmask2coco_seg_track,
+        }[args.mode]
 
         cfg_path = args.config if args.config is not None else args.mode
         bdd100k_config = load_bdd100k_config(cfg_path)
@@ -525,27 +525,27 @@ def main() -> None:
             bdd100k_config = load_bdd100k_config(args.mode)
 
         if args.mode in ["det", "box_track", "pose"]:
-            convert_func = dict(
-                det=scalabel2coco_detection,
-                box_track=scalabel2coco_box_track,
-                pose=scalabel2coco_pose,
-            )[args.mode]
+            convert_func = {
+                "det": scalabel2coco_detection,
+                "box_track": scalabel2coco_box_track,
+                "pose": scalabel2coco_pose,
+            }[args.mode]
         else:
             if args.mask_base is not None:
                 convert_func = partial(
-                    dict(
-                        ins_seg=bdd100k2coco_ins_seg,
-                        seg_track=bdd100k2coco_seg_track,
-                    )[args.mode],
+                    {
+                        "ins_seg": bdd100k2coco_ins_seg,
+                        "seg_track": bdd100k2coco_seg_track,
+                    }[args.mode],
                     mask_base=args.mask_base,
                     nproc=args.nproc,
                 )
             else:
                 convert_func = partial(
-                    dict(
-                        ins_seg=scalabel2coco_ins_seg,
-                        seg_track=scalabel2coco_seg_track,
-                    )[args.mode],
+                    {
+                        "ins_seg": scalabel2coco_ins_seg,
+                        "seg_track": scalabel2coco_seg_track,
+                    }[args.mode],
                     nproc=args.nproc,
                 )
 

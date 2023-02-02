@@ -40,9 +40,11 @@ def get_palette(mode: str) -> List[int]:
     else:
         color_mapping = {
             label.trainId: label.color
-            for label in dict(
-                sem_seg=labels, drivable=drivables, lane_mark=lane_categories
-            )[mode]
+            for label in {
+                "sem_seg": labels,
+                "drivable": drivables,
+                "lane_mark": lane_categories,
+            }[mode]
         }
         color_mapping[255] = (0, 0, 0)
         palette = [0] * 768

@@ -27,7 +27,7 @@ class TestUtilFunctions(unittest.TestCase):
         """Check color setting."""
         label = Label(
             id="tmp",
-            attributes=dict(truncated=True, crowd=False),
+            attributes={"truncated": True, "crowd": False},
         )
         color = set_instance_color(label, 15, 300)
         gt_color: NDArrayU8 = np.array([15, 8, 1, 44], dtype=np.uint8)

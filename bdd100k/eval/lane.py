@@ -130,7 +130,7 @@ def get_lane_class(
         ),
         value,
     )
-    return lane_cls  # type: ignore
+    return lane_cls
 
 
 def lane_class_func(
@@ -141,16 +141,16 @@ def lane_class_func(
 
 
 get_foreground = partial(get_lane_class, value=0, offset=3, width=1)
-sub_task_funcs = dict(
-    direction=lane_class_func(5, 1),
-    style=lane_class_func(4, 1),
-    category=lane_class_func(0, 3),
-)
-sub_task_cats: Dict[str, List[str]] = dict(
-    direction=[label.name for label in lane_directions],
-    style=[label.name for label in lane_styles],
-    category=[label.name for label in lane_categories],
-)
+sub_task_funcs = {
+    "direction": lane_class_func(5, 1),
+    "style": lane_class_func(4, 1),
+    "category": lane_class_func(0, 3),
+}
+sub_task_cats: Dict[str, List[str]] = {
+    "direction": [label.name for label in lane_directions],
+    "style": [label.name for label in lane_styles],
+    "category": [label.name for label in lane_categories],
+}
 
 
 class LaneResult(Result):
@@ -173,7 +173,7 @@ class LaneResult(Result):
         """Convert the lane_mark data into a flattened dict as the summary."""
         summary_dict: Dict[str, Union[int, float]] = {}
         for metric, scores_list in self.dict(
-            include=include, exclude=exclude  # type: ignore
+            include=include, exclude=exclude
         ).items():
             for category, score in scores_list[-2].items():
                 summary_dict[f"{metric}/{category}"] = score
