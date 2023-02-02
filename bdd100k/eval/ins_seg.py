@@ -171,17 +171,17 @@ class BDD100KInsSegEval(COCOevalV2):
         dt_areas = get_mask_areas(dt_masks)
 
         ious, _ = bitmask_intersection_rate(dt_masks, gt_masks)
-        return dict(
-            ind=img_ind,
-            ious=ious,
-            gt_areas=gt_areas,
-            gt_cat_ids=gt_cat_ids,
-            gt_crowds=gt_crowds,
-            gt_ignores=gt_ignores,
-            dt_areas=dt_areas,
-            dt_scores=dt_scores,
-            dt_cat_ids=dt_cat_ids,
-        )
+        return {
+            "ind": img_ind,
+            "ious": ious,
+            "gt_areas": gt_areas,
+            "gt_cat_ids": gt_cat_ids,
+            "gt_crowds": gt_crowds,
+            "gt_ignores": gt_ignores,
+            "dt_areas": dt_areas,
+            "dt_scores": dt_scores,
+            "dt_cat_ids": dt_cat_ids,
+        }
 
     def compute_match(self, img_ind: int) -> Dict[int, DictStrAny]:
         """Compute matching results for each image."""
@@ -249,16 +249,16 @@ class BDD100KInsSegEval(COCOevalV2):
                 eval_ind: int = (
                     cat_ind * area_num * img_num + area_ind * img_num + img_ind
                 )
-                to_updates[eval_ind] = dict(
-                    category_id=cat_id,
-                    aRng=p.areaRng[area_ind],
-                    maxDet=p.maxDets[-1],
-                    dtMatches=dt_matches_a,
-                    gtMatches=gt_matches_a,
-                    dtScores=dt_scores_c,
-                    gtIgnore=gt_ignores_a,
-                    dtIgnore=dt_ignores_a,
-                )
+                to_updates[eval_ind] = {
+                    "category_id": cat_id,
+                    "aRng": p.areaRng[area_ind],
+                    "maxDet": p.maxDets[-1],
+                    "dtMatches": dt_matches_a,
+                    "gtMatches": gt_matches_a,
+                    "dtScores": dt_scores_c,
+                    "gtIgnore": gt_ignores_a,
+                    "dtIgnore": dt_ignores_a,
+                }
 
         return to_updates
 

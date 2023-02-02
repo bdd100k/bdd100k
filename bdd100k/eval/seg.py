@@ -43,7 +43,7 @@ class SegResult(Result):
         """Convert the seg result into a flattened dict as the summary."""
         summary_dict: Dict[str, Union[int, float]] = {}
         for metric, scores_list in self.dict(
-            include=include, exclude=exclude  # type: ignore
+            include=include, exclude=exclude
         ).items():
             if not isinstance(scores_list, list):
                 summary_dict[metric] = scores_list
@@ -79,7 +79,7 @@ def per_class_iou(hist: NDArrayI32) -> NDArrayF64:
     )
     ious[np.isnan(ious)] = 0
     # Last class as `ignored`
-    return ious[:-1]  # type: ignore
+    return ious[:-1]
 
 
 def per_class_acc(hist: NDArrayI32) -> NDArrayF64:
@@ -87,7 +87,7 @@ def per_class_acc(hist: NDArrayI32) -> NDArrayF64:
     accs: NDArrayF64 = np.diag(hist) / hist.sum(axis=0)
     accs[np.isnan(accs)] = 0
     # Last class as `ignored`
-    return accs[:-1]  # type: ignore
+    return accs[:-1]
 
 
 def whole_acc(hist: NDArrayI32) -> float:
@@ -172,7 +172,7 @@ def evaluate_segmentation(
         logger.info("accumulating...")
     hist: NDArrayI32 = np.zeros((num_classes, num_classes), dtype=np.int32)
     gt_id_set = set()
-    for (hist_, gt_id_set_) in hist_and_gt_id_sets:
+    for hist_, gt_id_set_ in hist_and_gt_id_sets:
         hist += hist_
         gt_id_set.update(gt_id_set_)
 
@@ -186,12 +186,16 @@ def evaluate_segmentation(
         {cat_name: 100 * score for cat_name, score in zip(categories, accs)},
         {AVERAGE: np.multiply(np.mean(accs[list(gt_id_set)]), 100)},
     ]
-    res_dict: Dict[str, Union[float, ScoresList]] = dict(
-        IoU=IoUs,
-        Acc=Accs,
-        fIoU=np.multiply(freq_iou(hist), 100),  # pylint: disable=invalid-name
-        pAcc=np.multiply(whole_acc(hist), 100),  # pylint: disable=invalid-name
-    )
+    res_dict: Dict[str, Union[float, ScoresList]] = {
+        "IoU": IoUs,
+        "Acc": Accs,
+        "fIoU": np.multiply(
+            freq_iou(hist), 100
+        ),  # pylint: disable=invalid-name
+        "pAcc": np.multiply(
+            whole_acc(hist), 100
+        ),  # pylint: disable=invalid-name
+    }
 
     logger.info("GT id set [%s]", ",".join(str(s) for s in gt_id_set))
     return SegResult(**res_dict)

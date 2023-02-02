@@ -135,8 +135,8 @@ def segtrack_to_rle(
     frame.videoName = img_name.split("/")[0]
     frame.frameIndex = int(img_name.split("-")[-1].split(".")[0]) - 1
 
-    for i, _ in enumerate(instance_ids):
-        label = Label(id=str(instance_ids[i]))
+    for i, inst_id in enumerate(instance_ids):
+        label = Label(id=str(inst_id))
         label.category = categories[category_ids[i] - 1].name
         label.rle = mask_to_rle((masks == i + 1).astype(np.uint8))
         frame.labels.append(label)
@@ -160,12 +160,12 @@ def main() -> None:
 
     categories = get_leaf_categories(bdd100k_config.scalabel.categories)
 
-    convert_funcs: Dict[str, ToRLEFunc] = dict(
-        ins_seg=insseg_to_rle,
-        sem_seg=semseg_to_rle,
-        drivable=semseg_to_rle,
-        seg_track=segtrack_to_rle,
-    )
+    convert_funcs: Dict[str, ToRLEFunc] = {
+        "ins_seg": insseg_to_rle,
+        "sem_seg": semseg_to_rle,
+        "drivable": semseg_to_rle,
+        "seg_track": segtrack_to_rle,
+    }
 
     if args.mode == "ins_seg":
         assert args.score_file is not None

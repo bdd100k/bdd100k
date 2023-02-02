@@ -186,9 +186,11 @@ def seg_to_masks(
     colors_list: List[List[NDArrayU8]] = []
     poly2ds_list: List[List[List[Poly2D]]] = []
 
-    categories = dict(
-        sem_seg=labels, drivable=drivables, lane_mark=lane_categories
-    )[mode]
+    categories = {
+        "sem_seg": labels,
+        "drivable": drivables,
+        "lane_mark": lane_categories,
+    }[mode]
     cat_name2id = {
         cat.name: cat.trainId
         for cat in categories
@@ -474,14 +476,14 @@ def main() -> None:
     ]
     os.environ["QT_QPA_PLATFORM"] = "offscreen"  # matplotlib offscreen render
 
-    convert_funcs: Dict[str, ToMasksFunc] = dict(
-        sem_seg=semseg_to_masks,
-        drivable=drivable_to_masks,
-        lane_mark=lanemark_to_masks,
-        pan_seg=panseg_to_bitmasks,
-        ins_seg=insseg_to_bitmasks,
-        seg_track=segtrack_to_bitmasks,
-    )
+    convert_funcs: Dict[str, ToMasksFunc] = {
+        "sem_seg": semseg_to_masks,
+        "drivable": drivable_to_masks,
+        "lane_mark": lanemark_to_masks,
+        "pan_seg": panseg_to_bitmasks,
+        "ins_seg": insseg_to_bitmasks,
+        "seg_track": segtrack_to_bitmasks,
+    }
 
     dataset = load(args.input, args.nproc)
     if args.config is not None:
