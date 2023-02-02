@@ -277,7 +277,7 @@ def bitmask2coco_seg_track(
     for files in files_list:
         video_name = os.path.split(files[0])[0]
         video_id += 1
-        video = VidType(id=video_id, name=video_name)
+        video = VidType(id=video_id, name=video_name, attributes=None)
         videos.append(video)
 
         for frame_id, file_ in tqdm(enumerate(files)):
@@ -416,7 +416,7 @@ def bdd100k2coco_seg_track(
 
         video_name = video_anns[0].videoName
         video_id += 1
-        video = VidType(id=video_id, name=video_name)
+        video = VidType(id=video_id, name=video_name, attributes=None)
         videos.append(video)
 
         for image_anns in video_anns:
