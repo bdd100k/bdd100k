@@ -23,7 +23,7 @@ from scalabel.common.typing import (
     NDArrayU8,
 )
 from scalabel.label.transforms import rle_to_mask
-from scalabel.label.typing import Extrinsics, Frame, Intrinsics
+from scalabel.label.typing import Extrinsics, Frame, Intrinsics # type: ignore
 
 from bdd100k.sfm.colmap.read_write_dense import read_array  # type: ignore
 
@@ -41,13 +41,21 @@ def cam_spec_prior(
         # pixels
         # resolution always (720, 1280) --> principal point at (360, 640)
         # These are intrinsics estimated for bdd100k
-        intrinsics = Intrinsics(focal=(1020.0, 1020.0), center=(360.0, 640.0))
+        intrinsics = Intrinsics(
+            focal=(1020.0, 1020.0),
+            center=(360.0, 640.0),
+            radial=None,
+            tangential=None,
+        )
     else:
         if intrinsics_path:
             with open(intrinsics_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
             intrinsics = Intrinsics(
-                focal=(data["fx"], data["fy"]), center=(data["cy"], data["cx"])
+                focal=(data["fx"], data["fy"]),
+                center=(data["cy"], data["cx"]),
+                radial=None,
+                tangential=None,
             )
         else:
             intrinsics_path = None
