@@ -23,7 +23,7 @@ from scalabel.common.typing import (
     NDArrayU8,
 )
 from scalabel.label.transforms import rle_to_mask
-from scalabel.label.typing import Extrinsics, Frame, Intrinsics # type: ignore
+from scalabel.label.typing import Extrinsics, Frame, Intrinsics  # type: ignore
 
 from bdd100k.sfm.colmap.read_write_dense import read_array  # type: ignore
 
