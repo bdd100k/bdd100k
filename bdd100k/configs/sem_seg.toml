@@ -50,7 +50,7 @@ remove_ignored = true
     color = [70, 130, 180]
 
     [[scalabel.categories]]
-    name = "pedestrian"
+    name = "person"
     color = [220, 20, 60]
 
     [[scalabel.categories]]

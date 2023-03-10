@@ -160,12 +160,12 @@ def main() -> None:
 
     categories = get_leaf_categories(bdd100k_config.scalabel.categories)
 
-    convert_funcs: Dict[str, ToRLEFunc] = dict(
-        ins_seg=insseg_to_rle,
-        sem_seg=semseg_to_rle,
-        drivable=semseg_to_rle,
-        seg_track=segtrack_to_rle,
-    )
+    convert_funcs: Dict[str, ToRLEFunc] = {
+        "ins_seg": insseg_to_rle,
+        "sem_seg": semseg_to_rle,
+        "drivable": semseg_to_rle,
+        "seg_track": segtrack_to_rle,
+    }
 
     if args.mode == "ins_seg":
         assert args.score_file is not None

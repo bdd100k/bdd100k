@@ -9,7 +9,6 @@ from typing import List
 import numpy as np
 from PIL import Image
 from scalabel.common.parallel import NPROC
-from scalabel.common.typing import NDArrayU8
 from tqdm import tqdm
 
 from ..common.logger import logger
@@ -55,10 +54,9 @@ def mask_to_color(bitmask_file: str, colormap_file: str, mode: str) -> None:
     if mode in ["ins_seg", "pan_seg", "seg_track"]:
         bitmask = bitmask.split()[3]
     elif mode == "lane_mark":
-        array: NDArrayU8 = np.asarray(bitmask, dtype=np.uint8)
+        array = np.asarray(bitmask, dtype=np.uint8)
         # 15 = (1 << 4) - 1, only take the last 4 bits
-        array = array & 15  # type: ignore
-        bitmask = Image.fromarray(array)
+        bitmask = Image.fromarray(array & 15)
     palette = get_palette(mode)
     bitmask.putpalette(palette)
     bitmask.save(colormap_file)

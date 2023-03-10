@@ -143,8 +143,8 @@ class PQStat:
             n += 1
 
         if n > 0:
-            return dict(PQ=pq / n, SQ=sq / n, RQ=rq / n, N=n)
-        return dict(PQ=0, SQ=0, RQ=0, N=0)
+            return {"PQ": pq / n, "SQ": sq / n, "RQ": rq / n, "N": n}
+        return {"PQ": 0, "SQ": 0, "RQ": 0, "N": 0}
 
 
 def pq_per_image(gt_path: str, pred_path: str = "") -> PQStat:

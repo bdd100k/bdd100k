@@ -17,6 +17,7 @@ from scalabel.eval.result import AVERAGE, Result, Scores, ScoresList
 from tqdm import tqdm
 
 from ..common.logger import logger
+from ..common.typing import NDArrayI64
 from ..common.utils import reorder_preds
 from ..label.label import drivables, labels
 from ..label.to_mask import IGNORE_LABEL
@@ -56,7 +57,7 @@ def fast_hist(
     groundtruth: NDArrayU8,
     prediction: NDArrayU8,
     size: int,
-) -> NDArrayI32:
+) -> NDArrayI64:
     """Compute the histogram."""
     prediction = prediction.copy()
     # Out-of-range values as `ignored`
@@ -106,7 +107,7 @@ def freq_iou(hist: NDArrayI32) -> float:
 
 def per_image_hist(
     gt_path: str, pred_path: str = "", num_classes: int = 2
-) -> Tuple[NDArrayI32, Set[int]]:
+) -> Tuple[NDArrayI64, Set[int]]:
     """Calculate per image hist."""
     assert num_classes >= 2
     assert num_classes <= IGNORE_LABEL
@@ -172,7 +173,7 @@ def evaluate_segmentation(
         logger.info("accumulating...")
     hist: NDArrayI32 = np.zeros((num_classes, num_classes), dtype=np.int32)
     gt_id_set = set()
-    for (hist_, gt_id_set_) in hist_and_gt_id_sets:
+    for hist_, gt_id_set_ in hist_and_gt_id_sets:
         hist += hist_
         gt_id_set.update(gt_id_set_)
 
@@ -186,12 +187,16 @@ def evaluate_segmentation(
         {cat_name: 100 * score for cat_name, score in zip(categories, accs)},
         {AVERAGE: np.multiply(np.mean(accs[list(gt_id_set)]), 100)},
     ]
-    res_dict: Dict[str, Union[float, ScoresList]] = dict(
-        IoU=IoUs,
-        Acc=Accs,
-        fIoU=np.multiply(freq_iou(hist), 100),  # pylint: disable=invalid-name
-        pAcc=np.multiply(whole_acc(hist), 100),  # pylint: disable=invalid-name
-    )
+    res_dict: Dict[str, Union[float, ScoresList]] = {
+        "IoU": IoUs,
+        "Acc": Accs,
+        "fIoU": np.multiply(
+            freq_iou(hist), 100
+        ),  # pylint: disable=invalid-name
+        "pAcc": np.multiply(
+            whole_acc(hist), 100
+        ),  # pylint: disable=invalid-name
+    }
 
     logger.info("GT id set [%s]", ",".join(str(s) for s in gt_id_set))
     return SegResult(**res_dict)
