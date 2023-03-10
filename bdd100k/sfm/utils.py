@@ -466,7 +466,7 @@ def plot_depth(
     """Visualize depth map."""
     mask = np.logical_or((depth_map == vmin), (depth_map > vmax))
     depth_map_visual = np.ma.masked_where(mask, depth_map)
-    cmap = cm.viridis
+    cmap = cm.get_cmap("viridis")
     cmap.set_bad(color="gray")
     plt.figure(figsize=(30, 20))
     plt.imshow(depth_map_visual, cmap=cmap, vmin=vmin, vmax=vmax)
