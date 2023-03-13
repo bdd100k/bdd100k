@@ -170,10 +170,9 @@ def interpolate_trajectory(
             velo: NDArrayF64 = traj_hi - traj_lo
             traj_cur = traj_hi + velo * weight_hi
 
-        f.extrinsics = Extrinsics(
-            location=tuple(traj_cur[:3].tolist()),
-            rotation=tuple(traj_cur[3:].tolist()),
-        )
+        loc = (float(traj_cur[0]), float(traj_cur[1]), float(traj_cur[2]))
+        rot = (float(traj_cur[3]), float(traj_cur[4]), float(traj_cur[5]))
+        f.extrinsics = Extrinsics(location=loc, rotation=rot)
 
 
 def interpolate_gps(
@@ -202,11 +201,9 @@ def interpolate_gps(
             traj_lo = np.array(gps_poses[pose_index - 1])
             velo: NDArrayF64 = traj_hi - traj_lo
             traj_cur = traj_hi + velo * weight_hi
-
-        f.extrinsics = Extrinsics(
-            location=tuple(traj_cur[:3].tolist()),
-            rotation=tuple(traj_cur[3:].tolist()),
-        )
+        loc = (float(traj_cur[0]), float(traj_cur[1]), float(traj_cur[2]))
+        rot = (float(traj_cur[3]), float(traj_cur[4]), float(traj_cur[5]))
+        f.extrinsics = Extrinsics(location=loc, rotation=rot)
         dist_moved = gps_to_m(
             traj_prev[0],
             traj_prev[1],
