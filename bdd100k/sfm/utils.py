@@ -23,7 +23,7 @@ from scalabel.common.typing import (
     NDArrayU8,
 )
 from scalabel.label.transforms import rle_to_mask
-from scalabel.label.typing import Extrinsics, Frame, Intrinsics  # type: ignore
+from scalabel.label.typing import Extrinsics, Frame, Intrinsics
 
 from bdd100k.sfm.colmap.read_write_dense import read_array  # type: ignore
 
@@ -171,8 +171,9 @@ def interpolate_trajectory(
             traj_cur = traj_hi + velo * weight_hi
 
         f.extrinsics = Extrinsics(
-            location=tuple(traj_cur[:3]), rotation=tuple(traj_cur[3:])
-        )
+            location=tuple(traj_cur[:3]),
+            rotation=tuple(traj_cur[3:]),
+        )  # type: ignore
 
 
 def interpolate_gps(
@@ -203,8 +204,9 @@ def interpolate_gps(
             traj_cur = traj_hi + velo * weight_hi
 
         f.extrinsics = Extrinsics(
-            location=tuple(traj_cur[:3]), rotation=tuple(traj_cur[3:])
-        )
+            location=tuple(traj_cur[:3]),
+            rotation=tuple(traj_cur[3:]),
+        )  # type: ignore
         dist_moved = gps_to_m(
             traj_prev[0],
             traj_prev[1],
