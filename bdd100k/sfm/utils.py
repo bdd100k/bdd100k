@@ -171,9 +171,9 @@ def interpolate_trajectory(
             traj_cur = traj_hi + velo * weight_hi
 
         f.extrinsics = Extrinsics(
-            location=tuple(traj_cur[:3]),
-            rotation=tuple(traj_cur[3:]),
-        )  # type: ignore
+            location=tuple(traj_cur[:3].tolist()),
+            rotation=tuple(traj_cur[3:].tolist()),
+        )
 
 
 def interpolate_gps(
@@ -204,9 +204,9 @@ def interpolate_gps(
             traj_cur = traj_hi + velo * weight_hi
 
         f.extrinsics = Extrinsics(
-            location=tuple(traj_cur[:3]),
-            rotation=tuple(traj_cur[3:]),
-        )  # type: ignore
+            location=tuple(traj_cur[:3].tolist()),
+            rotation=tuple(traj_cur[3:].tolist()),
+        )
         dist_moved = gps_to_m(
             traj_prev[0],
             traj_prev[1],
