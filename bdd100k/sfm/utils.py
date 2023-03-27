@@ -143,14 +143,21 @@ def get_gps_from_data(list_data: List[DictStrAny]) -> NDArrayF64:
     return np.array(locations)
 
 
-def interpolate_trajectory(
-    gps_prior: List[DictStrAny],
+def interpolate_poses(
+    pose_prior: List[DictStrAny],
     frames: List[Frame],
     intrinsics_path: Optional[str] = "",
 ) -> None:
-    """Interpolate GPS based pose priors to per frame poses."""
-    num_frames_per_pose = len(frames) / len(gps_prior)
-    gps_poses = get_poses_from_data(gps_prior)
+    """Interpolate metric-scale pose priors to each frame.
+
+    Args:
+        pose_prior: metric-scale poses estimated from get_poses_from_data
+                    (around length of 40).
+        frames: A list of frames to be interpolated. (around length of 200)
+        intrinsics_path: optional path to intrinsics
+    """
+    num_frames_per_pose = len(frames) / len(pose_prior)
+    gps_poses = get_poses_from_data(pose_prior)
 
     for i, f in enumerate(frames):
         f.intrinsics = cam_spec_prior(intrinsics_path)
@@ -180,7 +187,18 @@ def interpolate_gps(
     frames: List[Frame],
     intrinsics_path: Optional[str] = "",
 ) -> Tuple[List[Frame], List[Frame]]:
-    """Interpolate GPS priors to per frame poses."""
+    """Interpolate GPS priors to each frame.
+
+    This function gives a GPS latitude and longitude as prior into COLMAP and
+    then inside COLMAP they are converted to metric scale. This is the method
+    used in BDD100K sfm module, but you can also use interpolate_poses if 6DOF
+    pose priors are known.
+
+    Args:
+        gps_prior: GPS priors from get_gps_from_data. (around length of 40)
+        frames: A list of frames to be interpolated. (around length of 200)
+        intrinsics_path: optional path to intrinsics
+    """
     num_frames_per_pose = len(frames) / len(gps_prior)
     gps_poses = get_gps_from_data(gps_prior)
     frames_filtered = []
@@ -223,7 +241,7 @@ def get_pose_priors(info_path: str, image_path: str) -> Optional[List[Frame]]:
     pose_data = load_pose_data(info_path)
     if pose_data is not None:
         frames = frames_from_images(image_path)
-        interpolate_trajectory(pose_data, frames)
+        interpolate_poses(pose_data, frames)
         return frames
     return None
 
