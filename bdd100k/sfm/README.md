@@ -12,7 +12,8 @@ We provide the code for our metric-scale reconstructions of BDD100K using [COLMA
 <img src="https://user-images.githubusercontent.com/49795181/177323054-6311d21e-3f05-45eb-a63a-3c9cfab199ce.png" width="800">
 
 The highlights of our COLMAP implementation are: 
-- GPS information is utilized during both spatial feature matcher and bundle adjustment. 
+- GPS information is utilized during both spatial feature matcher and bundle adjustment.
+- (Optional) mask out transient objects during feature extraction 
 - Inconsistent pose estimates are automatically removed from sparse reconstruction.
 - The depth maps are filtered before fusing them into a semi-dense point cloud.
 
@@ -56,6 +57,11 @@ Assuming you want to reconstruct a BDD100K sequence and the data is stored in th
     │   +── ...
     │   +── imageN.jpg
     +── info.json  // a .json file containing GPS information 
+    +── masks // an optional path for masks for feature extraction
+    │   +── image1.jpg.png
+    │   +── image2.jpg.png
+    │   +── ...
+    │   +── imageN.jpg.png
 
 
 The command to run the whole pipeline is:
@@ -66,13 +72,14 @@ python -m bdd100k.sfm.run_colmap \
     --image-path sequence/path/images \
     --output-path sequence/path/ \
     --info-path sequence/path/info.json \
+    --mask-path sequence/path/masks
 ```
 
 If you only want to run a part of the colmap pipeline run the following commands one by one:
 
 Feature extraction and matching:
 ```bash
-python -m bdd100k.sfm.run_colmap --job feature --image-path sequence/path/images --output-path sequence/path/ --info-path sequence/path/info.json
+python -m bdd100k.sfm.run_colmap --job feature --image-path sequence/path/images --output-path sequence/path/ --info-path sequence/path/info.json --mask-path sequence/path/masks
 ```
 
 Structure-from-Motion (Make sure you specify the path to the modified version of colmap):
@@ -126,4 +133,4 @@ python3 -m bdd100k.sfm.run_postprocess \
 The results will be saved to the folder `0_dense/depth_maps_processed`.
 
 ### 4. Visualization Example
-[<img src="https://user-images.githubusercontent.com/49795181/177338103-be278f72-c5a6-44d2-9e1b-6782adfbb411.png" width="500">](https://www.youtube.com/watch?v=Na3kHOR5_eM)
+[<img src="https://user-images.githubusercontent.com/49795181/177338103-be278f72-c5a6-44d2-9e1b-6782adfbb411.png" width="500">](https://www.youtube.com/watch?v=aethdqFmmyk)

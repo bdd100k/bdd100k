@@ -423,9 +423,12 @@ def depth_to_pcd(
     extrinsics_mat: NDArrayF64,
 ) -> NDArrayF64:
     """Map from 2D depth map to 3D point cloud."""
-    f = camera_params[0]
-    cx = camera_params[2]
-    cy = camera_params[3]
+    if len(camera_params) == 3:
+        fx, cx, cy = camera_params
+        fy = fx
+    else:
+        fx, fy, cx, cy = camera_params
+    f = fx
     width = depth_img.shape[1]
     height = depth_img.shape[0]
     xw = np.tile(list(range(width)), (height, 1)) - cx
@@ -452,9 +455,12 @@ def pcd_to_depth(
         depth_img: the rendered depth image
         pcd_indices: corresponding index of point in pcd list
     """
-    f = camera_params[0]
-    cx = camera_params[2]
-    cy = camera_params[3]
+    if len(camera_params) == 3:
+        fx, cx, cy = camera_params
+        fy = fx
+    else:
+        fx, fy, cx, cy = camera_params
+    f = fx
     intrinsics_mat = np.identity(4)
     intrinsics_mat[0, 2] = cx
     intrinsics_mat[1, 2] = cy
@@ -501,7 +507,9 @@ def plot_depth(
     if visualize:
         plt.show()
     else:
-        plt.imsave(save_path, depth_map_visual, cmap=cmap)
+        plt.imsave(
+            save_path, depth_map_visual, cmap=cmap, vmin=vmin, vmax=vmax
+        )
     plt.close()
 
 

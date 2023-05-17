@@ -152,6 +152,7 @@ def feature_extractor(
     colmap_new: str,
     no_gpu: Optional[bool] = False,
     intrinsics_path: Optional[str] = "bdd100k",
+    mask_path: Optional[str] = "",
 ) -> List[Frame]:
     """Conduct feature extraction."""
     # we assume shared intrinsics
@@ -162,8 +163,10 @@ def feature_extractor(
     else:
         intrinsics = cam_spec_prior(intrinsics_path)
 
-    no_gpu_option = (" --SiftExtraction.use_gpu 0") if no_gpu else ("")
-
+    no_gpu_option = " --SiftExtraction.use_gpu 0" if no_gpu else ""
+    mask_option = (
+        f" --ImageReader.mask_path {mask_path}" if mask_path != "" else ""
+    )
     if intrinsics:
         f_x = intrinsics.focal[0]
         c_x, c_y = intrinsics.center
@@ -177,7 +180,10 @@ def feature_extractor(
     os.system(
         f"{colmap_new} feature_extractor "
         f"--database_path {output_path}/database.db "
-        f"--image_path {image_path}" + intrinsics_options + no_gpu_option
+        f"--image_path {image_path}"
+        + intrinsics_options
+        + no_gpu_option
+        + mask_option
     )
     return frames
 
@@ -252,6 +258,7 @@ def run_feature() -> List[Frame]:
         ARGUMENTS.colmap_path,
         ARGUMENTS.no_gpu,
         ARGUMENTS.intrinsics,
+        ARGUMENTS.mask_path,
     )
     # Used for spatial matcher, only match 160 nearest frames at most
     max_num_neighbors = min(
