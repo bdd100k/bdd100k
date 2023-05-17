@@ -425,9 +425,8 @@ def depth_to_pcd(
     """Map from 2D depth map to 3D point cloud."""
     if len(camera_params) == 3:
         fx, cx, cy = camera_params
-        fy = fx
     else:
-        fx, fy, cx, cy = camera_params
+        fx, _, cx, cy = camera_params
     f = fx
     width = depth_img.shape[1]
     height = depth_img.shape[0]
@@ -457,9 +456,8 @@ def pcd_to_depth(
     """
     if len(camera_params) == 3:
         fx, cx, cy = camera_params
-        fy = fx
     else:
-        fx, fy, cx, cy = camera_params
+        fx, _, cx, cy = camera_params
     f = fx
     intrinsics_mat = np.identity(4)
     intrinsics_mat[0, 2] = cx
