@@ -10,8 +10,8 @@ from scalabel.common.typing import NDArrayU8
 from scalabel.label.io import load
 from scalabel.label.typing import Config, Frame, Label
 
-from ..common.utils import load_bdd100k_config
-from .to_mask import (
+from bdd100k.common.utils import load_bdd100k_config
+from bdd100k.label.to_mask import (
     insseg_to_bitmasks,
     panseg_to_bitmasks,
     segtrack_to_bitmasks,

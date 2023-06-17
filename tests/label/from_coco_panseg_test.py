@@ -9,7 +9,7 @@ from PIL import Image
 from scalabel.common.typing import NDArrayU8
 from scalabel.label.coco_typing import PanopticAnnType
 
-from .from_coco_panseg import panseg2bitmask
+from bdd100k.label.from_coco_panseg import panseg2bitmask
 
 
 class TestFromCocoPanSeg(unittest.TestCase):

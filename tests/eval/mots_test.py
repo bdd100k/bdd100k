@@ -5,12 +5,12 @@ import unittest
 import numpy as np
 from scalabel.common.typing import NDArrayF64
 
-from ..common.utils import (
+from bdd100k.common.utils import (
     group_and_sort_files,
     list_files,
     load_bdd100k_config,
 )
-from .mots import evaluate_seg_track
+from bdd100k.eval.mots import evaluate_seg_track
 
 
 class TestEvaluteMOTS(unittest.TestCase):

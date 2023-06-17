@@ -22,9 +22,10 @@ from scalabel.label.transforms import get_coco_categories
 from scalabel.label.typing import Config
 from tqdm import tqdm
 
+from bdd100k.common.utils import reorder_preds
+
 from ..common.bitmask import bitmask_intersection_rate, parse_bitmask
 from ..common.logger import logger
-from ..common.utils import reorder_preds
 
 
 def parse_res_bitmask(
@@ -101,7 +102,7 @@ class BDD100KInsSegEval(COCOevalV2):
     def _prepare(self) -> None:
         """Prepare file list for evaluation."""
         self.img_names = list(self.gt_paths.keys())
-        self.params.imgIds = self.img_names
+        self.params.imgIds = self.img_names  # type: ignore
         assert len(self.gt_paths) == len(self.dt_paths)
         for img_name in self.img_names:
             assert img_name in self.gt_paths and img_name in self.dt_paths

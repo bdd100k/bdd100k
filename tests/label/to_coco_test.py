@@ -2,8 +2,8 @@
 import os
 import unittest
 
-from ..common.utils import load_bdd100k_config
-from .to_coco import (
+from bdd100k.common.utils import load_bdd100k_config
+from bdd100k.label.to_coco import (
     bitmask2coco_ins_seg,
     bitmask2coco_seg_track,
     bitmasks_loader,

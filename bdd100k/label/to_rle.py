@@ -15,9 +15,10 @@ from scalabel.label.typing import Category, Frame, Label
 from scalabel.label.utils import get_leaf_categories
 from tqdm import tqdm
 
+from bdd100k.common.utils import list_files, load_bdd100k_config
+
 from ..common.bitmask import parse_bitmask
 from ..common.typing import BDD100KConfig
-from ..common.utils import list_files, load_bdd100k_config
 from ..eval.ins_seg import parse_res_bitmask
 
 ToRLEFunc = Callable[[Frame, str, List[Category]], Frame]
@@ -154,7 +155,7 @@ def main() -> None:
     if args.config is not None:
         bdd100k_config = load_bdd100k_config(args.config)
     elif dataset.config is not None:
-        bdd100k_config = BDD100KConfig(config=dataset.config)
+        bdd100k_config = BDD100KConfig(scalabel=dataset.config)
     else:
         bdd100k_config = load_bdd100k_config(args.mode)
 

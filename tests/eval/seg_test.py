@@ -5,8 +5,8 @@ import unittest
 import numpy as np
 from scalabel.common.typing import NDArrayI32, NDArrayU8
 
-from ..common.utils import list_files
-from .seg import evaluate_segmentation, fast_hist, per_image_hist
+from bdd100k.common.utils import list_files
+from bdd100k.eval.seg import evaluate_segmentation, fast_hist, per_image_hist
 
 
 class TestFastHist(unittest.TestCase):

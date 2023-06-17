@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 from scalabel.label.typing import Dataset, Frame
 
-from .run import run
+from bdd100k.eval.run import run
 
 
 def mock_load(*_) -> Dataset:  # type: ignore
@@ -60,7 +60,7 @@ class TestEvalRun(unittest.TestCase):
         def _mock_parse_args() -> argparse.Namespace:
             return construct_args(
                 task=task,
-                config=f"{self.cur_dir}/../configs/sem_seg.toml",
+                config=f"{self.cur_dir}/../../bdd100k/configs/sem_seg.toml",
                 ground_truth=f"{self.cur_dir}/testcases/rle/seg/gt",
                 result=f"{self.cur_dir}/testcases/rle/seg/pred",
             )
@@ -86,7 +86,7 @@ class TestEvalRun(unittest.TestCase):
         def _mock_parse_args() -> argparse.Namespace:
             return construct_args(
                 task=task,
-                config=f"{self.cur_dir}/../configs/sem_seg.toml",
+                config=f"{self.cur_dir}/../../bdd100k/configs/sem_seg.toml",
                 ground_truth=f"{self.cur_dir}/testcases/seg/gt",
                 result=f"{self.cur_dir}/testcases/seg/pred",
             )

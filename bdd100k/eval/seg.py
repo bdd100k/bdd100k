@@ -13,12 +13,13 @@ import numpy as np
 from PIL import Image
 from scalabel.common.parallel import NPROC
 from scalabel.common.typing import NDArrayF64, NDArrayI32, NDArrayU8
-from scalabel.eval.result import AVERAGE, Result, Scores, ScoresList
+from scalabel.eval.result import AVERAGE, Result, Scores
 from tqdm import tqdm
+
+from bdd100k.common.utils import reorder_preds
 
 from ..common.logger import logger
 from ..common.typing import NDArrayI64
-from ..common.utils import reorder_preds
 from ..label.label import drivables, labels
 from ..label.to_mask import IGNORE_LABEL
 
@@ -187,19 +188,14 @@ def evaluate_segmentation(
         {cat_name: 100 * score for cat_name, score in zip(categories, accs)},
         {AVERAGE: np.multiply(np.mean(accs[list(gt_id_set)]), 100)},
     ]
-    res_dict: Dict[str, Union[float, ScoresList]] = {
-        "IoU": IoUs,
-        "Acc": Accs,
-        "fIoU": np.multiply(
-            freq_iou(hist), 100
-        ),  # pylint: disable=invalid-name
-        "pAcc": np.multiply(
-            whole_acc(hist), 100
-        ),  # pylint: disable=invalid-name
-    }
 
     logger.info("GT id set [%s]", ",".join(str(s) for s in gt_id_set))
-    return SegResult(**res_dict)
+    return SegResult(
+        IoU=IoUs,
+        Acc=Accs,
+        fIoU=np.multiply(freq_iou(hist), 100),
+        pAcc=np.multiply(whole_acc(hist), 100),
+    )
 
 
 def evaluate_drivable(
