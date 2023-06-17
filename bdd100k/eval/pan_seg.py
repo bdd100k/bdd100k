@@ -261,4 +261,4 @@ def evaluate_pan_seg(
     if with_logs:
         logger.info("Time elapsed: %0.2f seconds", t_delta)
 
-    return PanSegResult(**res_dict)
+    return PanSegResult(**res_dict)  # type: ignore

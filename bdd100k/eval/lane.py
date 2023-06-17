@@ -259,7 +259,7 @@ def generate_results(task2arr: Dict[str, NDArrayF64]) -> LaneResult:
     for bound_pixel, f_score in zip(BOUND_PIXELS, task2arr[AVERAGE]):
         res_dict[f"F1_pix{bound_pixel}"][-1][AVERAGE] = f_score
 
-    return LaneResult(**res_dict)
+    return LaneResult(**res_dict)  # type: ignore
 
 
 def evaluate_lane_marking(
