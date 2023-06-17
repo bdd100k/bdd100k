@@ -155,7 +155,7 @@ def main() -> None:
     if args.config is not None:
         bdd100k_config = load_bdd100k_config(args.config)
     elif dataset.config is not None:
-        bdd100k_config = BDD100KConfig(config=dataset.config)
+        bdd100k_config = BDD100KConfig(scalabel=dataset.config)
     else:
         bdd100k_config = load_bdd100k_config(args.mode)
 

@@ -53,5 +53,5 @@ class BDD100KConfig(BaseModel):
     scalabel: Config
     remove_ignored: bool = False
     ignored_as_class: bool = False
-    ignored_mapping: Optional[Dict[str, str]]
-    name_mapping: Optional[Dict[str, str]]
+    ignored_mapping: Optional[Dict[str, str]] = None
+    name_mapping: Optional[Dict[str, str]] = None
