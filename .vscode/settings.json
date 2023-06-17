@@ -32,8 +32,5 @@
   "files.watcherExclude": {
     "node_modules": true
   },
-"restructuredtext.confPath": "${workspaceFolder}/doc/source",
-"[jsonc]": {
-    "editor.defaultFormatter": "vscode.json-language-features"
-}
+  "restructuredtext.confPath": "${workspaceFolder}/doc/source"
 }
