@@ -16,9 +16,10 @@ from scalabel.common.typing import NDArrayF64, NDArrayI32, NDArrayU8
 from scalabel.eval.result import AVERAGE, Result, Scores, ScoresList
 from tqdm import tqdm
 
+from bdd100k.common.utils import reorder_preds
+
 from ..common.logger import logger
 from ..common.typing import NDArrayI64
-from bdd100k.common.utils import reorder_preds
 from ..label.label import drivables, labels
 from ..label.to_mask import IGNORE_LABEL
 

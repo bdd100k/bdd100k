@@ -45,13 +45,14 @@ from scalabel.eval.result import OVERALL, Result, Scores, ScoresList
 from scalabel.label.coco_typing import PanopticCatType
 from tqdm import tqdm
 
+from bdd100k.common.utils import reorder_preds
+
 from ..common.bitmask import (
     bitmask_intersection_rate,
     gen_blank_bitmask,
     parse_bitmask,
 )
 from ..common.logger import logger
-from bdd100k.common.utils import reorder_preds
 from ..label.label import labels
 
 STUFF = "STUFF"

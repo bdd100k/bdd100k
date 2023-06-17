@@ -19,13 +19,14 @@ from scalabel.eval.sem_seg import evaluate_sem_seg as sc_eval_sem_seg
 from scalabel.label.io import group_and_sort, load
 from scalabel.label.typing import Frame
 
-from ..common.logger import logger
-from ..common.typing import BDD100KConfig
 from bdd100k.common.utils import (
     group_and_sort_files,
     list_files,
     load_bdd100k_config,
 )
+
+from ..common.logger import logger
+from ..common.typing import BDD100KConfig
 from ..label.to_scalabel import bdd100k_to_scalabel
 from .ins_seg import evaluate_ins_seg
 from .lane import evaluate_lane_marking

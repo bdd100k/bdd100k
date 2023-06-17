@@ -22,9 +22,10 @@ from scalabel.label.transforms import get_coco_categories
 from scalabel.label.typing import Config
 from tqdm import tqdm
 
+from bdd100k.common.utils import reorder_preds
+
 from ..common.bitmask import bitmask_intersection_rate, parse_bitmask
 from ..common.logger import logger
-from bdd100k.common.utils import reorder_preds
 
 
 def parse_res_bitmask(

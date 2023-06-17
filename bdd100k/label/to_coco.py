@@ -30,14 +30,15 @@ from scalabel.label.utils import (
 )
 from tqdm import tqdm
 
-from ..common.logger import logger
-from ..common.typing import BDD100KConfig, InstanceType
 from bdd100k.common.utils import (
     get_bdd100k_instance_id,
     group_and_sort_files,
     list_files,
     load_bdd100k_config,
 )
+
+from ..common.logger import logger
+from ..common.typing import BDD100KConfig, InstanceType
 from .to_scalabel import bdd100k_to_scalabel
 
 
