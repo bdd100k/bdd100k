@@ -6,7 +6,7 @@ import numpy as np
 from PIL import Image
 from scalabel.common.typing import NDArrayF64, NDArrayI32, NDArrayU8
 
-from .bitmask import bitmask_intersection_rate, parse_bitmask
+from bdd100k.common.bitmask import bitmask_intersection_rate, parse_bitmask
 
 
 class TestMaskIntersectionRate(unittest.TestCase):

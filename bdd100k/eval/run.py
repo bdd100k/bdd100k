@@ -21,7 +21,7 @@ from scalabel.label.typing import Frame
 
 from ..common.logger import logger
 from ..common.typing import BDD100KConfig
-from ..common.utils import (
+from bdd100k.common.utils import (
     group_and_sort_files,
     list_files,
     load_bdd100k_config,

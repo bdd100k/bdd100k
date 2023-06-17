@@ -6,8 +6,8 @@ from scalabel.label.io import load
 from scalabel.label.typing import Frame
 from scalabel.label.utils import get_leaf_categories
 
-from ..common.utils import load_bdd100k_config
-from .to_rle import insseg_to_rle, segtrack_to_rle, semseg_to_rle
+from bdd100k.common.utils import load_bdd100k_config
+from bdd100k.label.to_rle import insseg_to_rle, segtrack_to_rle, semseg_to_rle
 
 
 class TestToRLE(unittest.TestCase):

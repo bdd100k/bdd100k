@@ -5,8 +5,8 @@ import unittest
 import numpy as np
 from scalabel.common.typing import NDArrayF64, NDArrayU8
 
-from ..common.utils import list_files
-from .lane import (
+from bdd100k.common.utils import list_files
+from bdd100k.eval.lane import (
     eval_lane_per_threshold,
     evaluate_lane_marking,
     get_foreground,

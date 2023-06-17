@@ -32,7 +32,7 @@ from tqdm import tqdm
 
 from ..common.logger import logger
 from ..common.typing import BDD100KConfig, InstanceType
-from ..common.utils import (
+from bdd100k.common.utils import (
     get_bdd100k_instance_id,
     group_and_sort_files,
     list_files,

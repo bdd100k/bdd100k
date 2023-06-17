@@ -24,7 +24,7 @@ from tqdm import tqdm
 
 from ..common.bitmask import bitmask_intersection_rate, parse_bitmask
 from ..common.logger import logger
-from ..common.utils import reorder_preds
+from bdd100k.common.utils import reorder_preds
 
 
 def parse_res_bitmask(

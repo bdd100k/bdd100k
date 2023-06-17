@@ -51,7 +51,7 @@ from ..common.bitmask import (
     parse_bitmask,
 )
 from ..common.logger import logger
-from ..common.utils import reorder_preds
+from bdd100k.common.utils import reorder_preds
 from ..label.label import labels
 
 STUFF = "STUFF"

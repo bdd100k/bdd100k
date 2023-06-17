@@ -9,7 +9,7 @@ from PIL import Image
 from scalabel.common.typing import NDArrayU8
 from scalabel.label.coco_typing import ImgType
 
-from .to_coco_panseg import (
+from bdd100k.label.to_coco_panseg import (
     bitmask2coco_pan_seg,
     bitmask2pan_json,
     bitmask2pan_mask,

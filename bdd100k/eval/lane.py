@@ -72,7 +72,7 @@ from skimage.morphology import binary_dilation, disk  # type: ignore
 from tqdm import tqdm
 
 from ..common.logger import logger
-from ..common.utils import reorder_preds
+from bdd100k.common.utils import reorder_preds
 from ..label.label import lane_categories, lane_directions, lane_styles
 
 BOUND_PIXELS = [1, 2, 5]

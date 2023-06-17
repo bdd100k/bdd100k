@@ -17,7 +17,7 @@ from tqdm import tqdm
 
 from ..common.bitmask import parse_bitmask
 from ..common.typing import BDD100KConfig
-from ..common.utils import list_files, load_bdd100k_config
+from bdd100k.common.utils import list_files, load_bdd100k_config
 from ..eval.ins_seg import parse_res_bitmask
 
 ToRLEFunc = Callable[[Frame, str, List[Category]], Frame]

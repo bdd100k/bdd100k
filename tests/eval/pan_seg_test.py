@@ -6,8 +6,8 @@ import numpy as np
 from scalabel.common.typing import NDArrayF64
 from scalabel.label.coco_typing import PanopticCatType
 
-from ..common.utils import list_files
-from .pan_seg import PQStat, evaluate_pan_seg, pq_per_image
+from bdd100k.common.utils import list_files
+from bdd100k.eval.pan_seg import PQStat, evaluate_pan_seg, pq_per_image
 
 
 class TestPQStat(unittest.TestCase):

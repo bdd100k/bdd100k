@@ -20,7 +20,7 @@ from scalabel.label.coco_typing import (
 from tqdm import tqdm
 
 from ..common.logger import logger
-from ..common.utils import list_files
+from bdd100k.common.utils import list_files
 from .label import labels
 from .to_coco import bitmasks_loader
 from .to_mask import STUFF_NUM
