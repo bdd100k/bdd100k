@@ -43,35 +43,36 @@ class BDD100KDepthDataset:
                 continue
             for scene_type in ["singles", "overlaps"]:
                 scene_path = os.path.join(postcode_path, "daytime", scene_type)
-                if os.path.exists(scene_path):
-                    for scene in os.listdir(scene_path):
-                        denses_path = os.path.join(scene_path, scene, "dense")
-                        images_path = os.path.join(scene_path, scene, "images")
-                        for dense_path in os.listdir(denses_path):
-                            depth_maps_path = os.path.join(
-                                denses_path,
-                                dense_path,
-                                "depth_maps_nbr_consistent",
-                            )
-                            sparse_path = os.path.join(
-                                denses_path, dense_path, "sparse"
-                            )
-                            fused_pcd_path = os.path.join(
-                                denses_path, dense_path, "fused.ply"
-                            )
-                            files = glob.glob(
-                                depth_maps_path + "/" + self.sequence + "*"
-                            )
-                            if files:
-                                self.scene_type = scene_type
-                                self.scene_name = scene
-                                self.images_path = images_path
-                                self.postcode = postcode
-                                self.depth_path = depth_maps_path
-                                self.sparse_path = sparse_path
-                                self.fused_pcd_path = fused_pcd_path
-                            else:
-                                break
+                if not os.path.exists(scene_path):
+                    continue
+                for scene in os.listdir(scene_path):
+                    denses_path = os.path.join(scene_path, scene, "dense")
+                    images_path = os.path.join(scene_path, scene, "images")
+                    for dense_path in os.listdir(denses_path):
+                        depth_maps_path = os.path.join(
+                            denses_path,
+                            dense_path,
+                            "depth_maps_nbr_consistent",
+                        )
+                        sparse_path = os.path.join(
+                            denses_path, dense_path, "sparse"
+                        )
+                        fused_pcd_path = os.path.join(
+                            denses_path, dense_path, "fused.ply"
+                        )
+                        files = glob.glob(
+                            depth_maps_path + "/" + self.sequence + "*"
+                        )
+                        if files:
+                            self.scene_type = scene_type
+                            self.scene_name = scene
+                            self.images_path = images_path
+                            self.postcode = postcode
+                            self.depth_path = depth_maps_path
+                            self.sparse_path = sparse_path
+                            self.fused_pcd_path = fused_pcd_path
+                        else:
+                            break
 
     def get_images(self) -> None:
         """Update self.images, including image name and poses."""
@@ -94,7 +95,7 @@ class BDD100KDepthDataset:
 
     def get_depth(self) -> None:
         """Update depth information in self.images."""
-        if self.images == {}:
+        if not self.images:
             print("Images are missing")
             return
         for name, image in self.images.items():
@@ -104,7 +105,7 @@ class BDD100KDepthDataset:
                 cur_depth = (
                     cv2.imread(cur_depth_path, cv2.IMREAD_ANYDEPTH) / 256
                 )
-                self.images[name]["depth"] = cur_depth
+                image = cur_depth
 
 
 if __name__ == "__main__":
@@ -140,5 +141,5 @@ if __name__ == "__main__":
         save_path = os.path.join(
             ARGUMENTS.data_root, f"{ARGUMENTS.sequence}.json"
         )
-        with open(save_path, "w") as f:
+        with open(save_path, "w", encoding="utf-8") as f:
             json.dump(bdd100k_depth_dataset.__dict__, f, indent=2)
