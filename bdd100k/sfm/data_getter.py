@@ -98,14 +98,14 @@ class BDD100KDepthDataset:
         if not self.images:
             print("Images are missing")
             return
-        for name, image in self.images.items():
+        for name in self.images.keys():
             cur_depth_name = name.replace("jpg", "png")
             cur_depth_path = os.path.join(self.depth_path, cur_depth_name)
             if os.path.exists(cur_depth_path):
                 cur_depth = (
                     cv2.imread(cur_depth_path, cv2.IMREAD_ANYDEPTH) / 256
                 )
-                image = cur_depth
+                self.images[name]["depth"] = cur_depth
 
 
 if __name__ == "__main__":
