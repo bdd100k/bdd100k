@@ -45,13 +45,14 @@ from scalabel.eval.result import OVERALL, Result, Scores, ScoresList
 from scalabel.label.coco_typing import PanopticCatType
 from tqdm import tqdm
 
+from bdd100k.common.utils import reorder_preds
+
 from ..common.bitmask import (
     bitmask_intersection_rate,
     gen_blank_bitmask,
     parse_bitmask,
 )
 from ..common.logger import logger
-from ..common.utils import reorder_preds
 from ..label.label import labels
 
 STUFF = "STUFF"
@@ -260,4 +261,4 @@ def evaluate_pan_seg(
     if with_logs:
         logger.info("Time elapsed: %0.2f seconds", t_delta)
 
-    return PanSegResult(**res_dict)
+    return PanSegResult(**res_dict)  # type: ignore

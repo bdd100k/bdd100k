@@ -7,8 +7,8 @@ import numpy as np
 from PIL import Image
 from scalabel.common.typing import NDArrayF64, NDArrayU8
 
-from ..common.utils import list_files, load_bdd100k_config
-from .ins_seg import evaluate_ins_seg
+from bdd100k.common.utils import list_files, load_bdd100k_config
+from bdd100k.eval.ins_seg import evaluate_ins_seg
 
 
 class TestBDD100KInsSegEval(unittest.TestCase):

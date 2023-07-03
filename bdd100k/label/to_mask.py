@@ -21,9 +21,10 @@ from scalabel.label.utils import (
 )
 from tqdm import tqdm
 
+from bdd100k.common.utils import get_bdd100k_instance_id, load_bdd100k_config
+
 from ..common.logger import logger
 from ..common.typing import BDD100KConfig
-from ..common.utils import get_bdd100k_instance_id, load_bdd100k_config
 from .label import drivables, labels, lane_categories
 from .to_coco import parse_args
 from .to_scalabel import bdd100k_to_scalabel
@@ -489,7 +490,7 @@ def main() -> None:
     if args.config is not None:
         bdd100k_config = load_bdd100k_config(args.config)
     elif dataset.config is not None:
-        bdd100k_config = BDD100KConfig(config=dataset.config)
+        bdd100k_config = BDD100KConfig(scalabel=dataset.config)
     else:
         bdd100k_config = load_bdd100k_config(args.mode)
 

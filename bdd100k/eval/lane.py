@@ -71,8 +71,9 @@ from scalabel.eval.result import AVERAGE, Result, Scores, ScoresList
 from skimage.morphology import binary_dilation, disk  # type: ignore
 from tqdm import tqdm
 
+from bdd100k.common.utils import reorder_preds
+
 from ..common.logger import logger
-from ..common.utils import reorder_preds
 from ..label.label import lane_categories, lane_directions, lane_styles
 
 BOUND_PIXELS = [1, 2, 5]
@@ -258,7 +259,7 @@ def generate_results(task2arr: Dict[str, NDArrayF64]) -> LaneResult:
     for bound_pixel, f_score in zip(BOUND_PIXELS, task2arr[AVERAGE]):
         res_dict[f"F1_pix{bound_pixel}"][-1][AVERAGE] = f_score
 
-    return LaneResult(**res_dict)
+    return LaneResult(**res_dict)  # type: ignore
 
 
 def evaluate_lane_marking(

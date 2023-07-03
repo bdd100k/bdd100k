@@ -5,8 +5,8 @@ import unittest
 
 from scalabel.label.io import load
 
-from ..common.utils import load_bdd100k_config
-from .to_scalabel import IGNORED, bdd100k_to_scalabel
+from bdd100k.common.utils import load_bdd100k_config
+from bdd100k.label.to_scalabel import IGNORED, bdd100k_to_scalabel
 
 
 class TestBDD100KToScalabel(unittest.TestCase):

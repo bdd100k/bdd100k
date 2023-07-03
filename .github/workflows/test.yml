@@ -61,7 +61,7 @@ jobs:
           python3 -m pip install --upgrade pip
           pip install --ignore-installed -r requirements.txt
       - name: test
-        run: python3 -m pytest bdd100k
+        run: python3 -m pytest tests
 
   test-mac:
     name: test py${{ matrix.python-version }} on ${{ matrix.os }}
@@ -84,4 +84,4 @@ jobs:
       - name: test
         env:
           MPLBACKEND: TkAgg # Choose backend for mac
-        run: python3 -m pytest bdd100k
+        run: python3 -m pytest tests
