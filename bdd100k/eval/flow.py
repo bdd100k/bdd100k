@@ -264,18 +264,18 @@ def evaluate_flow(
     img_size = config.imageSize
     assert img_size is not None
     ann_videos = group_by_video(gt_frames)
-    ann_videos = [
-        f
-        for f in ann_videos
-        if f[0].videoName
-        in [
-            # "b1d0a191-03dcecc2",
-            # "b1d22ed6-f1cac061",
-            "b1c9c847-3bda4659",
-            "b1d0a191-06deb55d",
-            "b1d10d08-c35503b8",
-        ]
-    ]
+    # ann_videos = [
+    #     f
+    #     for f in ann_videos
+    #     if f[0].videoName
+    #     in [
+    #         # "b1d0a191-03dcecc2",
+    #         # "b1d22ed6-f1cac061",
+    #         "b1c9c847-3bda4659",
+    #         "b1d0a191-06deb55d",
+    #         "b1d10d08-c35503b8",
+    #     ]
+    # ]
     if nproc > 1:
         with Pool(nproc) as pool:
             scores = pool.map(
