@@ -67,7 +67,7 @@ def frame_to_mask(
     matplotlib.use("Agg")
     fig = plt.figure(facecolor="0")
     fig.set_size_inches((width / fig.get_dpi()), height / fig.get_dpi())
-    ax = fig.add_axes([0, 0, 1, 1])
+    ax = fig.add_axes([0, 0, 1, 1])  # type: ignore
     ax.axis("off")
     ax.set_xlim(0, width)
     ax.set_ylim(0, height)
@@ -91,7 +91,9 @@ def frame_to_mask(
             )
 
     fig.canvas.draw()
-    out: NDArrayU8 = np.frombuffer(fig.canvas.tostring_rgb(), np.uint8)
+    out: NDArrayU8 = np.frombuffer(  # type: ignore
+        fig.canvas.tostring_rgb(), np.uint8
+    )
     out = out.reshape((height, width, -1)).astype(np.int32)
     out = (out[..., 0] << 8) + out[..., 1]
     plt.close()
