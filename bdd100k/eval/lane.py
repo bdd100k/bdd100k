@@ -59,6 +59,7 @@ Licensed under the BSD License [see LICENSE for details]
 Written by Federico Perazzi
 ----------------------------------------------------------------------------
 """
+
 from functools import partial
 from multiprocessing import Pool
 from typing import AbstractSet, Callable, Dict, List, Optional, Union

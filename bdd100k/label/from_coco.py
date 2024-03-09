@@ -1,4 +1,5 @@
 """Convert coco to bdd100k format."""
+
 import argparse
 
 from scalabel.common.parallel import NPROC
