@@ -91,8 +91,8 @@ def frame_to_mask(
             )
 
     fig.canvas.draw()
-    out: NDArrayU8 = np.frombuffer(  # type: ignore
-        fig.canvas.tostring_rgb(), np.uint8
+    out: NDArrayU8 = np.frombuffer(
+        fig.canvas.tostring_rgb(), np.uint8  # type: ignore
     )
     out = out.reshape((height, width, -1)).astype(np.int32)
     out = (out[..., 0] << 8) + out[..., 1]
