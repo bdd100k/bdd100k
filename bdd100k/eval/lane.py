@@ -59,6 +59,7 @@ Licensed under the BSD License [see LICENSE for details]
 Written by Federico Perazzi
 ----------------------------------------------------------------------------
 """
+
 from functools import partial
 from multiprocessing import Pool
 from typing import AbstractSet, Callable, Dict, List, Optional, Union
@@ -68,7 +69,7 @@ from PIL import Image
 from scalabel.common.parallel import NPROC
 from scalabel.common.typing import NDArrayF64, NDArrayU8
 from scalabel.eval.result import AVERAGE, Result, Scores, ScoresList
-from skimage.morphology import binary_dilation, disk  # type: ignore
+from skimage.morphology import binary_dilation, disk
 from tqdm import tqdm
 
 from bdd100k.common.utils import reorder_preds

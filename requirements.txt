@@ -11,6 +11,7 @@ numpy
 pandas
 pillow
 pycocotools
+pydantic<2.0.0
 pylint
 pytest
 scikit-image

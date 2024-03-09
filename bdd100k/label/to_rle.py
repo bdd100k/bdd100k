@@ -1,4 +1,5 @@
 """Convert mask/bitmask to RLE."""
+
 import argparse
 import os
 from functools import partial

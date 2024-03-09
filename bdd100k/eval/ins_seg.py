@@ -2,6 +2,7 @@
 
 predictions format: BitMasks
 """
+
 import copy
 import json
 import os
